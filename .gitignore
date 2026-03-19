@@ -9,3 +9,6 @@
 /backend/dist
 /backend/.env
 /coverage
+
+/backend/.vscode
+/frontend/.vscode
