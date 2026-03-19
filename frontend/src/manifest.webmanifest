@@ -1,0 +1,18 @@
+{
+  "name": "IZZIE CAR",
+  "short_name": "IZZIE CAR",
+  "theme_color": "#2563EB",
+  "background_color": "#F9FAFB",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/",
+  "description": "Marketplace de aluguel de carros entre pessoas.",
+  "icons": [
+    {
+      "src": "assets/icons/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
