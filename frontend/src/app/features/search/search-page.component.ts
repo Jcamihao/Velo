@@ -9,9 +9,12 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AuthService } from '../../core/services/auth.service';
+import { SearchAlertsApiService } from '../../core/services/search-alerts-api.service';
 import { FilterModalComponent } from '../../shared/components/filter-modal.component';
 import { SearchHeaderComponent } from '../../shared/components/search-header.component';
-import { VehicleCardItem } from '../../core/models/domain.models';
+import { VehicleMapComponent } from '../../shared/components/vehicle-map.component';
+import { SearchAlert, VehicleCardItem, VehicleType } from '../../core/models/domain.models';
 import { FavoritesService } from '../../core/services/favorites.service';
 import { VehiclesApiService } from '../../core/services/vehicles-api.service';
 
@@ -20,9 +23,16 @@ type SearchQuery = {
   city: string;
   startDate: string;
   endDate: string;
+  vehicleType: VehicleType | '';
   category: string;
+  motorcycleStyle: string;
+  minEngineCc: string;
+  maxEngineCc: string;
   minPrice: string;
   maxPrice: string;
+  latitude: string;
+  longitude: string;
+  radiusKm: string;
 };
 
 @Component({
@@ -32,12 +42,13 @@ type SearchQuery = {
     CommonModule,
     SearchHeaderComponent,
     FilterModalComponent,
+    VehicleMapComponent,
   ],
   template: `
     <main class="page search-page">
       <app-search-header
-        [title]="'Search Cars'"
-        [subtitle]="'Escolha o modelo, ajuste o período e encontre opções premium e econômicas.'"
+        [title]="searchTitle"
+        [subtitle]="searchSubtitle"
         [query]="query.q"
         [startDate]="query.startDate"
         [endDate]="query.endDate"
@@ -45,73 +56,96 @@ type SearchQuery = {
         (filters)="filtersOpen = true"
       />
 
-      <section class="search-page__quick-filters">
-        <button type="button" class="search-page__quick-card" (click)="filtersOpen = true">
-          <span class="material-icons" aria-hidden="true">event_available</span>
-          <div>
-            <strong>{{ pickupLabel }}</strong>
-            <small>{{ pickupHint }}</small>
-          </div>
+      <section class="search-page__tools">
+        <button type="button" class="btn btn-secondary" (click)="useCurrentLocation()">
+          Minha localização
         </button>
-
-        <button type="button" class="search-page__quick-card" (click)="filtersOpen = true">
-          <span class="material-icons" aria-hidden="true">event_busy</span>
-          <div>
-            <strong>{{ returnLabel }}</strong>
-            <small>{{ returnHint }}</small>
-          </div>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          *ngIf="hasLocationFilter"
+          (click)="clearLocationFilter()"
+        >
+          Limpar raio
+        </button>
+        <button type="button" class="btn btn-secondary" (click)="mapOpen = !mapOpen">
+          {{ mapOpen ? 'Ocultar mapa' : 'Ver mapa' }}
+        </button>
+        <button
+          *ngIf="authService.hasSession()"
+          type="button"
+          class="btn btn-secondary"
+          [disabled]="alertSaving || !canSaveCurrentSearch || currentAlertSaved"
+          (click)="saveCurrentSearchAlert()"
+        >
+          {{
+            currentAlertSaved
+              ? 'Alerta salvo'
+              : alertSaving
+                ? 'Salvando alerta...'
+                : 'Salvar alerta'
+          }}
         </button>
       </section>
 
-      <section class="search-page__section" *ngIf="premiumVehicles.length">
+      <section class="search-page__alerts-card" *ngIf="authService.hasSession()">
         <div class="search-page__section-head">
-          <h2>Premium Cars</h2>
-          <button type="button" class="search-page__icon-button" (click)="filtersOpen = true">
-            <span class="material-icons" aria-hidden="true">tune</span>
-          </button>
+          <h2>Alertas de busca</h2>
+          <span>{{ searchAlerts.length }} salvo(s)</span>
         </div>
 
-        <div class="search-page__premium-rail">
-          <article
-            *ngFor="let vehicle of premiumVehicles"
-            class="search-page__premium-card"
-            tabindex="0"
-            role="button"
-            (click)="goToVehicle(vehicle.id)"
-            (keydown.enter)="goToVehicle(vehicle.id)"
-          >
-            <div class="search-page__premium-media">
-              <button
-                type="button"
-                class="search-page__favorite"
-                [class.search-page__favorite--active]="isFavorite(vehicle.id)"
-                [disabled]="isFavoritePending(vehicle.id)"
-                [attr.aria-label]="
-                  isFavorite(vehicle.id) ? 'Remover dos favoritos' : 'Salvar nos favoritos'
-                "
-                (click)="toggleFavorite(vehicle, $event)"
-              >
-                <span class="material-icons" aria-hidden="true">{{
-                  isFavorite(vehicle.id) ? 'favorite' : 'favorite_border'
-                }}</span>
-              </button>
-              <img [src]="vehicle.coverImage || fallbackImage" [alt]="vehicle.title" />
+        <p class="loading" *ngIf="alertsLoading">Carregando alertas...</p>
+        <p class="loading" *ngIf="alertFeedback">{{ alertFeedback }}</p>
+        <p class="loading" *ngIf="!alertsLoading && !searchAlerts.length">
+          Salve a busca atual para ser avisado quando surgir um carro ou moto nessa faixa.
+        </p>
+
+        <div class="search-page__alert-list" *ngIf="searchAlerts.length">
+          <article class="search-page__alert-item" *ngFor="let alert of searchAlerts">
+            <div>
+              <strong>{{ alert.title || 'Busca salva' }}</strong>
+              <p>{{ alertSummary(alert) }}</p>
             </div>
-            <strong>{{ vehicle.dailyRate | currency: 'BRL' : 'symbol' : '1.0-0' }}</strong>
-            <span>{{ shortTitle(vehicle.title) }}</span>
+
+            <button
+              type="button"
+              class="btn btn-ghost"
+              [disabled]="removingAlertId === alert.id"
+              (click)="removeAlert(alert.id)"
+            >
+              {{ removingAlertId === alert.id ? 'Removendo...' : 'Remover' }}
+            </button>
           </article>
         </div>
       </section>
 
-      <section class="search-page__section">
+      <section class="search-page__map-card" *ngIf="mapOpen">
         <div class="search-page__section-head">
-          <h2>Budget Cars</h2>
-          <span>Found: {{ totalItems }} cars</span>
+          <h2>Mapa</h2>
+          <span>{{ locationSummary }}</span>
         </div>
 
-        <section class="search-page__budget-grid" *ngIf="displayBudgetVehicles.length">
+        <app-vehicle-map
+          *ngIf="mapMarkers.length"
+          [markers]="mapMarkers"
+          [centerLatitude]="query.latitude ? +query.latitude : null"
+          [centerLongitude]="query.longitude ? +query.longitude : null"
+        />
+
+        <p class="loading" *ngIf="!mapMarkers.length">
+          Nenhum resultado com coordenadas para mostrar no mapa.
+        </p>
+      </section>
+
+      <section class="search-page__section">
+        <div class="search-page__section-head">
+          <h2>Resultados</h2>
+          <span>{{ totalItems }} {{ resultsLabel }}</span>
+        </div>
+
+        <section class="search-page__budget-grid" *ngIf="vehicles.length">
           <article
-            *ngFor="let vehicle of displayBudgetVehicles"
+            *ngFor="let vehicle of vehicles"
             class="search-page__budget-card"
             tabindex="0"
             role="button"
@@ -139,7 +173,26 @@ type SearchQuery = {
             <div class="search-page__budget-copy">
               <div class="search-page__budget-top">
                 <h3>{{ vehicle.title }}</h3>
-                <strong>{{ vehicle.dailyRate | currency: 'BRL' : 'symbol' : '1.0-0' }}</strong>
+                <strong>{{ vehicle.dailyRate | currency: 'BRL' : 'symbol' : '1.0-0' }} / semana</strong>
+              </div>
+
+              <div
+                class="search-page__promo-row"
+                *ngIf="
+                  vehicle.firstBookingDiscountPercent ||
+                  vehicle.weeklyDiscountPercent ||
+                  (vehicle.couponCode && vehicle.couponDiscountPercent)
+                "
+              >
+                <span class="search-page__promo-pill" *ngIf="vehicle.firstBookingDiscountPercent">
+                  1a reserva {{ vehicle.firstBookingDiscountPercent }}% off
+                </span>
+                <span class="search-page__promo-pill" *ngIf="vehicle.weeklyDiscountPercent">
+                  Semanal {{ vehicle.weeklyDiscountPercent }}% off
+                </span>
+                <span class="search-page__promo-pill" *ngIf="vehicle.couponCode && vehicle.couponDiscountPercent">
+                  Cupom ativo
+                </span>
               </div>
 
               <div class="search-page__budget-specs">
@@ -149,7 +202,7 @@ type SearchQuery = {
                 </span>
                 <span>
                   <span class="material-icons" aria-hidden="true">event_seat</span>
-                  {{ vehicle.seats }}/{{ vehicle.seats + 2 }}
+                  {{ vehicle.seats }} lugares
                 </span>
               </div>
 
@@ -161,8 +214,8 @@ type SearchQuery = {
         <p class="loading" *ngIf="loading">Carregando resultados...</p>
 
         <section class="empty-state" *ngIf="!loading && vehicles.length === 0">
-          <h2>Nenhum carro encontrado</h2>
-          <p>Tente mudar a cidade ou ampliar a faixa de preço.</p>
+          <h2>{{ emptyStateTitle }}</h2>
+          <p>{{ emptyStateDescription }}</p>
         </section>
       </section>
 
@@ -181,54 +234,43 @@ type SearchQuery = {
       .search-page {
         display: grid;
         gap: 16px;
-        width: min(100%, 440px);
+        width: 100%;
         margin: 0 auto;
-        padding: 20px 16px 32px;
+        padding: 20px 16px 40px;
       }
 
-      .search-page__quick-filters {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
-      }
-
-      .search-page__quick-card {
-        display: grid;
-        grid-template-columns: auto minmax(0, 1fr);
-        align-items: center;
-        gap: 12px;
-        padding: 14px 12px;
-        border: 1px solid var(--glass-border);
-        border-radius: 16px;
-        background: rgba(255, 255, 255, 0.98);
-        text-align: left;
-        box-shadow: var(--shadow-soft);
-      }
-
-      .search-page__quick-card .material-icons {
-        color: var(--primary);
-        font-size: 18px;
-      }
-
-      .search-page__quick-card strong,
-      .search-page__quick-card small,
       .search-page__section-head h2,
       .search-page__section-head span {
         margin: 0;
       }
 
-      .search-page__quick-card strong {
-        display: block;
-        color: var(--text-primary);
-        font-size: 13px;
-      }
-
-      .search-page__quick-card small {
-        color: var(--text-secondary);
-        font-size: 12px;
-      }
-
       .search-page__section {
+        display: grid;
+        gap: 14px;
+        padding: 18px 16px;
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.98);
+        border: 1px solid var(--glass-border);
+        box-shadow: var(--shadow-soft);
+      }
+
+      .search-page__tools {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .search-page__map-card {
+        display: grid;
+        gap: 14px;
+        padding: 18px 16px;
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.98);
+        border: 1px solid var(--glass-border);
+        box-shadow: var(--shadow-soft);
+      }
+
+      .search-page__alerts-card {
         display: grid;
         gap: 14px;
         padding: 18px 16px;
@@ -256,56 +298,12 @@ type SearchQuery = {
         font-size: 13px;
       }
 
-      .search-page__icon-button {
-        display: inline-grid;
-        place-items: center;
-        width: 38px;
-        height: 38px;
-        border: 0;
-        border-radius: 999px;
-        background: var(--surface-muted);
-        color: var(--text-secondary);
-      }
-
-      .search-page__premium-rail {
-        display: grid;
-        grid-auto-flow: column;
-        grid-auto-columns: minmax(146px, 1fr);
-        gap: 12px;
-        overflow-x: auto;
-      }
-
-      .search-page__premium-card,
       .search-page__budget-card {
         min-width: 0;
         border: 0;
         text-align: left;
         color: inherit;
         cursor: pointer;
-      }
-
-      .search-page__premium-card {
-        display: grid;
-        gap: 10px;
-        padding: 0;
-        background: transparent;
-      }
-
-      .search-page__premium-media {
-        position: relative;
-        min-height: 112px;
-        border-radius: 16px;
-        overflow: hidden;
-        background: linear-gradient(180deg, #fffdfd 0%, #f5efef 100%);
-        border: 1px solid var(--glass-border-soft);
-      }
-
-      .search-page__premium-media img {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
       }
 
       .search-page__favorite {
@@ -329,21 +327,9 @@ type SearchQuery = {
         color: var(--primary);
       }
 
-      .search-page__premium-card strong {
-        color: var(--primary);
-        font-size: 16px;
-        font-weight: 800;
-      }
-
-      .search-page__premium-card span {
-        color: var(--text-primary);
-        font-size: 14px;
-        line-height: 1.2;
-      }
-
       .search-page__budget-grid {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: minmax(0, 1fr);
         gap: 14px;
       }
 
@@ -403,6 +389,24 @@ type SearchQuery = {
         letter-spacing: -0.03em;
       }
 
+      .search-page__promo-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .search-page__promo-pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        padding: 0 10px;
+        border-radius: 999px;
+        background: rgba(245, 158, 11, 0.14);
+        color: #9a5c00;
+        font-size: 11px;
+        font-weight: 700;
+      }
+
       .search-page__budget-specs {
         display: flex;
         align-items: center;
@@ -428,6 +432,27 @@ type SearchQuery = {
         font-size: 12px;
       }
 
+      .search-page__alert-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .search-page__alert-item {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px;
+        border-radius: 18px;
+        background: var(--surface-muted);
+        border: 1px solid var(--glass-border-soft);
+      }
+
+      .search-page__alert-item strong,
+      .search-page__alert-item p {
+        margin: 0;
+      }
+
       .empty-state,
       .loading {
         padding: 18px;
@@ -447,25 +472,49 @@ type SearchQuery = {
         height: 1px;
       }
 
-      @media (max-width: 420px) {
-        .search-page__quick-filters,
+      @media (min-width: 421px) {
         .search-page__budget-grid {
-          grid-template-columns: minmax(0, 1fr);
+          grid-template-columns: repeat(2, minmax(0, 1fr));
         }
       }
 
-      @media (max-width: 380px) {
-        .search-page__premium-rail {
-          grid-auto-columns: minmax(136px, 1fr);
+      @media (min-width: 1080px) {
+        .search-page {
+          gap: 20px;
+          padding: 28px 20px 56px;
+        }
+
+        .search-page__section {
+          padding: 22px;
+          border-radius: 26px;
+        }
+
+        .search-page__budget-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 16px;
+        }
+
+        .search-page__budget-card {
+          gap: 12px;
+          padding: 14px;
+          border-radius: 20px;
+        }
+
+        .search-page__budget-media {
+          min-height: 172px;
+          border-radius: 16px;
         }
       }
+
     `,
   ],
 })
 export class SearchPageComponent implements AfterViewInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  protected readonly authService = inject(AuthService);
   private readonly favoritesService = inject(FavoritesService);
+  private readonly searchAlertsApiService = inject(SearchAlertsApiService);
   private readonly vehiclesApiService = inject(VehiclesApiService);
 
   @ViewChild('sentinel') sentinelRef?: ElementRef<HTMLDivElement>;
@@ -475,6 +524,12 @@ export class SearchPageComponent implements AfterViewInit, OnDestroy {
   protected hasNextPage = false;
   protected totalItems = 0;
   protected filtersOpen = false;
+  protected mapOpen = false;
+  protected searchAlerts: SearchAlert[] = [];
+  protected alertsLoading = false;
+  protected alertSaving = false;
+  protected alertFeedback = '';
+  protected removingAlertId: string | null = null;
   protected readonly fallbackImage =
     'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=80';
   protected query: SearchQuery = {
@@ -482,40 +537,26 @@ export class SearchPageComponent implements AfterViewInit, OnDestroy {
     city: '',
     startDate: '',
     endDate: '',
+    vehicleType: '',
     category: '',
+    motorcycleStyle: '',
+    minEngineCc: '',
+    maxEngineCc: '',
     minPrice: '',
     maxPrice: '',
+    latitude: '',
+    longitude: '',
+    radiusKm: '',
   };
 
   private currentPage = 1;
   private observer?: IntersectionObserver;
 
-  protected get premiumVehicles() {
-    return this.vehicles.slice(0, 3);
-  }
-
-  protected get displayBudgetVehicles() {
-    const budgetVehicles = this.vehicles.slice(3);
-    return budgetVehicles.length ? budgetVehicles : this.vehicles;
-  }
-
-  protected get pickupLabel() {
-    return this.query.startDate ? this.formatShortDate(this.query.startDate) : 'Retirada';
-  }
-
-  protected get pickupHint() {
-    return this.query.startDate ? 'Data selecionada' : 'Escolha o dia';
-  }
-
-  protected get returnLabel() {
-    return this.query.endDate ? this.formatShortDate(this.query.endDate) : 'Devolução';
-  }
-
-  protected get returnHint() {
-    return this.query.endDate ? 'Fim da reserva' : 'Defina o retorno';
-  }
-
   constructor() {
+    if (this.authService.hasSession()) {
+      this.loadAlerts();
+    }
+
     this.route.queryParamMap
       .pipe(takeUntilDestroyed())
       .subscribe((params) => {
@@ -524,14 +565,33 @@ export class SearchPageComponent implements AfterViewInit, OnDestroy {
           city: params.get('city') || '',
           startDate: params.get('startDate') || '',
           endDate: params.get('endDate') || '',
+          vehicleType: (params.get('vehicleType') as VehicleType | '') || '',
           category: params.get('category') || '',
+          motorcycleStyle: params.get('motorcycleStyle') || '',
+          minEngineCc: params.get('minEngineCc') || '',
+          maxEngineCc: params.get('maxEngineCc') || '',
           minPrice: params.get('minPrice') || '',
           maxPrice: params.get('maxPrice') || '',
+          latitude: params.get('latitude') || '',
+          longitude: params.get('longitude') || '',
+          radiusKm: params.get('radiusKm') || '',
         };
         this.currentPage = 1;
         this.vehicles = [];
         this.fetchVehicles();
       });
+  }
+
+  protected get canSaveCurrentSearch() {
+    return Object.keys(this.buildAlertFilters()).length > 0;
+  }
+
+  protected get currentAlertSaved() {
+    const currentSignature = this.alertSignature(this.buildAlertFilters());
+
+    return !!currentSignature && this.searchAlerts.some(
+      (alert) => this.alertSignature(alert.filters) === currentSignature,
+    );
   }
 
   ngAfterViewInit() {
@@ -573,6 +633,43 @@ export class SearchPageComponent implements AfterViewInit, OnDestroy {
     });
   }
 
+  protected useCurrentLocation() {
+    if (!('geolocation' in navigator)) {
+      globalThis.alert('Geolocalização não disponível neste navegador.');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        this.router.navigate(['/search'], {
+          queryParams: {
+            ...this.query,
+            latitude: coords.latitude.toFixed(6),
+            longitude: coords.longitude.toFixed(6),
+            radiusKm: this.query.radiusKm || '20',
+          },
+        });
+      },
+      () => {
+        globalThis.alert('Não foi possível obter sua localização agora.');
+      },
+      {
+        enableHighAccuracy: true,
+      },
+    );
+  }
+
+  protected clearLocationFilter() {
+    this.router.navigate(['/search'], {
+      queryParams: {
+        ...this.query,
+        latitude: '',
+        longitude: '',
+        radiusKm: '',
+      },
+    });
+  }
+
   protected goToVehicle(vehicleId: string) {
     this.router.navigate(['/vehicles', vehicleId]);
   }
@@ -589,6 +686,51 @@ export class SearchPageComponent implements AfterViewInit, OnDestroy {
     event.preventDefault();
     event.stopPropagation();
     this.favoritesService.toggleFavorite(vehicle);
+  }
+
+  protected saveCurrentSearchAlert() {
+    const filters = this.buildAlertFilters();
+
+    if (!Object.keys(filters).length) {
+      this.alertFeedback = 'Escolha pelo menos um filtro antes de salvar o alerta.';
+      return;
+    }
+
+    this.alertSaving = true;
+    this.alertFeedback = '';
+
+    this.searchAlertsApiService
+      .create({ filters })
+      .subscribe({
+        next: () => {
+          this.alertSaving = false;
+          this.alertFeedback = 'Alerta salvo. Vamos avisar quando surgir algo nessa faixa.';
+          this.loadAlerts();
+        },
+        error: (error) => {
+          this.alertSaving = false;
+          this.alertFeedback =
+            error?.error?.message || 'Não foi possível salvar esse alerta.';
+        },
+      });
+  }
+
+  protected removeAlert(alertId: string) {
+    this.removingAlertId = alertId;
+    this.alertFeedback = '';
+
+    this.searchAlertsApiService.remove(alertId).subscribe({
+      next: () => {
+        this.removingAlertId = null;
+        this.alertFeedback = 'Alerta removido.';
+        this.loadAlerts();
+      },
+      error: (error) => {
+        this.removingAlertId = null;
+        this.alertFeedback =
+          error?.error?.message || 'Não foi possível remover esse alerta.';
+      },
+    });
   }
 
   private fetchVehicles() {
@@ -621,17 +763,6 @@ export class SearchPageComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  private formatShortDate(date: string) {
-    return new Intl.DateTimeFormat('pt-BR', {
-      day: '2-digit',
-      month: 'short',
-    }).format(new Date(`${date}T12:00:00`));
-  }
-
-  protected shortTitle(title: string) {
-    return title.length > 18 ? `${title.slice(0, 18)}...` : title;
-  }
-
   protected transmissionLabel(transmission: string) {
     const labels: Record<string, string> = {
       AUTOMATIC: 'Auto',
@@ -640,5 +771,142 @@ export class SearchPageComponent implements AfterViewInit, OnDestroy {
     };
 
     return labels[transmission] || transmission;
+  }
+
+  protected get mapMarkers() {
+    return this.vehicles
+      .filter(
+        (vehicle) =>
+          vehicle.latitude !== null &&
+          vehicle.latitude !== undefined &&
+          vehicle.longitude !== null &&
+          vehicle.longitude !== undefined,
+      )
+      .map((vehicle) => ({
+        id: vehicle.id,
+        title: vehicle.title,
+        city: vehicle.city,
+        state: vehicle.state,
+        latitude: vehicle.latitude as number,
+        longitude: vehicle.longitude as number,
+      }));
+  }
+
+  protected get hasLocationFilter() {
+    return !!this.query.latitude && !!this.query.longitude;
+  }
+
+  protected get locationSummary() {
+    return this.hasLocationFilter
+      ? `Raio de ${this.query.radiusKm || '20'} km`
+      : 'Use sua localização para filtrar no mapa';
+  }
+
+  protected get searchTitle() {
+    if (this.query.vehicleType === 'CAR') {
+      return 'Buscar carros';
+    }
+
+    return this.query.vehicleType === 'MOTORCYCLE' ? 'Buscar motos' : 'Buscar veículos';
+  }
+
+  protected get searchSubtitle() {
+    if (this.query.vehicleType === 'CAR') {
+      return 'Escolha o modelo, ajuste o período e encontre carros disponíveis na sua faixa de preço.';
+    }
+
+    return this.query.vehicleType === 'MOTORCYCLE'
+      ? 'Escolha o modelo, ajuste o período e encontre motos disponíveis na sua faixa de preço.'
+      : 'Escolha o modelo, ajuste o período e filtre entre carros e motos.';
+  }
+
+  protected get resultsLabel() {
+    if (this.query.vehicleType === 'CAR') {
+      return 'carros encontrados';
+    }
+
+    return this.query.vehicleType === 'MOTORCYCLE' ? 'motos encontradas' : 'veículos encontrados';
+  }
+
+  protected get emptyStateTitle() {
+    if (this.query.vehicleType === 'CAR') {
+      return 'Nenhum carro encontrado';
+    }
+
+    return this.query.vehicleType === 'MOTORCYCLE'
+      ? 'Nenhuma moto encontrada'
+      : 'Nenhum veículo encontrado';
+  }
+
+  protected get emptyStateDescription() {
+    if (this.query.vehicleType === 'CAR') {
+      return 'Tente mudar a cidade ou ampliar a faixa de preço para ver mais carros.';
+    }
+
+    return this.query.vehicleType === 'MOTORCYCLE'
+      ? 'Tente mudar a cidade ou ampliar a faixa de preço para ver mais motos.'
+      : 'Tente mudar a cidade, o tipo de veículo ou ampliar a faixa de preço.';
+  }
+
+  protected alertSummary(alert: SearchAlert) {
+    const filters = alert.filters as Record<string, unknown>;
+    const city = filters['city'] ? String(filters['city']) : '';
+    const vehicleType = String(filters['vehicleType'] ?? '');
+    const minPrice = filters['minPrice'];
+    const maxPrice = filters['maxPrice'];
+    const parts = [
+      city,
+      vehicleType === 'CAR'
+        ? 'carros'
+        : vehicleType === 'MOTORCYCLE'
+          ? 'motos'
+          : 'veículos',
+      minPrice || maxPrice
+        ? `R$ ${minPrice || '0'}-${maxPrice || 'sem teto'}`
+        : '',
+    ].filter(Boolean);
+
+    return parts.join(' • ');
+  }
+
+  private loadAlerts() {
+    this.alertsLoading = true;
+
+    this.searchAlertsApiService.getMine().subscribe({
+      next: (alerts) => {
+        this.searchAlerts = alerts;
+        this.alertsLoading = false;
+      },
+      error: () => {
+        this.searchAlerts = [];
+        this.alertsLoading = false;
+      },
+    });
+  }
+
+  private buildAlertFilters() {
+    const numericKeys = new Set([
+      'minEngineCc',
+      'maxEngineCc',
+      'minPrice',
+      'maxPrice',
+      'latitude',
+      'longitude',
+      'radiusKm',
+    ]);
+
+    return Object.fromEntries(
+      Object.entries(this.query)
+        .filter(([, value]) => value !== '')
+        .map(([key, value]) => [key, numericKeys.has(key) ? Number(value) : value]),
+    );
+  }
+
+  private alertSignature(filters: Record<string, unknown>) {
+    return JSON.stringify(
+      Object.entries(filters)
+        .filter(([, value]) => value !== '' && value !== undefined && value !== null)
+        .sort(([left], [right]) => left.localeCompare(right)),
+    );
   }
 }

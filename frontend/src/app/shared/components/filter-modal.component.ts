@@ -2,6 +2,17 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
+type FilterDraft = {
+  vehicleType: string;
+  category: string;
+  motorcycleStyle: string;
+  minEngineCc: string;
+  maxEngineCc: string;
+  minPrice: string;
+  maxPrice: string;
+  radiusKm: string;
+};
+
 @Component({
   selector: 'app-filter-modal',
   standalone: true,
@@ -20,8 +31,20 @@ import { FormsModule } from '@angular/forms';
         </header>
 
         <label>
+          <span>Tipo de veículo</span>
+          <select [(ngModel)]="draft.vehicleType" (ngModelChange)="onVehicleTypeChange()">
+            <option value="">Todos</option>
+            <option value="CAR">Carro</option>
+            <option value="MOTORCYCLE">Moto</option>
+          </select>
+        </label>
+
+        <label>
           <span>Categoria</span>
-          <select [(ngModel)]="draft.category">
+          <select
+            [(ngModel)]="draft.category"
+            [disabled]="draft.vehicleType === 'MOTORCYCLE'"
+          >
             <option value="">Todas</option>
             <option value="ECONOMY">Econômico</option>
             <option value="HATCH">Hatch</option>
@@ -32,6 +55,38 @@ import { FormsModule } from '@angular/forms';
             <option value="LUXURY">Luxo</option>
           </select>
         </label>
+
+        <div class="filter-modal__grid" *ngIf="draft.vehicleType === 'MOTORCYCLE'">
+          <label>
+            <span>Estilo</span>
+            <select [(ngModel)]="draft.motorcycleStyle">
+              <option value="">Todos</option>
+              <option value="SCOOTER">Scooter</option>
+              <option value="STREET">Street</option>
+              <option value="SPORT">Sport</option>
+              <option value="TRAIL">Trail</option>
+              <option value="CUSTOM">Custom</option>
+              <option value="TOURING">Touring</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Raio (km)</span>
+            <input [(ngModel)]="draft.radiusKm" type="number" min="1" />
+          </label>
+        </div>
+
+        <div class="filter-modal__grid" *ngIf="draft.vehicleType === 'MOTORCYCLE'">
+          <label>
+            <span>Cilindrada mín.</span>
+            <input [(ngModel)]="draft.minEngineCc" type="number" min="50" />
+          </label>
+
+          <label>
+            <span>Cilindrada máx.</span>
+            <input [(ngModel)]="draft.maxEngineCc" type="number" min="50" />
+          </label>
+        </div>
 
         <div class="filter-modal__grid">
           <label>
@@ -44,6 +99,11 @@ import { FormsModule } from '@angular/forms';
             <input [(ngModel)]="draft.maxPrice" type="number" />
           </label>
         </div>
+
+        <label *ngIf="draft.vehicleType !== 'MOTORCYCLE'">
+          <span>Raio (km)</span>
+          <input [(ngModel)]="draft.radiusKm" type="number" min="1" placeholder="Use com Minha localização" />
+        </label>
 
         <footer>
           <button type="button" class="btn btn-secondary" (click)="reset()">
@@ -78,6 +138,8 @@ import { FormsModule } from '@angular/forms';
         bottom: 0;
         display: grid;
         gap: 18px;
+        max-height: min(100dvh, 760px);
+        overflow-y: auto;
         padding: 24px 20px 28px;
         border-radius: 32px 32px 0 0;
         background: rgba(255, 255, 255, 0.99);
@@ -127,7 +189,7 @@ import { FormsModule } from '@angular/forms';
 
       .filter-modal__grid {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: minmax(0, 1fr);
         gap: 12px;
       }
 
@@ -140,13 +202,13 @@ import { FormsModule } from '@angular/forms';
 
       footer {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: minmax(0, 1fr);
       }
 
-      @media (max-width: 480px) {
+      @media (min-width: 481px) {
         .filter-modal__grid,
         footer {
-          grid-template-columns: minmax(0, 1fr);
+          grid-template-columns: 1fr 1fr;
         }
       }
     `,
@@ -154,21 +216,44 @@ import { FormsModule } from '@angular/forms';
 })
 export class FilterModalComponent {
   @Input() open = false;
-  @Input() set filters(value: { category?: string; minPrice?: string; maxPrice?: string }) {
-    this.draft = { ...value };
+  @Input() set filters(value: Partial<FilterDraft>) {
+    this.draft = {
+      ...this.createDraft(),
+      ...value,
+    };
   }
 
   @Output() close = new EventEmitter<void>();
-  @Output() apply = new EventEmitter<{
-    category?: string;
-    minPrice?: string;
-    maxPrice?: string;
-  }>();
+  @Output() apply = new EventEmitter<FilterDraft>();
 
-  protected draft: { category?: string; minPrice?: string; maxPrice?: string } = {};
+  protected draft: FilterDraft = this.createDraft();
 
   reset() {
-    this.draft = {};
+    this.draft = this.createDraft();
     this.apply.emit(this.draft);
+  }
+
+  protected onVehicleTypeChange() {
+    if (this.draft.vehicleType === 'MOTORCYCLE') {
+      this.draft.category = '';
+      return;
+    }
+
+    this.draft.motorcycleStyle = '';
+    this.draft.minEngineCc = '';
+    this.draft.maxEngineCc = '';
+  }
+
+  private createDraft(): FilterDraft {
+    return {
+      vehicleType: '',
+      category: '',
+      motorcycleStyle: '',
+      minEngineCc: '',
+      maxEngineCc: '',
+      minPrice: '',
+      maxPrice: '',
+      radiusKm: '',
+    };
   }
 }

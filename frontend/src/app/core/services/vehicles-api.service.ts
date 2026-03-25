@@ -7,6 +7,7 @@ import {
   UpdateVehiclePayload,
   VehicleImage,
   VehicleDetail,
+  VehiclePricingPreview,
   VehicleSearchResponse,
 } from '../models/domain.models';
 
@@ -32,6 +33,18 @@ export class VehiclesApiService {
   getById(vehicleId: string) {
     return this.http.get<VehicleDetail>(
       `${environment.apiBaseUrl}/vehicles/${vehicleId}`,
+    );
+  }
+
+  getPricingPreview(vehicleId: string, startDate: string, endDate: string) {
+    return this.http.get<VehiclePricingPreview>(
+      `${environment.apiBaseUrl}/vehicles/${vehicleId}/pricing-preview`,
+      {
+        params: {
+          startDate,
+          endDate,
+        },
+      },
     );
   }
 

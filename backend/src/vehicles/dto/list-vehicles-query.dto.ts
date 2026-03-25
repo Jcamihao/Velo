@@ -1,5 +1,10 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { VehicleCategory } from '@prisma/client';
+import {
+  BookingApprovalMode,
+  MotorcycleStyle,
+  VehicleCategory,
+  VehicleType,
+} from '@prisma/client';
 import { Type } from 'class-transformer';
 import {
   IsDateString,
@@ -33,10 +38,37 @@ export class ListVehiclesQueryDto {
   @IsDateString()
   endDate?: string;
 
+  @ApiPropertyOptional({ enum: VehicleType })
+  @IsOptional()
+  @IsEnum(VehicleType)
+  vehicleType?: VehicleType;
+
+  @ApiPropertyOptional({ enum: BookingApprovalMode })
+  @IsOptional()
+  @IsEnum(BookingApprovalMode)
+  bookingApprovalMode?: BookingApprovalMode;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsEnum(VehicleCategory)
   category?: VehicleCategory;
+
+  @ApiPropertyOptional({ enum: MotorcycleStyle })
+  @IsOptional()
+  @IsEnum(MotorcycleStyle)
+  motorcycleStyle?: MotorcycleStyle;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 0 })
+  minEngineCc?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 0 })
+  maxEngineCc?: number;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -49,6 +81,26 @@ export class ListVehiclesQueryDto {
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })
   maxPrice?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 7 })
+  latitude?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 7 })
+  longitude?: number;
+
+  @ApiPropertyOptional({ default: 25 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 1 })
+  @Min(1)
+  @Max(200)
+  radiusKm?: number;
 
   @ApiPropertyOptional({ default: 1 })
   @IsOptional()

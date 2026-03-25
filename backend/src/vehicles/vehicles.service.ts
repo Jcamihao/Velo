@@ -5,13 +5,19 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  BookingApprovalMode,
   BookingStatus,
+  CancellationPolicy,
+  MotorcycleStyle,
   Prisma,
   Role,
   VehicleCategory,
+  VehicleType,
 } from '@prisma/client';
 import { CacheQueueService } from '../cache-queue/cache-queue.service';
+import { VehiclePricingService } from '../pricing/vehicle-pricing.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { SearchAlertsService } from '../search-alerts/search-alerts.service';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { ListVehiclesQueryDto } from './dto/list-vehicles-query.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
@@ -21,6 +27,8 @@ export class VehiclesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cacheQueueService: CacheQueueService,
+    private readonly vehiclePricingService: VehiclePricingService,
+    private readonly searchAlertsService: SearchAlertsService,
   ) {}
 
   async findAll(query: ListVehiclesQueryDto) {
@@ -99,6 +107,33 @@ export class VehiclesService {
       });
     }
 
+    if (query.vehicleType) {
+      andFilters.push({
+        vehicleType: query.vehicleType as VehicleType,
+      });
+    }
+
+    if (query.bookingApprovalMode) {
+      andFilters.push({
+        bookingApprovalMode: query.bookingApprovalMode as BookingApprovalMode,
+      });
+    }
+
+    if (query.motorcycleStyle) {
+      andFilters.push({
+        motorcycleStyle: query.motorcycleStyle as MotorcycleStyle,
+      });
+    }
+
+    if (query.minEngineCc || query.maxEngineCc) {
+      andFilters.push({
+        engineCc: {
+          gte: query.minEngineCc,
+          lte: query.maxEngineCc,
+        },
+      });
+    }
+
     if (query.minPrice || query.maxPrice) {
       andFilters.push({
         dailyRate: {
@@ -138,6 +173,31 @@ export class VehiclesService {
           },
         },
       );
+    }
+
+    if (query.latitude !== undefined && query.longitude !== undefined) {
+      const radiusKm = query.radiusKm ?? 25;
+      const latitudeDelta = radiusKm / 111;
+      const longitudeDelta =
+        radiusKm /
+        (111 *
+          Math.max(
+            Math.cos((query.latitude * Math.PI) / 180),
+            0.2,
+          ));
+
+      andFilters.push({
+        latitude: {
+          not: null,
+          gte: query.latitude - latitudeDelta,
+          lte: query.latitude + latitudeDelta,
+        },
+        longitude: {
+          not: null,
+          gte: query.longitude - longitudeDelta,
+          lte: query.longitude + longitudeDelta,
+        },
+      });
     }
 
     const where: Prisma.VehicleWhereInput = {
@@ -211,11 +271,31 @@ export class VehiclesService {
       plate: vehicle.plate,
       city: vehicle.city,
       state: vehicle.state,
+      vehicleType: vehicle.vehicleType,
       category: vehicle.category,
+      bookingApprovalMode: vehicle.bookingApprovalMode,
+      cancellationPolicy: vehicle.cancellationPolicy,
       transmission: vehicle.transmission,
       fuelType: vehicle.fuelType,
       seats: vehicle.seats,
       dailyRate: Number(vehicle.dailyRate),
+      addons: this.normalizeAddons(vehicle.addons),
+      firstBookingDiscountPercent: vehicle.firstBookingDiscountPercent ?? 0,
+      weeklyDiscountPercent: vehicle.weeklyDiscountPercent ?? 0,
+      couponCode: vehicle.couponCode ?? null,
+      couponDiscountPercent: vehicle.couponDiscountPercent ?? 0,
+      weekendSurchargePercent: vehicle.weekendSurchargePercent ?? 0,
+      holidaySurchargePercent: vehicle.holidaySurchargePercent ?? 0,
+      highDemandSurchargePercent: vehicle.highDemandSurchargePercent ?? 0,
+      advanceBookingDiscountPercent:
+        vehicle.advanceBookingDiscountPercent ?? 0,
+      advanceBookingDaysThreshold: vehicle.advanceBookingDaysThreshold ?? 0,
+      motorcycleStyle: vehicle.motorcycleStyle,
+      engineCc: vehicle.engineCc,
+      hasAbs: vehicle.hasAbs,
+      hasTopCase: vehicle.hasTopCase,
+      latitude: vehicle.latitude ? Number(vehicle.latitude) : null,
+      longitude: vehicle.longitude ? Number(vehicle.longitude) : null,
       description: vehicle.description,
       addressLine: vehicle.addressLine,
       isActive: vehicle.isActive,
@@ -282,6 +362,18 @@ export class VehiclesService {
     return payload;
   }
 
+  async getPricingPreview(
+    vehicleId: string,
+    startDate: string,
+    endDate: string,
+  ) {
+    return this.vehiclePricingService.getPricingPreview(
+      vehicleId,
+      startDate,
+      endDate,
+    );
+  }
+
   async create(ownerId: string, dto: CreateVehicleDto) {
     const vehicle = await this.prisma.vehicle.create({
       data: {
@@ -293,11 +385,31 @@ export class VehiclesService {
         plate: dto.plate.toUpperCase(),
         city: dto.city,
         state: dto.state.toUpperCase(),
+        vehicleType: dto.vehicleType ?? VehicleType.CAR,
         category: dto.category,
+        bookingApprovalMode:
+          dto.bookingApprovalMode ?? BookingApprovalMode.MANUAL,
+        cancellationPolicy:
+          dto.cancellationPolicy ?? CancellationPolicy.FLEXIBLE,
         transmission: dto.transmission,
         fuelType: dto.fuelType,
         seats: dto.seats,
         dailyRate: dto.dailyRate,
+        addons: this.normalizeAddons(dto.addons),
+        firstBookingDiscountPercent: dto.firstBookingDiscountPercent ?? 0,
+        weeklyDiscountPercent: dto.weeklyDiscountPercent ?? 0,
+        couponCode: this.normalizeCouponCode(dto.couponCode),
+        couponDiscountPercent: dto.couponDiscountPercent ?? 0,
+        weekendSurchargePercent: dto.weekendSurchargePercent ?? 0,
+        holidaySurchargePercent: dto.holidaySurchargePercent ?? 0,
+        highDemandSurchargePercent: dto.highDemandSurchargePercent ?? 0,
+        advanceBookingDiscountPercent:
+          dto.advanceBookingDiscountPercent ?? 0,
+        advanceBookingDaysThreshold: dto.advanceBookingDaysThreshold ?? 0,
+        motorcycleStyle: dto.motorcycleStyle,
+        engineCc: dto.engineCc,
+        hasAbs: dto.hasAbs,
+        hasTopCase: dto.hasTopCase,
         description: dto.description,
         addressLine: dto.addressLine,
         latitude: dto.latitude,
@@ -315,6 +427,9 @@ export class VehiclesService {
     });
 
     await this.cacheQueueService.invalidateByPrefix('vehicles:list:');
+    if (vehicle.isActive && vehicle.isPublished) {
+      await this.searchAlertsService.notifyMatchingUsers(vehicle.id);
+    }
     return this.mapVehicleDetail(vehicle);
   }
 
@@ -327,6 +442,11 @@ export class VehiclesService {
         ...dto,
         plate: dto.plate ? dto.plate.toUpperCase() : undefined,
         state: dto.state ? dto.state.toUpperCase() : undefined,
+        addons: dto.addons ? this.normalizeAddons(dto.addons) : undefined,
+        couponCode:
+          dto.couponCode !== undefined
+            ? this.normalizeCouponCode(dto.couponCode)
+            : undefined,
       },
       include: {
         images: {
@@ -343,6 +463,9 @@ export class VehiclesService {
     });
 
     await this.invalidateVehicleCache(vehicleId);
+    if (vehicle.isActive && vehicle.isPublished) {
+      await this.searchAlertsService.notifyMatchingUsers(vehicle.id);
+    }
     return this.mapVehicleDetail(vehicle);
   }
 
@@ -425,11 +548,31 @@ export class VehiclesService {
       year: vehicle.year,
       city: vehicle.city,
       state: vehicle.state,
+      vehicleType: vehicle.vehicleType,
       category: vehicle.category,
+      bookingApprovalMode: vehicle.bookingApprovalMode,
+      cancellationPolicy: vehicle.cancellationPolicy,
       seats: vehicle.seats,
       transmission: vehicle.transmission,
       fuelType: vehicle.fuelType,
       dailyRate: Number(vehicle.dailyRate),
+      addons: this.normalizeAddons(vehicle.addons),
+      firstBookingDiscountPercent: vehicle.firstBookingDiscountPercent ?? 0,
+      weeklyDiscountPercent: vehicle.weeklyDiscountPercent ?? 0,
+      couponCode: vehicle.couponCode ?? null,
+      couponDiscountPercent: vehicle.couponDiscountPercent ?? 0,
+      weekendSurchargePercent: vehicle.weekendSurchargePercent ?? 0,
+      holidaySurchargePercent: vehicle.holidaySurchargePercent ?? 0,
+      highDemandSurchargePercent: vehicle.highDemandSurchargePercent ?? 0,
+      advanceBookingDiscountPercent:
+        vehicle.advanceBookingDiscountPercent ?? 0,
+      advanceBookingDaysThreshold: vehicle.advanceBookingDaysThreshold ?? 0,
+      motorcycleStyle: vehicle.motorcycleStyle,
+      engineCc: vehicle.engineCc,
+      hasAbs: vehicle.hasAbs,
+      hasTopCase: vehicle.hasTopCase,
+      latitude: vehicle.latitude ? Number(vehicle.latitude) : null,
+      longitude: vehicle.longitude ? Number(vehicle.longitude) : null,
       ratingAverage: Number(vehicle.ratingAverage),
       reviewsCount: vehicle.reviewsCount,
       coverImage: vehicle.images[0]?.url ?? null,
@@ -450,8 +593,6 @@ export class VehiclesService {
       }),
       description: vehicle.description,
       addressLine: vehicle.addressLine,
-      latitude: vehicle.latitude ? Number(vehicle.latitude) : null,
-      longitude: vehicle.longitude ? Number(vehicle.longitude) : null,
       isPublished: vehicle.isPublished,
       images: vehicle.images.map((image: any) => ({
         id: image.id,
@@ -470,5 +611,40 @@ export class VehiclesService {
         },
       })),
     };
+  }
+
+  private normalizeAddons(addons: unknown) {
+    if (!Array.isArray(addons)) {
+      return [];
+    }
+
+    return addons
+      .slice(0, 8)
+      .map((addon, index) => {
+        const entry = addon as Record<string, unknown>;
+        const name = String(entry.name ?? '').trim();
+        const description = String(entry.description ?? '').trim();
+        const price = Number(entry.price ?? 0);
+
+        if (!name || Number.isNaN(price) || price < 0) {
+          return null;
+        }
+
+        return {
+          id:
+            String(entry.id ?? '').trim() ||
+            `addon-${index + 1}-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+          name,
+          description,
+          price: Number(price.toFixed(2)),
+          enabled: entry.enabled !== false,
+        };
+      })
+      .filter((entry): entry is NonNullable<typeof entry> => !!entry);
+  }
+
+  private normalizeCouponCode(value: unknown) {
+    const couponCode = String(value ?? '').trim().toUpperCase();
+    return couponCode || null;
   }
 }

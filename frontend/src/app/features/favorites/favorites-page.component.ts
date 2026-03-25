@@ -12,7 +12,7 @@ import { VehicleCardComponent } from '../../shared/components/vehicle-card.compo
     <main class="page favorites-page">
       <section class="favorites-card">
         <span class="eyebrow">Favoritos</span>
-        <h1>Seus carros salvos</h1>
+        <h1>Seus veículos salvos</h1>
         <p>Continue acompanhando os anúncios que chamaram sua atenção.</p>
       </section>
 
@@ -27,7 +27,7 @@ import { VehicleCardComponent } from '../../shared/components/vehicle-card.compo
         <section class="empty-card">
           <strong>Nenhum favorito salvo ainda</strong>
           <p>Explore os anúncios e toque no coração para montar sua lista.</p>
-          <a routerLink="/search" class="btn btn-primary">Buscar carros</a>
+          <a routerLink="/search" class="btn btn-primary">Buscar veículos</a>
         </section>
       </ng-template>
     </main>
@@ -37,7 +37,7 @@ import { VehicleCardComponent } from '../../shared/components/vehicle-card.compo
       .favorites-page {
         display: grid;
         gap: 18px;
-        padding: 20px 16px 32px;
+        padding: 20px 16px 40px;
       }
 
       .favorites-card,
@@ -53,7 +53,8 @@ import { VehicleCardComponent } from '../../shared/components/vehicle-card.compo
 
       .favorites-list {
         display: grid;
-        gap: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 14px;
       }
 
       .eyebrow {
@@ -76,6 +77,23 @@ import { VehicleCardComponent } from '../../shared/components/vehicle-card.compo
       .empty-card .btn {
         width: fit-content;
         text-decoration: none;
+      }
+
+      @media (min-width: 1080px) {
+        .favorites-page {
+          gap: 20px;
+          padding: 28px 20px 56px;
+        }
+
+        .favorites-card,
+        .empty-card {
+          padding: 26px;
+        }
+
+        .favorites-list {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 16px;
+        }
       }
     `,
   ],

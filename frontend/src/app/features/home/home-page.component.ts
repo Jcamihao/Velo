@@ -2,7 +2,6 @@ import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
-import { FavoritesService } from '../../core/services/favorites.service';
 import { VehiclesApiService } from '../../core/services/vehicles-api.service';
 import { SearchHeaderComponent } from '../../shared/components/search-header.component';
 import { VehicleCardComponent } from '../../shared/components/vehicle-card.component';
@@ -68,70 +67,7 @@ const POPULAR_BRANDS: BrandShortcut[] = [
   imports: [CommonModule, SearchHeaderComponent, VehicleCardComponent],
   template: `
     <main class="page home-page">
-      <section class="hero-card">
-        <app-search-header (search)="goToSearch($event)" (filters)="goToSearch({})" />
-
-        <div class="hero-card__welcome">
-          <div>
-            <span class="hero-card__eyebrow">Welcome</span>
-            <h2>{{ greetingName }}</h2>
-            <p>Encontre carros com cara de app premium e reserve em poucos toques.</p>
-          </div>
-
-          <div class="hero-card__badge material-icons" aria-hidden="true">directions_car</div>
-        </div>
-
-        <div class="hero-card__spotlight" *ngIf="spotlightVehicle">
-          <button
-            type="button"
-            class="hero-card__favorite"
-            [class.hero-card__favorite--active]="isFavorite(spotlightVehicle.id)"
-            [disabled]="isFavoritePending(spotlightVehicle.id)"
-            [attr.aria-label]="
-              isFavorite(spotlightVehicle.id) ? 'Remover dos favoritos' : 'Salvar nos favoritos'
-            "
-            (click)="toggleFavorite(spotlightVehicle, $event)"
-          >
-            <span class="material-icons" aria-hidden="true">{{
-              isFavorite(spotlightVehicle.id) ? 'favorite' : 'favorite_border'
-            }}</span>
-          </button>
-
-          <div class="hero-card__spotlight-top">
-            <div class="hero-card__spec-row">
-              <span>
-                <span class="material-icons" aria-hidden="true">tune</span>
-                {{ transmissionLabel(spotlightVehicle.transmission) }}
-              </span>
-              <span>
-                <span class="material-icons" aria-hidden="true">event_seat</span>
-                {{ spotlightVehicle.seats }} lugares
-              </span>
-            </div>
-
-            <strong class="hero-card__spotlight-price">
-              {{ spotlightVehicle.dailyRate | currency: 'BRL' : 'symbol' : '1.0-0' }}
-            </strong>
-          </div>
-
-          <div class="hero-card__spotlight-visual">
-            <img
-              class="hero-card__car"
-              [src]="spotlightVehicle.coverImage || fallbackImage"
-              [alt]="spotlightVehicle.title"
-            />
-          </div>
-
-          <div class="hero-card__copy">
-            <span class="hero-card__pill">Popular agora</span>
-            <strong>{{ spotlightVehicle.title }}</strong>
-            <p>{{ spotlightVehicle.city }}, {{ spotlightVehicle.state }} • {{ spotlightVehicle.year }}</p>
-            <button type="button" class="btn btn-primary" (click)="goToVehicle(spotlightVehicle.id)">
-              Ver detalhes
-            </button>
-          </div>
-        </div>
-      </section>
+      <app-search-header (search)="goToSearch($event)" (filters)="goToSearch({})" />
 
       <section class="owner-entry" *ngIf="isOwner">
         <div>
@@ -218,25 +154,10 @@ const POPULAR_BRANDS: BrandShortcut[] = [
         </div>
       </section>
 
-      <section class="quick-stats">
-        <article>
-          <strong>+120</strong>
-          <span>anúncios com visual premium</span>
-        </article>
-        <article>
-          <strong>12%</strong>
-          <span>taxa simples e previsível</span>
-        </article>
-        <article>
-          <strong>24/7</strong>
-          <span>reserva rápida entre pessoas</span>
-        </article>
-      </section>
-
       <section class="section-title">
         <div>
-          <span>Popular Car</span>
-          <h2>Carros para reservar agora</h2>
+          <span>Disponíveis</span>
+          <h2>Veículos disponíveis</h2>
         </div>
         <a (click)="goToSearch({})">Ver tudo</a>
       </section>
@@ -254,232 +175,13 @@ const POPULAR_BRANDS: BrandShortcut[] = [
       .home-page {
         display: grid;
         gap: 18px;
-        width: min(100%, 440px);
+        width: 100%;
         margin: 0 auto;
-        padding: 20px 16px 32px;
+        padding: 20px 16px 40px;
       }
 
-      .hero-card {
-        display: grid;
-        gap: 20px;
-        padding: 0;
-        border-radius: 0;
-        background: transparent;
-        border: 0;
-        box-shadow: none;
-      }
-
-      .hero-card__welcome,
-      .hero-card__spotlight {
-        gap: 18px;
-      }
-
-      .hero-card__welcome {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        align-items: center;
-        padding: 18px 16px;
-        border-radius: 22px;
-        background: rgba(255, 255, 255, 0.98);
-        border: 1px solid var(--glass-border);
-        box-shadow: var(--shadow-soft);
-      }
-
-      .hero-card__welcome h2,
       .section-title h2 {
         margin: 4px 0 0;
-      }
-
-      .hero-card__welcome p,
-      .hero-card__copy p {
-        margin: 8px 0 0;
-        color: var(--text-secondary);
-      }
-
-      .hero-card__eyebrow,
-      .hero-card__pill {
-        display: inline-flex;
-        width: fit-content;
-        padding: 8px 12px;
-        border-radius: 999px;
-        background: var(--label-surface-soft);
-        border: 1px solid var(--glass-border-soft);
-        color: var(--label-ink-strong);
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-
-      .hero-card__badge {
-        display: grid;
-        place-items: center;
-        width: 54px;
-        height: 54px;
-        border-radius: 16px;
-        background: linear-gradient(180deg, #ff5a44 0%, #ff3326 100%);
-        color: #fff;
-        font-size: 24px;
-        box-shadow: 0 16px 28px rgba(255, 59, 48, 0.22);
-      }
-
-      .hero-card__spotlight {
-        position: relative;
-        display: grid;
-        gap: 10px;
-        min-height: 0;
-        padding: 18px 16px 16px;
-        border-radius: 28px;
-        background: linear-gradient(180deg, #ffffff 0%, #f5efef 100%);
-        color: var(--text-primary);
-        border: 1px solid var(--glass-border-soft);
-        overflow: hidden;
-        box-shadow: var(--shadow-soft);
-      }
-
-      .hero-card__spotlight::before,
-      .hero-card__spotlight::after {
-        content: '';
-        position: absolute;
-        background: linear-gradient(180deg, #ff5b45 0%, #ff2f22 100%);
-        pointer-events: none;
-      }
-
-      .hero-card__spotlight::before {
-        top: -14px;
-        right: -18px;
-        width: 122px;
-        height: 88px;
-        border-radius: 0 0 0 68px;
-        transform: rotate(-8deg);
-      }
-
-      .hero-card__spotlight::after {
-        right: -26px;
-        top: 118px;
-        width: 96px;
-        height: 130px;
-        border-radius: 60px 0 0 60px;
-      }
-
-      .hero-card__spotlight-top,
-      .hero-card__copy {
-        position: relative;
-        z-index: 2;
-      }
-
-      .hero-card__favorite {
-        position: absolute;
-        top: 16px;
-        left: 16px;
-        z-index: 3;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 38px;
-        height: 38px;
-        border: 0;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.94);
-        color: var(--text-secondary);
-        box-shadow: 0 12px 22px rgba(28, 17, 18, 0.12);
-      }
-
-      .hero-card__favorite--active {
-        color: var(--primary);
-      }
-
-      .hero-card__spotlight-top {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-      }
-
-      .hero-card__spec-row {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        flex-wrap: wrap;
-      }
-
-      .hero-card__spec-row span {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        color: var(--label-ink);
-        font-size: 13px;
-        font-weight: 600;
-      }
-
-      .hero-card__spec-row .material-icons {
-        font-size: 16px;
-        color: var(--text-secondary);
-      }
-
-      .hero-card__spotlight-price {
-        color: var(--primary);
-        font-size: 24px;
-        font-weight: 800;
-        letter-spacing: -0.04em;
-      }
-
-      .hero-card__spotlight-visual {
-        position: relative;
-        z-index: 2;
-        min-height: 248px;
-        border-radius: 22px;
-        overflow: hidden;
-        background: linear-gradient(180deg, #fffdfd 0%, #f5efef 100%);
-      }
-
-      .hero-card__spotlight-visual::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background:
-          linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 42%, rgba(42, 28, 29, 0.12) 100%);
-        pointer-events: none;
-      }
-
-      .hero-card__copy {
-        display: grid;
-        gap: 10px;
-        max-width: min(82%, 320px);
-      }
-
-      .hero-card__copy strong {
-        font-size: 28px;
-        line-height: 1.02;
-        color: var(--text-primary);
-      }
-
-      .hero-card__pill {
-        background: var(--label-surface-soft);
-        color: var(--label-ink-strong);
-      }
-
-      .hero-card__spotlight .hero-card__copy p {
-        color: var(--text-secondary);
-      }
-
-      .hero-card__spotlight .btn {
-        width: fit-content;
-        min-height: 48px;
-      }
-
-      .hero-card__car {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
-
-      .quick-stats {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 12px;
       }
 
       .owner-entry {
@@ -515,33 +217,14 @@ const POPULAR_BRANDS: BrandShortcut[] = [
         width: fit-content;
         background: #fff;
         color: var(--primary);
+        justify-self: start;
       }
 
       .brands-section,
-      .quick-stats,
       .section-title,
       .vehicle-grid {
         position: relative;
         z-index: 1;
-      }
-
-      .quick-stats article {
-        padding: 16px;
-        border-radius: 20px;
-        background: rgba(255, 255, 255, 0.96);
-        border: 1px solid var(--glass-border);
-        box-shadow: var(--shadow-soft);
-      }
-
-      .quick-stats strong {
-        display: block;
-        color: var(--text-primary);
-        font-size: 22px;
-      }
-
-      .quick-stats span {
-        color: var(--text-secondary);
-        font-size: 12px;
       }
 
       .brands-section {
@@ -636,18 +319,53 @@ const POPULAR_BRANDS: BrandShortcut[] = [
         gap: 10px;
       }
 
-      @media (max-width: 640px) {
-        .hero-card__welcome {
-          grid-template-columns: minmax(0, 1fr);
+      @media (min-width: 768px) {
+        .home-page {
+          gap: 20px;
+          padding-bottom: 48px;
         }
 
-        .quick-stats {
-          grid-template-columns: minmax(0, 1fr);
+        .owner-entry {
+          grid-template-columns: minmax(0, 1fr) auto;
+          align-items: end;
+          gap: 18px;
         }
 
-        .hero-card__spotlight-top {
-          align-items: flex-start;
-          flex-direction: column;
+        .vehicle-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 14px;
+        }
+      }
+
+      @media (min-width: 1080px) {
+        .home-page {
+          gap: 24px;
+          padding: 28px 20px 56px;
+        }
+
+        .section-title h2 {
+          font-size: 28px;
+        }
+
+        .owner-entry {
+          padding: 22px 24px;
+        }
+
+        .brands-rail {
+          grid-auto-flow: initial;
+          grid-template-columns: repeat(7, minmax(0, 1fr));
+          overflow: visible;
+        }
+
+        .brand-chip__icon {
+          width: 78px;
+          height: 78px;
+          border-radius: 22px;
+        }
+
+        .vehicle-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 16px;
         }
       }
 
@@ -656,7 +374,6 @@ const POPULAR_BRANDS: BrandShortcut[] = [
 })
 export class HomePageComponent {
   private readonly authService = inject(AuthService);
-  private readonly favoritesService = inject(FavoritesService);
   private readonly router = inject(Router);
   private readonly vehiclesApiService = inject(VehiclesApiService);
 
@@ -671,16 +388,11 @@ export class HomePageComponent {
       .subscribe((response) => (this.featuredVehicles = response.items));
   }
 
-  protected get greetingName() {
-    return this.authService.currentUser()?.profile?.fullName || 'Explore sua cidade';
-  }
-
-  protected get spotlightVehicle() {
-    return this.featuredVehicles[0];
-  }
-
   protected get isOwner() {
-    return this.authService.currentUser()?.role === 'OWNER';
+    return (
+      (this.authService.currentUser()?.role ?? this.authService.getSessionRole()) ===
+      'OWNER'
+    );
   }
 
   protected goToSearch(params: Record<string, string | undefined>) {
@@ -689,35 +401,19 @@ export class HomePageComponent {
     });
   }
 
-  protected goToVehicle(vehicleId: string) {
-    this.router.navigate(['/vehicles', vehicleId]);
-  }
-
-  protected isFavorite(vehicleId: string) {
-    return this.favoritesService.isFavorite(vehicleId);
-  }
-
-  protected isFavoritePending(vehicleId: string) {
-    return this.favoritesService.isPending(vehicleId);
-  }
-
-  protected toggleFavorite(vehicle: VehicleCardItem, event: Event) {
-    event.preventDefault();
-    event.stopPropagation();
-    this.favoritesService.toggleFavorite(vehicle);
-  }
-
   protected goToOwnerAnnouncements() {
-    this.router.navigate(['/anunciar-carro']);
-  }
+    if (!this.authService.hasSession()) {
+      this.router.navigate(['/auth/login'], {
+        queryParams: { redirectTo: '/anunciar-carro' },
+      });
+      return;
+    }
 
-  protected transmissionLabel(transmission: string) {
-    const labels: Record<string, string> = {
-      AUTOMATIC: 'Auto',
-      MANUAL: 'Manual',
-      CVT: 'CVT',
-    };
+    if (this.isOwner) {
+      this.router.navigate(['/anunciar-carro']);
+      return;
+    }
 
-    return labels[transmission] || transmission;
+    this.router.navigate(['/anunciar']);
   }
 }

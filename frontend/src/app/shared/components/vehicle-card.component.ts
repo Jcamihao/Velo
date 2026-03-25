@@ -11,9 +11,7 @@ import { FavoritesService } from '../../core/services/favorites.service';
   template: `
     <article class="vehicle-card" [routerLink]="['/vehicles', vehicle.id]" tabindex="0" role="link">
       <div class="vehicle-card__media">
-        <span class="vehicle-card__badge">{{
-          categoryLabel(vehicle.category)
-        }}</span>
+        <span class="vehicle-card__badge">{{ badgeLabel() }}</span>
         <button
           type="button"
           class="vehicle-card__favorite"
@@ -38,7 +36,26 @@ import { FavoritesService } from '../../core/services/favorites.service';
           <h3>{{ vehicle.title }}</h3>
           <strong>{{
             vehicle.dailyRate | currency: 'BRL' : 'symbol' : '1.0-0'
-          }}</strong>
+          }} / semana</strong>
+        </div>
+
+        <div
+          class="vehicle-card__promo-row"
+          *ngIf="
+            vehicle.firstBookingDiscountPercent ||
+            vehicle.weeklyDiscountPercent ||
+            (vehicle.couponCode && vehicle.couponDiscountPercent)
+          "
+        >
+          <span class="vehicle-card__promo-pill" *ngIf="vehicle.firstBookingDiscountPercent">
+            1a reserva {{ vehicle.firstBookingDiscountPercent }}% off
+          </span>
+          <span class="vehicle-card__promo-pill" *ngIf="vehicle.weeklyDiscountPercent">
+            Semanal {{ vehicle.weeklyDiscountPercent }}% off
+          </span>
+          <span class="vehicle-card__promo-pill" *ngIf="vehicle.couponCode && vehicle.couponDiscountPercent">
+            Cupom ativo
+          </span>
         </div>
 
         <div class="vehicle-card__specs">
@@ -163,6 +180,24 @@ import { FavoritesService } from '../../core/services/favorites.service';
         letter-spacing: -0.03em;
       }
 
+      .vehicle-card__promo-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .vehicle-card__promo-pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        padding: 0 10px;
+        border-radius: 999px;
+        background: rgba(245, 158, 11, 0.14);
+        color: #9a5c00;
+        font-size: 11px;
+        font-weight: 700;
+      }
+
       .vehicle-card__top h3,
       .vehicle-card__copy p {
         margin: 0;
@@ -171,10 +206,10 @@ import { FavoritesService } from '../../core/services/favorites.service';
       .vehicle-card__specs {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 6px;
         flex-wrap: wrap;
         color: var(--text-secondary);
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 600;
       }
 
@@ -223,13 +258,38 @@ import { FavoritesService } from '../../core/services/favorites.service';
         text-transform: uppercase;
       }
 
-      @media (max-width: 420px) {
+      @media (min-width: 421px) {
         .vehicle-card__specs {
-          gap: 6px;
+          gap: 10px;
         }
 
         .vehicle-card__specs span {
-          font-size: 11px;
+          font-size: 12px;
+        }
+      }
+
+      @media (min-width: 960px) {
+        .vehicle-card {
+          gap: 12px;
+          padding: 16px;
+          border-radius: 22px;
+        }
+
+        .vehicle-card__media {
+          min-height: 180px;
+          border-radius: 18px;
+        }
+
+        .vehicle-card__top h3 {
+          font-size: 16px;
+        }
+
+        .vehicle-card__cta {
+          min-height: 40px;
+        }
+
+        p {
+          white-space: normal;
         }
       }
     `,
@@ -255,6 +315,12 @@ export class VehicleCardComponent {
     };
 
     return labels[category] || category;
+  }
+
+  protected badgeLabel() {
+    return this.vehicle.vehicleType === 'MOTORCYCLE'
+      ? 'Moto'
+      : this.categoryLabel(this.vehicle.category);
   }
 
   protected transmissionLabel(transmission: string) {

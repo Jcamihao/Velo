@@ -16,9 +16,9 @@ import { AuthService } from '../../core/services/auth.service';
           <a
             class="search-header__brand"
             routerLink="/"
-            aria-label="Ir para a Home da IZZIE CAR"
+            aria-label="Ir para a Home da Velo"
           >
-            <img src="assets/icons/app-icon.svg" alt="IZZIE CAR" />
+            <img src="assets/logo_velo.png" alt="Velo" />
           </a>
 
           <form class="search-header__searchbar" (ngSubmit)="submit()">
@@ -45,7 +45,7 @@ import { AuthService } from '../../core/services/auth.service';
         </header>
 
         <div class="search-header__copy" *ngIf="title || subtitle">
-          <span class="search-header__eyebrow">IZZIE CAR</span>
+          <span class="search-header__eyebrow">Velo</span>
           <h1>{{ title }}</h1>
           <p *ngIf="subtitle">{{ subtitle }}</p>
         </div>
@@ -144,10 +144,10 @@ import { AuthService } from '../../core/services/auth.service';
         position: relative;
         overflow: hidden;
         display: grid;
-        gap: 18px;
+        gap: 16px;
         width: 100%;
-        padding: 18px 16px 24px;
-        border-radius: 28px;
+        padding: 16px 14px 20px;
+        border-radius: 24px;
         background: linear-gradient(180deg, #473d3e 0%, #362e2f 100%);
         box-shadow: 0 26px 48px rgba(20, 11, 11, 0.24);
       }
@@ -180,9 +180,9 @@ import { AuthService } from '../../core/services/auth.service';
 
       .search-header__nav {
         display: grid;
-        grid-template-columns: auto minmax(0, 1fr) auto;
+        grid-template-columns: 54px minmax(0, 1fr) 54px;
         align-items: center;
-        gap: 14px;
+        gap: 8px;
         width: 100%;
         margin: 0 auto;
         position: relative;
@@ -193,16 +193,16 @@ import { AuthService } from '../../core/services/auth.service';
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 58px;
-        height: 58px;
-        border-radius: 18px;
+        width: 54px;
+        height: 54px;
+        border-radius: 14px;
         background: rgba(255, 255, 255, 0.98);
         box-shadow: 0 16px 28px rgba(28, 17, 18, 0.14);
       }
 
       .search-header__brand img {
-        width: 40px;
-        height: 40px;
+        width: 42px;
+        height: 42px;
         object-fit: contain;
       }
 
@@ -210,11 +210,11 @@ import { AuthService } from '../../core/services/auth.service';
         display: grid;
         grid-template-columns: auto minmax(0, 1fr);
         align-items: center;
-        gap: 10px;
+        gap: 8px;
         min-width: 0;
-        min-height: 58px;
-        padding: 0 18px;
-        border-radius: 18px;
+        min-height: 54px;
+        padding: 0 12px;
+        border-radius: 16px;
         background: rgba(255, 255, 255, 0.98);
         border: 1px solid var(--glass-border);
         box-shadow: 0 16px 28px rgba(28, 17, 18, 0.12);
@@ -237,6 +237,7 @@ import { AuthService } from '../../core/services/auth.service';
         background: transparent;
         box-shadow: none;
         font: inherit;
+        font-size: 15px;
         color: var(--text-primary);
       }
 
@@ -248,10 +249,10 @@ import { AuthService } from '../../core/services/auth.service';
         position: relative;
         display: inline-grid;
         place-items: center;
-        width: 58px;
-        height: 58px;
+        width: 54px;
+        height: 54px;
         border: 0;
-        border-radius: 18px;
+        border-radius: 14px;
         background: rgba(255, 255, 255, 0.98);
         color: var(--primary);
         box-shadow: 0 16px 28px rgba(28, 17, 18, 0.14);
@@ -259,7 +260,7 @@ import { AuthService } from '../../core/services/auth.service';
       }
 
       .search-header__notifications-trigger .material-icons {
-        font-size: 24px;
+        font-size: 22px;
       }
 
       .search-header__notifications-badge {
@@ -282,7 +283,7 @@ import { AuthService } from '../../core/services/auth.service';
         gap: 8px;
         position: relative;
         z-index: 1;
-        padding: 2px 4px 0;
+        padding: 2px 2px 0;
       }
 
       .search-header__eyebrow {
@@ -302,7 +303,7 @@ import { AuthService } from '../../core/services/auth.service';
       h1 {
         margin: 0;
         max-width: 13ch;
-        font-size: 34px;
+        font-size: 29px;
         line-height: 0.98;
         color: #fff;
       }
@@ -311,7 +312,7 @@ import { AuthService } from '../../core/services/auth.service';
         margin: 0;
         max-width: 31ch;
         color: rgba(255, 255, 255, 0.76);
-        font-size: 14px;
+        font-size: 13px;
       }
 
       .notifications-overlay {
@@ -334,11 +335,11 @@ import { AuthService } from '../../core/services/auth.service';
         top: 0;
         right: 0;
         bottom: 0;
-        width: min(92vw, 388px);
+        width: min(100vw, 100vw);
         display: grid;
         grid-template-rows: auto auto 1fr;
         gap: 16px;
-        padding: 24px 18px 32px;
+        padding: 22px 16px 28px;
         background: rgba(255, 255, 255, 0.99);
         border-left: 1px solid var(--glass-border);
         box-shadow: -20px 0 40px rgba(90, 115, 145, 0.12);
@@ -427,61 +428,110 @@ import { AuthService } from '../../core/services/auth.service';
         box-shadow: inset 0 0 0 1px rgba(31, 140, 255, 0.08);
       }
 
-      @media (max-width: 480px) {
+      @media (min-width: 481px) {
         .search-header__nav-shell {
-          gap: 16px;
-          padding: 16px 14px 20px;
-          border-radius: 24px;
+          gap: 18px;
+          padding: 18px 16px 24px;
+          border-radius: 28px;
         }
 
         .search-header__nav {
-          grid-template-columns: 48px minmax(0, 1fr) 48px;
-          gap: 8px;
+          grid-template-columns: auto minmax(0, 1fr) auto;
+          gap: 14px;
         }
 
-        .search-header__brand {
-          width: 48px;
-          height: 48px;
-          border-radius: 14px;
+        .search-header__brand,
+        .search-header__notifications-trigger {
+          width: 64px;
+          height: 64px;
+          border-radius: 18px;
         }
 
         .search-header__brand img {
-          width: 30px;
-          height: 30px;
+          width: 52px;
+          height: 52px;
         }
 
         .search-header__searchbar {
-          gap: 8px;
-          min-height: 48px;
-          padding: 0 12px;
-          border-radius: 16px;
+          gap: 10px;
+          min-height: 64px;
+          padding: 0 18px;
+          border-radius: 18px;
         }
 
         .search-header__searchbar input {
-          font-size: 15px;
-        }
-
-        .search-header__notifications-trigger {
-          width: 48px;
-          height: 48px;
-          border-radius: 14px;
+          font-size: 16px;
         }
 
         .search-header__notifications-trigger .material-icons {
-          font-size: 22px;
+          font-size: 24px;
+        }
+
+        .search-header__copy {
+          padding: 2px 4px 0;
         }
 
         h1 {
-          font-size: 29px;
+          font-size: 34px;
         }
 
         p {
-          font-size: 13px;
+          font-size: 14px;
         }
 
         .notifications-drawer {
-          width: min(100vw, 100vw);
-          padding: 22px 16px 28px;
+          width: min(92vw, 388px);
+          padding: 24px 18px 32px;
+        }
+      }
+
+      @media (min-width: 960px) {
+        .search-header__nav-shell {
+          gap: 24px;
+          padding: 24px 26px 30px;
+          border-radius: 34px;
+        }
+
+        .search-header__nav {
+          gap: 16px;
+        }
+
+        .search-header__brand,
+        .search-header__notifications-trigger {
+          width: 72px;
+          height: 72px;
+          border-radius: 22px;
+        }
+
+        .search-header__brand img {
+          width: 58px;
+          height: 58px;
+        }
+
+        .search-header__searchbar {
+          min-height: 72px;
+          padding: 0 22px;
+          border-radius: 22px;
+        }
+
+        .search-header__copy {
+          gap: 10px;
+          padding: 6px 6px 0;
+        }
+
+        h1 {
+          max-width: 16ch;
+          font-size: clamp(40px, 4.2vw, 56px);
+        }
+
+        p {
+          max-width: 56ch;
+          font-size: 15px;
+        }
+
+        .notifications-drawer {
+          width: min(420px, calc(100vw - 56px));
+          padding: 28px 22px 32px;
         }
       }
     `,
@@ -492,7 +542,7 @@ export class SearchHeaderComponent {
   protected readonly notificationsService = inject(NotificationsCenterService);
   private readonly router = inject(Router);
 
-  @Input() title = 'Encontre um carro em poucos cliques';
+  @Input() title = 'Encontre um veículo em poucos cliques';
   @Input() subtitle =
     'Pesquise por cidade, período e preço com a mesma agilidade de um app.';
   @Input() query = '';
