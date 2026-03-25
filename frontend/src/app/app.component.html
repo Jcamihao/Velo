@@ -24,7 +24,7 @@
 
         <div>
           <span class="menu-drawer__eyebrow">Menu</span>
-          <h2>{{ authService.currentUser()?.profile?.fullName || 'IZZIE CAR' }}</h2>
+          <h2>{{ authService.currentUser()?.profile?.fullName || 'Velo' }}</h2>
           <p>
             {{
               authService.currentUser()?.email ||
@@ -40,6 +40,14 @@
     </header>
 
     <nav class="menu-drawer__nav">
+      <button type="button" class="menu-link" *ngIf="isOwnerSession" (click)="openOwnerDashboard()">
+        <span class="material-icons" aria-hidden="true">dashboard</span>
+        <div>
+          <strong>Dashboard</strong>
+          <small>Faturamento, agenda e pedidos</small>
+        </div>
+      </button>
+
       <button type="button" class="menu-link" (click)="openProfile()">
         <span class="material-icons" aria-hidden="true">person</span>
         <div>
@@ -71,6 +79,7 @@
           <small>Seus carros salvos vão aparecer aqui</small>
         </div>
       </button>
+
     </nav>
 
     <div class="menu-drawer__footer" *ngIf="!authService.currentUser()">

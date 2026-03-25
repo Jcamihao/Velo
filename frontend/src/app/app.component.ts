@@ -4,6 +4,7 @@ import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map, startWith } from 'rxjs';
 import { AuthService } from './core/services/auth.service';
+import { AnalyticsTrackingService } from './core/services/analytics-tracking.service';
 import { AppLoggerService } from './core/services/app-logger.service';
 import { RouteTraceService } from './core/services/route-trace.service';
 import { BottomNavComponent } from './shared/components/bottom-nav.component';
@@ -18,6 +19,7 @@ import { BottomNavComponent } from './shared/components/bottom-nav.component';
 export class AppComponent {
   private readonly router = inject(Router);
   private readonly logger = inject(AppLoggerService);
+  private readonly analyticsTrackingService = inject(AnalyticsTrackingService);
   private readonly routeTraceService = inject(RouteTraceService);
   protected readonly authService = inject(AuthService);
   protected menuOpen = false;
@@ -32,6 +34,11 @@ export class AppComponent {
 
   constructor() {
     this.routeTraceService.start();
+    this.analyticsTrackingService.trackCurrentSession(
+      globalThis.location?.pathname
+        ? `${globalThis.location.pathname}${globalThis.location.search}`
+        : '/',
+    );
     this.logger.info('app', 'bootstrap', {
       authenticated: this.authService.isAuthenticated(),
     });
@@ -101,6 +108,20 @@ export class AppComponent {
     this.router.navigate(['/anunciar']);
   }
 
+  protected openOwnerDashboard() {
+    const user = this.authService.currentUser();
+    const role = this.authService.getSessionRole();
+
+    if ((user?.role ?? role) !== 'OWNER') {
+      this.closeMenu();
+      this.router.navigate(['/anunciar']);
+      return;
+    }
+
+    this.closeMenu();
+    this.router.navigate(['/owner-dashboard']);
+  }
+
   protected goToLogin() {
     this.closeMenu();
     this.router.navigate(['/auth/login']);
@@ -149,5 +170,9 @@ export class AppComponent {
   protected get menuAvatarAlt() {
     const fullName = this.authService.currentUser()?.profile?.fullName?.trim();
     return fullName ? `Foto de perfil de ${fullName}` : 'Foto de perfil';
+  }
+
+  protected get isOwnerSession() {
+    return (this.authService.currentUser()?.role ?? this.authService.getSessionRole()) === 'OWNER';
   }
 }

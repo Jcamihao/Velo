@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
 import { ChatInboxService } from '../../core/services/chat-inbox.service';
 
 @Component({
@@ -35,6 +36,7 @@ import { ChatInboxService } from '../../core/services/chat-inbox.service';
 })
 export class BottomNavComponent {
   private readonly router = inject(Router);
+  private readonly authService = inject(AuthService);
   private readonly chatInboxService = inject(ChatInboxService);
 
   @Input() menuOpen = false;
@@ -58,6 +60,12 @@ export class BottomNavComponent {
       return;
     }
 
+    if (item.key === 'host') {
+      const role = this.authService.currentUser()?.role ?? this.authService.getSessionRole();
+      this.router.navigateByUrl(role === 'OWNER' ? '/owner-dashboard' : item.link);
+      return;
+    }
+
     this.router.navigateByUrl(item.link);
   }
 
@@ -73,7 +81,7 @@ export class BottomNavComponent {
     }
 
     if (item.key === 'host') {
-      return currentUrl.startsWith('/anunciar');
+      return currentUrl.startsWith('/anunciar') || currentUrl.startsWith('/owner-dashboard');
     }
 
     return currentUrl.startsWith(item.link);

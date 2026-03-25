@@ -89,7 +89,7 @@ export const routes: Routes = [
   {
     path: 'anunciar-carro',
     canActivate: [authGuard, roleGuard],
-    data: { roles: ['OWNER'] },
+    data: { roles: ['OWNER'], view: 'ads' },
     loadComponent: () =>
       import('./features/owner-dashboard/owner-dashboard-page.component').then(
         (m) => m.OwnerDashboardPageComponent,
@@ -97,8 +97,12 @@ export const routes: Routes = [
   },
   {
     path: 'owner-dashboard',
-    redirectTo: 'anunciar-carro',
-    pathMatch: 'full',
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['OWNER'], view: 'dashboard' },
+    loadComponent: () =>
+      import('./features/owner-dashboard/owner-dashboard-page.component').then(
+        (m) => m.OwnerDashboardPageComponent,
+      ),
   },
   {
     path: 'admin',
