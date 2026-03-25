@@ -41,6 +41,30 @@ export class AdminController {
     return this.adminService.blockUser(userId);
   }
 
+  @Patch('users/:id/document/approve')
+  @ApiOperation({ summary: 'Aprova o documento enviado pelo usuário' })
+  approveUserDocument(@Param('id') userId: string) {
+    return this.adminService.approveUserDocument(userId);
+  }
+
+  @Patch('users/:id/document/reject')
+  @ApiOperation({ summary: 'Recusa o documento enviado pelo usuário' })
+  rejectUserDocument(@Param('id') userId: string) {
+    return this.adminService.rejectUserDocument(userId);
+  }
+
+  @Patch('users/:id/driver-license/approve')
+  @ApiOperation({ summary: 'Aprova a CNH enviada pelo usuário' })
+  approveUserDriverLicense(@Param('id') userId: string) {
+    return this.adminService.approveUserDriverLicense(userId);
+  }
+
+  @Patch('users/:id/driver-license/reject')
+  @ApiOperation({ summary: 'Recusa a CNH enviada pelo usuário' })
+  rejectUserDriverLicense(@Param('id') userId: string) {
+    return this.adminService.rejectUserDriverLicense(userId);
+  }
+
   @Patch('vehicles/:id/deactivate')
   @ApiOperation({ summary: 'Desativa um veículo' })
   deactivateVehicle(@Param('id') vehicleId: string) {

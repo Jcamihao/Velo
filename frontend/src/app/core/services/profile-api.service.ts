@@ -63,6 +63,26 @@ export class ProfileApiService {
     );
   }
 
+  uploadMyDocument(file: File) {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return this.http.post<Profile>(
+      `${environment.apiBaseUrl}/profiles/me/document`,
+      formData,
+    );
+  }
+
+  uploadMyDriverLicense(file: File) {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return this.http.post<Profile>(
+      `${environment.apiBaseUrl}/profiles/me/driver-license`,
+      formData,
+    );
+  }
+
   getNotifications() {
     return this.http.get<NotificationItem[]>(
       `${environment.apiBaseUrl}/notifications/my`,

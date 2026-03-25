@@ -42,7 +42,7 @@ import { VehicleCardComponent } from '../../shared/components/vehicle-card.compo
               <span class="eyebrow">{{ roleLabel(profile.role) }}</span>
               <h1>{{ profile.fullName }}</h1>
               <p class="user-profile-hero__since">
-                Na IZZIE CAR desde {{ memberSinceLabel(profile.memberSince) }}
+                Na Velo desde {{ memberSinceLabel(profile.memberSince) }}
               </p>
               <p *ngIf="locationLabel(profile)">{{ locationLabel(profile) }}</p>
             </div>
@@ -166,7 +166,7 @@ import { VehicleCardComponent } from '../../shared/components/vehicle-card.compo
       .user-profile-page {
         display: grid;
         gap: 16px;
-        padding: 18px 16px 132px;
+        padding: 18px 12px 132px;
       }
 
       .user-profile-shell,
@@ -174,8 +174,8 @@ import { VehicleCardComponent } from '../../shared/components/vehicle-card.compo
       .user-profile-section {
         display: grid;
         gap: 16px;
-        padding: 22px;
-        border-radius: 28px;
+        padding: 18px;
+        border-radius: 24px;
       }
 
       .eyebrow {
@@ -211,7 +211,7 @@ import { VehicleCardComponent } from '../../shared/components/vehicle-card.compo
       }
 
       .user-profile-hero__top {
-        align-items: center;
+        align-items: flex-start;
       }
 
       .user-profile-hero__avatar {
@@ -246,7 +246,7 @@ import { VehicleCardComponent } from '../../shared/components/vehicle-card.compo
 
       .user-profile-stats {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: 1fr;
         gap: 12px;
       }
 
@@ -365,27 +365,59 @@ import { VehicleCardComponent } from '../../shared/components/vehicle-card.compo
         color: var(--primary);
       }
 
-      @media (max-width: 640px) {
+      @media (min-width: 641px) {
         .user-profile-page {
-          padding-left: 12px;
-          padding-right: 12px;
+          padding: 18px 16px 132px;
         }
 
         .user-profile-shell,
         .user-profile-hero,
         .user-profile-section {
-          padding: 18px;
-          border-radius: 24px;
+          padding: 22px;
+          border-radius: 28px;
         }
 
         .user-profile-hero__top {
-          align-items: flex-start;
+          align-items: center;
         }
 
         .user-profile-stats {
-          grid-template-columns: 1fr;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
         }
       }
+
+      @media (min-width: 1080px) {
+        .user-profile-page {
+          gap: 20px;
+          padding: 24px 20px 156px;
+        }
+
+        .user-profile-hero {
+          grid-template-columns: minmax(0, 1.1fr) 320px;
+          align-items: start;
+        }
+
+        .user-profile-hero__top,
+        .user-profile-hero__bio {
+          grid-column: 1;
+        }
+
+        .user-profile-stats {
+          grid-column: 2;
+          grid-row: 1 / span 2;
+          grid-template-columns: 1fr;
+        }
+
+        .verification-list {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .user-profile-listings {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 14px;
+        }
+      }
+
     `,
   ],
 })

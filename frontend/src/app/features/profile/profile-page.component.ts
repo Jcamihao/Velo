@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { of, switchMap } from 'rxjs';
+import { forkJoin, of, switchMap } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { ProfileApiService } from '../../core/services/profile-api.service';
 import { Profile } from '../../core/models/domain.models';
@@ -55,7 +55,54 @@ import { Profile } from '../../core/models/domain.models';
 
         <label><span>Nome completo</span><input [(ngModel)]="profile.fullName" /></label>
         <label><span>Telefone</span><input [(ngModel)]="profile.phone" /></label>
+        <label><span>Número do documento</span><input [(ngModel)]="profile.documentNumber" /></label>
+        <label><span>Número da CNH</span><input [(ngModel)]="profile.driverLicenseNumber" /></label>
         <label><span>Bio</span><textarea [(ngModel)]="profile.bio" rows="4"></textarea></label>
+
+        <div class="verification-grid">
+          <article class="verification-card">
+            <div class="verification-card__head">
+              <div>
+                <strong>Documento</strong>
+                <p>{{ verificationStatusLabel(profile.documentVerificationStatus) }}</p>
+              </div>
+
+              <label class="upload-trigger">
+                <input type="file" accept="image/*" (change)="onDocumentSelected($event)" />
+                <span>{{ pendingDocumentFile ? 'Trocar arquivo' : 'Enviar' }}</span>
+              </label>
+            </div>
+
+            <p class="file-hint" *ngIf="pendingDocumentFile">
+              Novo arquivo: {{ pendingDocumentFile.name }}
+            </p>
+            <a *ngIf="profile.documentImageUrl" class="doc-link" [href]="profile.documentImageUrl" target="_blank" rel="noreferrer">
+              Ver documento enviado
+            </a>
+          </article>
+
+          <article class="verification-card">
+            <div class="verification-card__head">
+              <div>
+                <strong>CNH</strong>
+                <p>{{ verificationStatusLabel(profile.driverLicenseVerification) }}</p>
+              </div>
+
+              <label class="upload-trigger">
+                <input type="file" accept="image/*" (change)="onDriverLicenseSelected($event)" />
+                <span>{{ pendingDriverLicenseFile ? 'Trocar arquivo' : 'Enviar' }}</span>
+              </label>
+            </div>
+
+            <p class="file-hint" *ngIf="pendingDriverLicenseFile">
+              Novo arquivo: {{ pendingDriverLicenseFile.name }}
+            </p>
+            <a *ngIf="profile.driverLicenseImageUrl" class="doc-link" [href]="profile.driverLicenseImageUrl" target="_blank" rel="noreferrer">
+              Ver CNH enviada
+            </a>
+          </article>
+        </div>
+
         <button type="button" class="btn btn-primary" (click)="save()" [disabled]="saving">
           {{ saving ? 'Salvando...' : 'Salvar perfil' }}
         </button>
@@ -69,7 +116,7 @@ import { Profile } from '../../core/models/domain.models';
       .profile-page {
         display: grid;
         gap: 18px;
-        padding: 20px 16px 32px;
+        padding: 16px 12px 24px;
       }
 
       .profile-card,
@@ -78,8 +125,8 @@ import { Profile } from '../../core/models/domain.models';
         display: grid;
         gap: 14px;
         min-width: 0;
-        padding: 20px;
-        border-radius: 24px;
+        padding: 18px 16px;
+        border-radius: 20px;
         background: rgba(255, 255, 255, 0.98);
         border: 1px solid var(--glass-border);
         box-shadow: var(--shadow-soft);
@@ -88,7 +135,7 @@ import { Profile } from '../../core/models/domain.models';
       .profile-card__hero,
       .avatar-section {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         justify-content: space-between;
         gap: 16px;
         flex-wrap: wrap;
@@ -202,21 +249,68 @@ import { Profile } from '../../core/models/domain.models';
         color: var(--error);
       }
 
-      @media (max-width: 480px) {
+      .verification-grid {
+        display: grid;
+        gap: 12px;
+      }
+
+      .verification-card {
+        display: grid;
+        gap: 10px;
+        padding: 14px;
+        border-radius: 18px;
+        background: var(--surface-muted);
+        border: 1px solid var(--glass-border-soft);
+      }
+
+      .verification-card__head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .doc-link {
+        color: var(--primary);
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      @media (min-width: 481px) {
         .profile-page {
-          padding: 16px 12px 24px;
+          padding: 20px 16px 32px;
         }
 
         .profile-card,
         .loading-card,
         .profile-form {
-          padding: 18px 16px;
-          border-radius: 20px;
+          padding: 20px;
+          border-radius: 24px;
         }
 
         .profile-card__hero,
         .avatar-section {
-          align-items: flex-start;
+          align-items: center;
+        }
+      }
+
+      @media (min-width: 1080px) {
+        .profile-page {
+          grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+          align-items: start;
+          gap: 20px;
+          padding: 28px 20px 56px;
+        }
+
+        .profile-card {
+          position: sticky;
+          top: 24px;
+        }
+
+        .loading-card,
+        .profile-form {
+          grid-column: 2;
         }
       }
     `,
@@ -237,6 +331,8 @@ export class ProfilePageComponent implements OnDestroy {
   protected feedback = '';
   protected errorMessage = '';
   protected pendingAvatarFile: File | null = null;
+  protected pendingDocumentFile: File | null = null;
+  protected pendingDriverLicenseFile: File | null = null;
   private avatarPreviewUrl: string | null = null;
 
   constructor() {
@@ -276,32 +372,49 @@ export class ProfilePageComponent implements OnDestroy {
     this.feedback = '';
     this.errorMessage = '';
     const pendingAvatarFile = this.pendingAvatarFile;
+    const pendingDocumentFile = this.pendingDocumentFile;
+    const pendingDriverLicenseFile = this.pendingDriverLicenseFile;
 
     this.profileApiService
       .updateMyProfile(this.buildEditableProfile(this.profile))
       .pipe(
         switchMap((profile) => {
-          if (!pendingAvatarFile) {
-            return of(profile);
-          }
+          const uploads = {
+            profile: of(profile),
+            avatar: pendingAvatarFile
+              ? this.profileApiService.uploadMyAvatar(pendingAvatarFile)
+              : of(null),
+            document: pendingDocumentFile
+              ? this.profileApiService.uploadMyDocument(pendingDocumentFile)
+              : of(null),
+            driverLicense: pendingDriverLicenseFile
+              ? this.profileApiService.uploadMyDriverLicense(pendingDriverLicenseFile)
+              : of(null),
+          };
 
-          return this.profileApiService.uploadMyAvatar(pendingAvatarFile);
+          return forkJoin(uploads);
         }),
       )
       .subscribe({
-        next: (profile) => {
+        next: ({ profile, avatar, document, driverLicense }) => {
           const normalizedProfile = this.buildEditableProfile({
             ...this.profile,
             ...profile,
+            ...avatar,
+            ...document,
+            ...driverLicense,
           });
 
           this.profile = normalizedProfile;
           this.authService.syncProfile(normalizedProfile);
           this.pendingAvatarFile = null;
+          this.pendingDocumentFile = null;
+          this.pendingDriverLicenseFile = null;
           this.revokeAvatarPreview();
-          this.feedback = pendingAvatarFile
-            ? 'Perfil e foto atualizados com sucesso.'
-            : 'Perfil atualizado com sucesso.';
+          this.feedback =
+            pendingAvatarFile || pendingDocumentFile || pendingDriverLicenseFile
+              ? 'Perfil e arquivos atualizados com sucesso.'
+              : 'Perfil atualizado com sucesso.';
           this.saving = false;
         },
         error: (error) => {
@@ -329,6 +442,31 @@ export class ProfilePageComponent implements OnDestroy {
     this.pendingAvatarFile = file;
     this.setAvatarPreview(file);
     input.value = '';
+  }
+
+  protected onDocumentSelected(event: Event) {
+    this.pendingDocumentFile = this.extractImageFile(
+      event,
+      'Selecione uma imagem válida para o documento.',
+    );
+  }
+
+  protected onDriverLicenseSelected(event: Event) {
+    this.pendingDriverLicenseFile = this.extractImageFile(
+      event,
+      'Selecione uma imagem válida para a CNH.',
+    );
+  }
+
+  protected verificationStatusLabel(status?: Profile['documentVerificationStatus']) {
+    const labels = {
+      APPROVED: 'Aprovado',
+      PENDING: 'Em análise',
+      REJECTED: 'Recusado',
+      NOT_SUBMITTED: 'Não enviado',
+    } as const;
+
+    return labels[status || 'NOT_SUBMITTED'] || 'Não enviado';
   }
 
   private loadData() {
@@ -361,6 +499,12 @@ export class ProfilePageComponent implements OnDestroy {
       avatarUrl: profile.avatarUrl ?? null,
       documentNumber: profile.documentNumber ?? null,
       driverLicenseNumber: profile.driverLicenseNumber ?? null,
+      documentImageUrl: profile.documentImageUrl ?? null,
+      driverLicenseImageUrl: profile.driverLicenseImageUrl ?? null,
+      documentVerificationStatus:
+        profile.documentVerificationStatus ?? 'NOT_SUBMITTED',
+      driverLicenseVerification:
+        profile.driverLicenseVerification ?? 'NOT_SUBMITTED',
     };
   }
 
@@ -381,6 +525,25 @@ export class ProfilePageComponent implements OnDestroy {
   private setAvatarPreview(file: File) {
     this.revokeAvatarPreview();
     this.avatarPreviewUrl = URL.createObjectURL(file);
+  }
+
+  private extractImageFile(event: Event, errorMessage: string) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+
+    if (!file) {
+      return null;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      this.errorMessage = errorMessage;
+      input.value = '';
+      return null;
+    }
+
+    this.errorMessage = '';
+    input.value = '';
+    return file;
   }
 
   private revokeAvatarPreview() {

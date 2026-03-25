@@ -26,10 +26,28 @@ import { AdminApiService } from '../../core/services/admin-api.service';
           <div>
             <strong>{{ user.profile?.fullName || user.email }}</strong>
             <p>{{ user.role }} • {{ user.status }}</p>
+            <p>
+              Documento: {{ verificationLabel(user.profile?.documentVerificationStatus) }} •
+              CNH: {{ verificationLabel(user.profile?.driverLicenseVerification) }}
+            </p>
           </div>
-          <button type="button" class="btn btn-secondary" (click)="blockUser(user.id)">
-            Bloquear
-          </button>
+          <div class="row__actions">
+            <button type="button" class="btn btn-secondary" (click)="approveDocument(user.id)">
+              Aprovar doc
+            </button>
+            <button type="button" class="btn btn-secondary" (click)="rejectDocument(user.id)">
+              Recusar doc
+            </button>
+            <button type="button" class="btn btn-secondary" (click)="approveDriverLicense(user.id)">
+              Aprovar CNH
+            </button>
+            <button type="button" class="btn btn-secondary" (click)="rejectDriverLicense(user.id)">
+              Recusar CNH
+            </button>
+            <button type="button" class="btn btn-secondary" (click)="blockUser(user.id)">
+              Bloquear
+            </button>
+          </div>
         </article>
       </section>
 
@@ -84,7 +102,7 @@ import { AdminApiService } from '../../core/services/admin-api.service';
 
       .admin-stats {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: 1fr;
         gap: 12px;
       }
 
@@ -101,7 +119,8 @@ import { AdminApiService } from '../../core/services/admin-api.service';
 
       .row {
         display: flex;
-        align-items: center;
+        flex-direction: column;
+        align-items: flex-start;
         justify-content: space-between;
         gap: 12px;
         padding-top: 12px;
@@ -124,6 +143,54 @@ import { AdminApiService } from '../../core/services/admin-api.service';
       p {
         color: var(--text-secondary);
       }
+
+      .row__actions {
+        display: flex;
+        width: 100%;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+      }
+
+      .row .btn {
+        width: 100%;
+      }
+
+      @media (min-width: 701px) {
+        .admin-stats {
+          grid-template-columns: repeat(3, 1fr);
+        }
+
+        .row {
+          flex-direction: row;
+          align-items: center;
+        }
+
+        .row__actions {
+          width: auto;
+          justify-content: flex-end;
+        }
+
+        .row .btn {
+          width: auto;
+        }
+      }
+
+      @media (min-width: 1080px) {
+        .admin-page {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          align-items: start;
+          gap: 20px;
+          padding: 28px 20px 56px;
+        }
+
+        .admin-hero,
+        .admin-stats,
+        .admin-card:last-of-type {
+          grid-column: 1 / -1;
+        }
+      }
+
     `,
   ],
 })
@@ -141,6 +208,33 @@ export class AdminPageComponent {
 
   protected blockUser(userId: string) {
     this.adminApiService.blockUser(userId).subscribe(() => this.loadData());
+  }
+
+  protected approveDocument(userId: string) {
+    this.adminApiService.approveUserDocument(userId).subscribe(() => this.loadData());
+  }
+
+  protected rejectDocument(userId: string) {
+    this.adminApiService.rejectUserDocument(userId).subscribe(() => this.loadData());
+  }
+
+  protected approveDriverLicense(userId: string) {
+    this.adminApiService.approveUserDriverLicense(userId).subscribe(() => this.loadData());
+  }
+
+  protected rejectDriverLicense(userId: string) {
+    this.adminApiService.rejectUserDriverLicense(userId).subscribe(() => this.loadData());
+  }
+
+  protected verificationLabel(status?: string) {
+    const labels: Record<string, string> = {
+      APPROVED: 'Aprovado',
+      PENDING: 'Em análise',
+      REJECTED: 'Recusado',
+      NOT_SUBMITTED: 'Não enviado',
+    };
+
+    return labels[status || 'NOT_SUBMITTED'] || status || 'Não enviado';
   }
 
   protected deactivateVehicle(vehicleId: string) {

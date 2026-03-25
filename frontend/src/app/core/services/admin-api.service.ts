@@ -28,6 +28,34 @@ export class AdminApiService {
     return this.http.patch(`${environment.apiBaseUrl}/admin/users/${userId}/block`, {});
   }
 
+  approveUserDocument(userId: string) {
+    return this.http.patch(
+      `${environment.apiBaseUrl}/admin/users/${userId}/document/approve`,
+      {},
+    );
+  }
+
+  rejectUserDocument(userId: string) {
+    return this.http.patch(
+      `${environment.apiBaseUrl}/admin/users/${userId}/document/reject`,
+      {},
+    );
+  }
+
+  approveUserDriverLicense(userId: string) {
+    return this.http.patch(
+      `${environment.apiBaseUrl}/admin/users/${userId}/driver-license/approve`,
+      {},
+    );
+  }
+
+  rejectUserDriverLicense(userId: string) {
+    return this.http.patch(
+      `${environment.apiBaseUrl}/admin/users/${userId}/driver-license/reject`,
+      {},
+    );
+  }
+
   deactivateVehicle(vehicleId: string) {
     return this.http.patch(
       `${environment.apiBaseUrl}/admin/vehicles/${vehicleId}/deactivate`,

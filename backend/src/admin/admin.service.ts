@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { UserStatus } from '@prisma/client';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { UserStatus, VerificationStatus } from '@prisma/client';
 import { CacheQueueService } from '../cache-queue/cache-queue.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -89,6 +89,38 @@ export class AdminService {
     });
   }
 
+  async approveUserDocument(userId: string) {
+    return this.updateVerificationStatus(
+      userId,
+      'documentVerificationStatus',
+      VerificationStatus.APPROVED,
+    );
+  }
+
+  async rejectUserDocument(userId: string) {
+    return this.updateVerificationStatus(
+      userId,
+      'documentVerificationStatus',
+      VerificationStatus.REJECTED,
+    );
+  }
+
+  async approveUserDriverLicense(userId: string) {
+    return this.updateVerificationStatus(
+      userId,
+      'driverLicenseVerification',
+      VerificationStatus.APPROVED,
+    );
+  }
+
+  async rejectUserDriverLicense(userId: string) {
+    return this.updateVerificationStatus(
+      userId,
+      'driverLicenseVerification',
+      VerificationStatus.REJECTED,
+    );
+  }
+
   async deactivateVehicle(vehicleId: string) {
     const vehicle = await this.prisma.vehicle.update({
       where: { id: vehicleId },
@@ -102,5 +134,26 @@ export class AdminService {
     await this.cacheQueueService.invalidateByPrefix('vehicles:list:');
 
     return vehicle;
+  }
+
+  private async updateVerificationStatus(
+    userId: string,
+    field: 'documentVerificationStatus' | 'driverLicenseVerification',
+    status: VerificationStatus,
+  ) {
+    const profile = await this.prisma.profile.findUnique({
+      where: { userId },
+    });
+
+    if (!profile) {
+      throw new NotFoundException('Perfil do usuário não encontrado.');
+    }
+
+    return this.prisma.profile.update({
+      where: { userId },
+      data: {
+        [field]: status,
+      },
+    });
   }
 }

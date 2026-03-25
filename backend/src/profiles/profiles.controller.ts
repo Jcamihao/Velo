@@ -78,4 +78,62 @@ export class ProfilesController {
   ) {
     return this.profilesService.uploadMyAvatar(user.sub, file);
   }
+
+  @Post('me/document')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: 5 * 1024 * 1024,
+      },
+    }),
+  )
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+      required: ['file'],
+    },
+  })
+  @ApiOperation({ summary: 'Faz upload do documento do usuário autenticado' })
+  uploadMyDocument(
+    @CurrentUser() user: AuthenticatedUser,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.profilesService.uploadMyDocument(user.sub, file);
+  }
+
+  @Post('me/driver-license')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: 5 * 1024 * 1024,
+      },
+    }),
+  )
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+      required: ['file'],
+    },
+  })
+  @ApiOperation({ summary: 'Faz upload da CNH do usuário autenticado' })
+  uploadMyDriverLicense(
+    @CurrentUser() user: AuthenticatedUser,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.profilesService.uploadMyDriverLicense(user.sub, file);
+  }
 }

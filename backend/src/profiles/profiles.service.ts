@@ -108,11 +108,31 @@ export class ProfilesService {
         year: vehicle.year,
         city: vehicle.city,
         state: vehicle.state,
+        vehicleType: vehicle.vehicleType,
         category: vehicle.category,
+        bookingApprovalMode: vehicle.bookingApprovalMode,
+        cancellationPolicy: vehicle.cancellationPolicy,
         seats: vehicle.seats,
         transmission: vehicle.transmission,
         fuelType: vehicle.fuelType,
         dailyRate: Number(vehicle.dailyRate),
+        addons: Array.isArray(vehicle.addons) ? vehicle.addons : [],
+        firstBookingDiscountPercent: vehicle.firstBookingDiscountPercent ?? 0,
+        weeklyDiscountPercent: vehicle.weeklyDiscountPercent ?? 0,
+        couponCode: vehicle.couponCode ?? null,
+        couponDiscountPercent: vehicle.couponDiscountPercent ?? 0,
+        weekendSurchargePercent: vehicle.weekendSurchargePercent ?? 0,
+        holidaySurchargePercent: vehicle.holidaySurchargePercent ?? 0,
+        highDemandSurchargePercent: vehicle.highDemandSurchargePercent ?? 0,
+        advanceBookingDiscountPercent:
+          vehicle.advanceBookingDiscountPercent ?? 0,
+        advanceBookingDaysThreshold: vehicle.advanceBookingDaysThreshold ?? 0,
+        motorcycleStyle: vehicle.motorcycleStyle,
+        engineCc: vehicle.engineCc,
+        hasAbs: vehicle.hasAbs,
+        hasTopCase: vehicle.hasTopCase,
+        latitude: vehicle.latitude ? Number(vehicle.latitude) : null,
+        longitude: vehicle.longitude ? Number(vehicle.longitude) : null,
         ratingAverage: Number(vehicle.ratingAverage),
         reviewsCount: vehicle.reviewsCount,
         coverImage: vehicle.images[0]?.url ?? null,
@@ -195,6 +215,14 @@ export class ProfilesService {
     return updatedProfile;
   }
 
+  async uploadMyDocument(userId: string, file: Express.Multer.File) {
+    return this.uploadVerificationDocument(userId, file, 'document');
+  }
+
+  async uploadMyDriverLicense(userId: string, file: Express.Multer.File) {
+    return this.uploadVerificationDocument(userId, file, 'driverLicense');
+  }
+
   private resolveProfileVerificationStatus(
     documentStatus: VerificationStatus,
     driverLicenseStatus: VerificationStatus,
@@ -221,5 +249,75 @@ export class ProfilesService {
     }
 
     return VerificationStatus.NOT_SUBMITTED;
+  }
+
+  private async uploadVerificationDocument(
+    userId: string,
+    file: Express.Multer.File,
+    type: 'document' | 'driverLicense',
+  ) {
+    if (!file) {
+      throw new BadRequestException('Selecione um arquivo para upload.');
+    }
+
+    if (!file.mimetype?.startsWith('image/')) {
+      throw new BadRequestException('Envie uma imagem válida para verificação.');
+    }
+
+    const currentProfile = await this.prisma.profile.findUnique({
+      where: { userId },
+      select: {
+        documentImageUrl: true,
+        driverLicenseImageUrl: true,
+      },
+    });
+
+    const uploadedFile = await this.storageService.uploadPublicFile(
+      file,
+      'documents',
+    );
+
+    const previousFileUrl =
+      type === 'document'
+        ? currentProfile?.documentImageUrl
+        : currentProfile?.driverLicenseImageUrl;
+
+    if (previousFileUrl) {
+      await this.storageService.deletePublicFileByUrl(previousFileUrl);
+    }
+
+    return this.prisma.profile.upsert({
+      where: { userId },
+      update:
+        type === 'document'
+          ? {
+              documentImageUrl: uploadedFile.url,
+              documentVerificationStatus: VerificationStatus.PENDING,
+            }
+          : {
+              driverLicenseImageUrl: uploadedFile.url,
+              driverLicenseVerification: VerificationStatus.PENDING,
+            },
+      create:
+        type === 'document'
+          ? {
+              userId,
+              fullName: '',
+              phone: '',
+              city: '',
+              state: '',
+              documentImageUrl: uploadedFile.url,
+              documentVerificationStatus: VerificationStatus.PENDING,
+            }
+          : {
+              userId,
+              fullName: '',
+              phone: '',
+              city: '',
+              state: '',
+              driverLicenseImageUrl: uploadedFile.url,
+              driverLicenseVerification: VerificationStatus.PENDING,
+            },
+    });
   }
 }
