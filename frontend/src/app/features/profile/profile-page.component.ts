@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { forkJoin, of, switchMap } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { ProfileApiService } from '../../core/services/profile-api.service';
@@ -9,7 +10,7 @@ import { Profile } from '../../core/models/domain.models';
 @Component({
   selector: 'app-profile-page',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <main class="page profile-page">
       <section class="profile-card">
@@ -59,6 +60,10 @@ import { Profile } from '../../core/models/domain.models';
         <label><span>Número da CNH</span><input [(ngModel)]="profile.driverLicenseNumber" /></label>
         <label><span>Bio</span><textarea [(ngModel)]="profile.bio" rows="4"></textarea></label>
 
+        <a class="privacy-link" routerLink="/privacy-center">
+          Gerenciar preferências, exportação e solicitações na central de privacidade
+        </a>
+
         <div class="verification-grid">
           <article class="verification-card">
             <div class="verification-card__head">
@@ -76,9 +81,15 @@ import { Profile } from '../../core/models/domain.models';
             <p class="file-hint" *ngIf="pendingDocumentFile">
               Novo arquivo: {{ pendingDocumentFile.name }}
             </p>
-            <a *ngIf="profile.documentImageUrl" class="doc-link" [href]="profile.documentImageUrl" target="_blank" rel="noreferrer">
-              Ver documento enviado
-            </a>
+            <button
+              *ngIf="profile.hasDocumentImage"
+              type="button"
+              class="doc-link"
+              [disabled]="openingDocument"
+              (click)="openVerificationFile('document')"
+            >
+              {{ openingDocument ? 'Abrindo...' : 'Ver documento enviado' }}
+            </button>
           </article>
 
           <article class="verification-card">
@@ -97,9 +108,15 @@ import { Profile } from '../../core/models/domain.models';
             <p class="file-hint" *ngIf="pendingDriverLicenseFile">
               Novo arquivo: {{ pendingDriverLicenseFile.name }}
             </p>
-            <a *ngIf="profile.driverLicenseImageUrl" class="doc-link" [href]="profile.driverLicenseImageUrl" target="_blank" rel="noreferrer">
-              Ver CNH enviada
-            </a>
+            <button
+              *ngIf="profile.hasDriverLicenseImage"
+              type="button"
+              class="doc-link"
+              [disabled]="openingDriverLicense"
+              (click)="openVerificationFile('driverLicense')"
+            >
+              {{ openingDriverLicense ? 'Abrindo...' : 'Ver CNH enviada' }}
+            </button>
           </article>
         </div>
 
@@ -272,6 +289,17 @@ import { Profile } from '../../core/models/domain.models';
       }
 
       .doc-link {
+        border: 0;
+        padding: 0;
+        background: transparent;
+        text-align: left;
+        cursor: pointer;
+        color: var(--primary);
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .privacy-link {
         color: var(--primary);
         font-weight: 700;
         text-decoration: none;
@@ -333,6 +361,8 @@ export class ProfilePageComponent implements OnDestroy {
   protected pendingAvatarFile: File | null = null;
   protected pendingDocumentFile: File | null = null;
   protected pendingDriverLicenseFile: File | null = null;
+  protected openingDocument = false;
+  protected openingDriverLicense = false;
   private avatarPreviewUrl: string | null = null;
 
   constructor() {
@@ -501,11 +531,40 @@ export class ProfilePageComponent implements OnDestroy {
       driverLicenseNumber: profile.driverLicenseNumber ?? null,
       documentImageUrl: profile.documentImageUrl ?? null,
       driverLicenseImageUrl: profile.driverLicenseImageUrl ?? null,
+      hasDocumentImage: profile.hasDocumentImage ?? false,
+      hasDriverLicenseImage: profile.hasDriverLicenseImage ?? false,
       documentVerificationStatus:
         profile.documentVerificationStatus ?? 'NOT_SUBMITTED',
       driverLicenseVerification:
         profile.driverLicenseVerification ?? 'NOT_SUBMITTED',
     };
+  }
+
+  protected openVerificationFile(type: 'document' | 'driverLicense') {
+    const request$ =
+      type === 'document'
+        ? this.profileApiService.getMyDocumentUrl()
+        : this.profileApiService.getMyDriverLicenseUrl();
+
+    if (type === 'document') {
+      this.openingDocument = true;
+    } else {
+      this.openingDriverLicense = true;
+    }
+
+    request$.subscribe({
+      next: ({ url }) => {
+        window.open(url, '_blank', 'noopener,noreferrer');
+        this.openingDocument = false;
+        this.openingDriverLicense = false;
+      },
+      error: (error) => {
+        this.errorMessage =
+          this.resolveErrorMessage(error, 'Não foi possível abrir o arquivo solicitado.');
+        this.openingDocument = false;
+        this.openingDriverLicense = false;
+      },
+    });
   }
 
   private resolveErrorMessage(

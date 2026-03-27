@@ -7,7 +7,7 @@ export class AdminApiService {
   private readonly http = inject(HttpClient);
 
   getDashboard() {
-    return this.http.get<{ totals: { users: number; vehicles: number; bookings: number } }>(
+    return this.http.get<{ totals: { users: number; vehicles: number; bookings: number; privacyRequests: number } }>(
       `${environment.apiBaseUrl}/admin/dashboard`,
     );
   }
@@ -60,6 +60,33 @@ export class AdminApiService {
     return this.http.patch(
       `${environment.apiBaseUrl}/admin/vehicles/${vehicleId}/deactivate`,
       {},
+    );
+  }
+
+  getUserVerificationFileUrl(
+    userId: string,
+    type: 'document' | 'driverLicense',
+  ) {
+    return this.http.get<{ url: string }>(
+      `${environment.apiBaseUrl}/admin/users/${userId}/verification-file`,
+      {
+        params: { type },
+      },
+    );
+  }
+
+  getPrivacyRequests() {
+    return this.http.get(`${environment.apiBaseUrl}/admin/privacy/requests`);
+  }
+
+  updatePrivacyRequest(
+    requestId: string,
+    status: string,
+    resolutionNotes?: string,
+  ) {
+    return this.http.patch(
+      `${environment.apiBaseUrl}/admin/privacy/requests/${requestId}`,
+      { status, resolutionNotes },
     );
   }
 }

@@ -12,7 +12,6 @@ import * as bcrypt from 'bcryptjs';
 import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
-import { RefreshDto } from './dto/refresh.dto';
 import { RegisterDto } from './dto/register.dto';
 
 @Injectable()
@@ -77,14 +76,20 @@ export class AuthService {
     return this.issueTokens(user.id, user.email, user.role, user);
   }
 
-  async refresh(dto: RefreshDto) {
+  async refresh(refreshToken: string | undefined) {
     const refreshSecret =
       this.configService.get<string>('auth.refreshSecret') ??
       'velo_refresh_secret';
+
+    if (!refreshToken) {
+      this.logger.warn('refresh_missing_token');
+      throw new UnauthorizedException('Refresh token inválido.');
+    }
+
     let payload: JwtPayload;
 
     try {
-      payload = await this.jwtService.verifyAsync<JwtPayload>(dto.refreshToken, {
+      payload = await this.jwtService.verifyAsync<JwtPayload>(refreshToken, {
         secret: refreshSecret,
       });
     } catch (error) {
@@ -100,7 +105,7 @@ export class AuthService {
     }
 
     const isValidRefreshToken = await bcrypt.compare(
-      dto.refreshToken,
+      refreshToken,
       user.refreshTokenHash,
     );
 
@@ -111,6 +116,29 @@ export class AuthService {
 
     this.logger.log(`refresh_success userId=${user.id} email=${user.email}`);
     return this.issueTokens(user.id, user.email, user.role, user);
+  }
+
+  async logout(refreshToken?: string) {
+    if (!refreshToken) {
+      this.logger.debug('logout_without_refresh_token');
+      return { success: true };
+    }
+
+    const refreshSecret =
+      this.configService.get<string>('auth.refreshSecret') ??
+      'velo_refresh_secret';
+
+    try {
+      const payload = await this.jwtService.verifyAsync<JwtPayload>(refreshToken, {
+        secret: refreshSecret,
+      });
+      await this.usersService.updateRefreshToken(payload.sub, null);
+      this.logger.log(`logout_success userId=${payload.sub}`);
+    } catch (error) {
+      this.logger.warn('logout_refresh_token_invalid');
+    }
+
+    return { success: true };
   }
 
   async me(userId: string) {
@@ -160,8 +188,8 @@ export class AuthService {
 
     return {
       accessToken,
-      refreshToken,
       user: await this.usersService.sanitizeUser(user),
+      refreshToken,
     };
   }
 }

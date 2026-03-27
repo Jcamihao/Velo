@@ -36,6 +36,10 @@ import { AuthService } from '../../core/services/auth.service';
           <span>Não tem conta?</span>
           <a routerLink="/auth/register">Crie agora</a>
         </div>
+
+        <div class="helper-links helper-links--secondary">
+          <a routerLink="/privacy">Privacidade</a>
+        </div>
       </section>
     </main>
   `,
@@ -108,6 +112,10 @@ import { AuthService } from '../../core/services/auth.service';
         color: var(--primary);
         font-weight: 700;
         text-decoration: none;
+      }
+
+      .helper-links--secondary {
+        margin-top: -4px;
       }
 
       .feedback {

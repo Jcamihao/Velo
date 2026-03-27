@@ -72,6 +72,21 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'privacy',
+    loadComponent: () =>
+      import('./features/privacy/privacy-page.component').then(
+        (m) => m.PrivacyPageComponent,
+      ),
+  },
+  {
+    path: 'privacy-center',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/privacy/privacy-center-page.component').then(
+        (m) => m.PrivacyCenterPageComponent,
+      ),
+  },
+  {
     path: 'users/:id',
     loadComponent: () =>
       import('./features/user-profile/user-profile-page.component').then(

@@ -18,6 +18,7 @@ import { AdminApiService } from '../../core/services/admin-api.service';
         <article><strong>{{ dashboard.totals.users }}</strong><span>usuários</span></article>
         <article><strong>{{ dashboard.totals.vehicles }}</strong><span>veículos</span></article>
         <article><strong>{{ dashboard.totals.bookings }}</strong><span>reservas</span></article>
+        <article><strong>{{ dashboard.totals.privacyRequests }}</strong><span>pedidos LGPD</span></article>
       </section>
 
       <section class="admin-card">
@@ -43,6 +44,22 @@ import { AdminApiService } from '../../core/services/admin-api.service';
             </button>
             <button type="button" class="btn btn-secondary" (click)="rejectDriverLicense(user.id)">
               Recusar CNH
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              *ngIf="user.profile?.hasDocumentImage"
+              (click)="openVerificationFile(user.id, 'document')"
+            >
+              Ver doc
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              *ngIf="user.profile?.hasDriverLicenseImage"
+              (click)="openVerificationFile(user.id, 'driverLicense')"
+            >
+              Ver CNH
             </button>
             <button type="button" class="btn btn-secondary" (click)="blockUser(user.id)">
               Bloquear
@@ -70,6 +87,37 @@ import { AdminApiService } from '../../core/services/admin-api.service';
           <div>
             <strong>{{ booking.vehicle.title }}</strong>
             <p>{{ booking.status }} • {{ booking.renter.profile?.fullName || booking.renter.email }}</p>
+          </div>
+        </article>
+      </section>
+
+      <section class="admin-card">
+        <h2>Solicitações LGPD</h2>
+        <article class="row" *ngFor="let request of privacyRequests">
+          <div>
+            <strong>{{ privacyRequestTypeLabel(request.type) }}</strong>
+            <p>
+              {{ request.user?.profile?.fullName || request.user?.email }} • {{ privacyRequestStatusLabel(request.status) }}
+            </p>
+            <p *ngIf="request.notes">{{ request.notes }}</p>
+          </div>
+          <div class="row__actions">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              *ngIf="request.status === 'OPEN'"
+              (click)="updatePrivacyRequest(request.id, 'IN_REVIEW')"
+            >
+              Em análise
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              *ngIf="request.status !== 'COMPLETED'"
+              (click)="updatePrivacyRequest(request.id, 'COMPLETED')"
+            >
+              Concluir
+            </button>
           </div>
         </article>
       </section>
@@ -158,7 +206,7 @@ import { AdminApiService } from '../../core/services/admin-api.service';
 
       @media (min-width: 701px) {
         .admin-stats {
-          grid-template-columns: repeat(3, 1fr);
+          grid-template-columns: repeat(4, 1fr);
         }
 
         .row {
@@ -197,10 +245,11 @@ import { AdminApiService } from '../../core/services/admin-api.service';
 export class AdminPageComponent {
   private readonly adminApiService = inject(AdminApiService);
 
-  protected dashboard?: { totals: { users: number; vehicles: number; bookings: number } };
+  protected dashboard?: { totals: { users: number; vehicles: number; bookings: number; privacyRequests: number } };
   protected users: any[] = [];
   protected vehicles: any[] = [];
   protected bookings: any[] = [];
+  protected privacyRequests: any[] = [];
 
   constructor() {
     this.loadData();
@@ -241,17 +290,60 @@ export class AdminPageComponent {
     this.adminApiService.deactivateVehicle(vehicleId).subscribe(() => this.loadData());
   }
 
+  protected openVerificationFile(userId: string, type: 'document' | 'driverLicense') {
+    this.adminApiService.getUserVerificationFileUrl(userId, type).subscribe({
+      next: ({ url }) => {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      },
+    });
+  }
+
+  protected updatePrivacyRequest(requestId: string, status: string) {
+    this.adminApiService
+      .updatePrivacyRequest(requestId, status)
+      .subscribe(() => this.loadData());
+  }
+
+  protected privacyRequestTypeLabel(type: string) {
+    const labels: Record<string, string> = {
+      ACCESS: 'Acesso',
+      PORTABILITY: 'Portabilidade',
+      DELETION: 'Exclusão',
+      CORRECTION: 'Correção',
+      RESTRICTION: 'Restrição',
+      OBJECTION: 'Oposição',
+      ANONYMIZATION: 'Anonimização',
+      REVOCATION: 'Revogação',
+    };
+
+    return labels[type] || type;
+  }
+
+  protected privacyRequestStatusLabel(status: string) {
+    const labels: Record<string, string> = {
+      OPEN: 'Aberta',
+      IN_REVIEW: 'Em análise',
+      COMPLETED: 'Concluída',
+      REJECTED: 'Recusada',
+      CANCELLED: 'Cancelada',
+    };
+
+    return labels[status] || status;
+  }
+
   private loadData() {
     forkJoin({
       dashboard: this.adminApiService.getDashboard(),
       users: this.adminApiService.getUsers(),
       vehicles: this.adminApiService.getVehicles(),
       bookings: this.adminApiService.getBookings(),
-    }).subscribe(({ dashboard, users, vehicles, bookings }) => {
+      privacyRequests: this.adminApiService.getPrivacyRequests(),
+    }).subscribe(({ dashboard, users, vehicles, bookings, privacyRequests }) => {
       this.dashboard = dashboard;
       this.users = users as any[];
       this.vehicles = vehicles as any[];
       this.bookings = bookings as any[];
+      this.privacyRequests = privacyRequests as any[];
     });
   }
 }

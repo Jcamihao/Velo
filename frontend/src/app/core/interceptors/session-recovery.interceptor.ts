@@ -27,7 +27,7 @@ export const sessionRecoveryInterceptor: HttpInterceptorFn = (req, next) => {
         httpError.status === 401
         && !isAuthRoute
         && !alreadyRetried
-        && !!authService.getRefreshToken();
+        && authService.hasSessionHint();
 
       if (!shouldAttemptRecovery) {
         return throwError(() => error);

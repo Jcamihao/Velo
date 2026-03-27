@@ -2,11 +2,13 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { AppLoggerService } from './app-logger.service';
+import { PrivacyPreferencesService } from './privacy-preferences.service';
 
 @Injectable({ providedIn: 'root' })
 export class AnalyticsTrackingService {
   private readonly http = inject(HttpClient);
   private readonly logger = inject(AppLoggerService);
+  private readonly privacyPreferencesService = inject(PrivacyPreferencesService);
   private readonly storage = globalThis.localStorage;
   private readonly sessionStorageRef = globalThis.sessionStorage;
 
@@ -14,6 +16,11 @@ export class AnalyticsTrackingService {
   private readonly sessionTrackedKey = 'velo.analytics.sessionTracked';
 
   trackCurrentSession(path: string) {
+    if (!this.privacyPreferencesService.analyticsConsentGranted()) {
+      this.logger.debug('analytics', 'visit_skipped_without_consent', { path });
+      return;
+    }
+
     if (this.sessionStorageRef.getItem(this.sessionTrackedKey)) {
       return;
     }

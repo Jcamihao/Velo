@@ -91,6 +91,10 @@ import { ProfileApiService } from '../../core/services/profile-api.service';
           <span>Já tem conta?</span>
           <a routerLink="/auth/login">Entrar</a>
         </div>
+
+        <div class="helper-links helper-links--secondary">
+          <a routerLink="/privacy">Privacidade</a>
+        </div>
       </section>
     </main>
   `,
@@ -256,6 +260,10 @@ import { ProfileApiService } from '../../core/services/profile-api.service';
         justify-content: center;
         gap: 8px;
         color: var(--text-secondary);
+      }
+
+      .helper-links--secondary {
+        margin-top: -4px;
       }
 
       .helper-links a {

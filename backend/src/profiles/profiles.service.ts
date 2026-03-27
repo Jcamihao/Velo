@@ -19,9 +19,11 @@ export class ProfilesService {
   ) {}
 
   async getMyProfile(userId: string) {
-    return this.prisma.profile.findUnique({
+    const profile = await this.prisma.profile.findUnique({
       where: { userId },
     });
+
+    return this.mapPrivateProfile(profile);
   }
 
   async getPublicProfile(userId: string) {
@@ -147,7 +149,7 @@ export class ProfilesService {
   }
 
   async updateMyProfile(userId: string, dto: UpdateProfileDto) {
-    return this.prisma.profile.upsert({
+    const profile = await this.prisma.profile.upsert({
       where: { userId },
       update: dto,
       create: {
@@ -162,6 +164,8 @@ export class ProfilesService {
         driverLicenseNumber: dto.driverLicenseNumber,
       },
     });
+
+    return this.mapPrivateProfile(profile);
   }
 
   async uploadMyAvatar(userId: string, file: Express.Multer.File) {
@@ -212,7 +216,7 @@ export class ProfilesService {
         });
     }
 
-    return updatedProfile;
+    return this.mapPrivateProfile(updatedProfile);
   }
 
   async uploadMyDocument(userId: string, file: Express.Multer.File) {
@@ -221,6 +225,35 @@ export class ProfilesService {
 
   async uploadMyDriverLicense(userId: string, file: Express.Multer.File) {
     return this.uploadVerificationDocument(userId, file, 'driverLicense');
+  }
+
+  async getVerificationFileUrl(
+    userId: string,
+    type: 'document' | 'driverLicense',
+  ) {
+    const profile = await this.prisma.profile.findUnique({
+      where: { userId },
+      select: {
+        documentImageUrl: true,
+        driverLicenseImageUrl: true,
+      },
+    });
+
+    const storedValue =
+      type === 'document'
+        ? profile?.documentImageUrl
+        : profile?.driverLicenseImageUrl;
+
+    if (!storedValue) {
+      throw new NotFoundException('Arquivo de verificação não encontrado.');
+    }
+
+    const url = await this.storageService.getPrivateFileUrl(storedValue);
+
+    return {
+      url,
+      generatedAt: new Date().toISOString(),
+    };
   }
 
   private resolveProfileVerificationStatus(
@@ -272,7 +305,7 @@ export class ProfilesService {
       },
     });
 
-    const uploadedFile = await this.storageService.uploadPublicFile(
+    const uploadedFile = await this.storageService.uploadPrivateFile(
       file,
       'documents',
     );
@@ -283,19 +316,19 @@ export class ProfilesService {
         : currentProfile?.driverLicenseImageUrl;
 
     if (previousFileUrl) {
-      await this.storageService.deletePublicFileByUrl(previousFileUrl);
+      await this.storageService.deletePrivateFileByStoredValue(previousFileUrl);
     }
 
-    return this.prisma.profile.upsert({
+    const profile = await this.prisma.profile.upsert({
       where: { userId },
       update:
         type === 'document'
           ? {
-              documentImageUrl: uploadedFile.url,
+              documentImageUrl: uploadedFile.key,
               documentVerificationStatus: VerificationStatus.PENDING,
             }
           : {
-              driverLicenseImageUrl: uploadedFile.url,
+              driverLicenseImageUrl: uploadedFile.key,
               driverLicenseVerification: VerificationStatus.PENDING,
             },
       create:
@@ -306,7 +339,7 @@ export class ProfilesService {
               phone: '',
               city: '',
               state: '',
-              documentImageUrl: uploadedFile.url,
+              documentImageUrl: uploadedFile.key,
               documentVerificationStatus: VerificationStatus.PENDING,
             }
           : {
@@ -315,9 +348,47 @@ export class ProfilesService {
               phone: '',
               city: '',
               state: '',
-              driverLicenseImageUrl: uploadedFile.url,
+              driverLicenseImageUrl: uploadedFile.key,
               driverLicenseVerification: VerificationStatus.PENDING,
             },
     });
+
+    return this.mapPrivateProfile(profile);
+  }
+
+  private mapPrivateProfile(profile: {
+    fullName: string;
+    phone: string;
+    city: string;
+    state: string;
+    bio?: string | null;
+    avatarUrl?: string | null;
+    documentNumber?: string | null;
+    driverLicenseNumber?: string | null;
+    documentImageUrl?: string | null;
+    driverLicenseImageUrl?: string | null;
+    documentVerificationStatus?: VerificationStatus;
+    driverLicenseVerification?: VerificationStatus;
+  } | null) {
+    if (!profile) {
+      return null;
+    }
+
+    return {
+      fullName: profile.fullName,
+      phone: profile.phone,
+      city: profile.city,
+      state: profile.state,
+      bio: profile.bio ?? null,
+      avatarUrl: profile.avatarUrl ?? null,
+      documentNumber: profile.documentNumber ?? null,
+      driverLicenseNumber: profile.driverLicenseNumber ?? null,
+      hasDocumentImage: !!profile.documentImageUrl,
+      hasDriverLicenseImage: !!profile.driverLicenseImageUrl,
+      documentVerificationStatus:
+        profile.documentVerificationStatus ?? VerificationStatus.NOT_SUBMITTED,
+      driverLicenseVerification:
+        profile.driverLicenseVerification ?? VerificationStatus.NOT_SUBMITTED,
+    };
   }
 }

@@ -83,6 +83,18 @@ export class ProfileApiService {
     );
   }
 
+  getMyDocumentUrl() {
+    return this.http.get<{ url: string }>(
+      `${environment.apiBaseUrl}/profiles/me/document/url`,
+    );
+  }
+
+  getMyDriverLicenseUrl() {
+    return this.http.get<{ url: string }>(
+      `${environment.apiBaseUrl}/profiles/me/driver-license/url`,
+    );
+  }
+
   getNotifications() {
     return this.http.get<NotificationItem[]>(
       `${environment.apiBaseUrl}/notifications/my`,

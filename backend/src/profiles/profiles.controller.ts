@@ -108,6 +108,12 @@ export class ProfilesController {
     return this.profilesService.uploadMyDocument(user.sub, file);
   }
 
+  @Get('me/document/url')
+  @ApiOperation({ summary: 'Gera uma URL temporária para o documento do usuário autenticado' })
+  getMyDocumentUrl(@CurrentUser() user: AuthenticatedUser) {
+    return this.profilesService.getVerificationFileUrl(user.sub, 'document');
+  }
+
   @Post('me/driver-license')
   @UseInterceptors(
     FileInterceptor('file', {
@@ -135,5 +141,11 @@ export class ProfilesController {
     @UploadedFile() file: Express.Multer.File,
   ) {
     return this.profilesService.uploadMyDriverLicense(user.sub, file);
+  }
+
+  @Get('me/driver-license/url')
+  @ApiOperation({ summary: 'Gera uma URL temporária para a CNH do usuário autenticado' })
+  getMyDriverLicenseUrl(@CurrentUser() user: AuthenticatedUser) {
+    return this.profilesService.getVerificationFileUrl(user.sub, 'driverLicense');
   }
 }

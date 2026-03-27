@@ -1,20 +1,29 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { UserStatus, VerificationStatus } from '@prisma/client';
+import {
+  PrivacyRequestStatus,
+  UserStatus,
+  VerificationStatus,
+} from '@prisma/client';
 import { CacheQueueService } from '../cache-queue/cache-queue.service';
+import { PrivacyService } from '../privacy/privacy.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { ProfilesService } from '../profiles/profiles.service';
 
 @Injectable()
 export class AdminService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cacheQueueService: CacheQueueService,
+    private readonly profilesService: ProfilesService,
+    private readonly privacyService: PrivacyService,
   ) {}
 
   async getDashboard() {
-    const [users, vehicles, bookings] = await Promise.all([
+    const [users, vehicles, bookings, privacyRequests] = await Promise.all([
       this.prisma.user.count(),
       this.prisma.vehicle.count(),
       this.prisma.booking.count(),
+      this.prisma.privacyRequest.count(),
     ]);
 
     return {
@@ -22,19 +31,47 @@ export class AdminService {
         users,
         vehicles,
         bookings,
+        privacyRequests,
       },
     };
   }
 
   async getUsers() {
-    return this.prisma.user.findMany({
+    const users = await this.prisma.user.findMany({
       include: {
-        profile: true,
+        profile: {
+          select: {
+            fullName: true,
+            city: true,
+            state: true,
+            avatarUrl: true,
+            documentVerificationStatus: true,
+            driverLicenseVerification: true,
+            documentImageUrl: true,
+            driverLicenseImageUrl: true,
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',
       },
     });
+
+    return users.map((user) => ({
+      ...user,
+      profile: user.profile
+        ? {
+            fullName: user.profile.fullName,
+            city: user.profile.city,
+            state: user.profile.state,
+            avatarUrl: user.profile.avatarUrl,
+            documentVerificationStatus: user.profile.documentVerificationStatus,
+            driverLicenseVerification: user.profile.driverLicenseVerification,
+            hasDocumentImage: !!user.profile.documentImageUrl,
+            hasDriverLicenseImage: !!user.profile.driverLicenseImageUrl,
+          }
+        : null,
+    }));
   }
 
   async getVehicles() {
@@ -134,6 +171,29 @@ export class AdminService {
     await this.cacheQueueService.invalidateByPrefix('vehicles:list:');
 
     return vehicle;
+  }
+
+  async getUserVerificationFileUrl(
+    userId: string,
+    type: 'document' | 'driverLicense',
+  ) {
+    return this.profilesService.getVerificationFileUrl(userId, type);
+  }
+
+  async getPrivacyRequests() {
+    return this.privacyService.getAdminRequests();
+  }
+
+  async updatePrivacyRequest(
+    requestId: string,
+    status: PrivacyRequestStatus,
+    resolutionNotes?: string,
+  ) {
+    return this.privacyService.updateRequestStatus({
+      requestId,
+      status,
+      resolutionNotes,
+    });
   }
 
   private async updateVerificationStatus(

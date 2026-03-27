@@ -101,6 +101,25 @@ enum PaymentMethod {
   BANK_TRANSFER
 }
 
+enum PrivacyRequestType {
+  ACCESS
+  PORTABILITY
+  DELETION
+  CORRECTION
+  RESTRICTION
+  OBJECTION
+  ANONYMIZATION
+  REVOCATION
+}
+
+enum PrivacyRequestStatus {
+  OPEN
+  IN_REVIEW
+  COMPLETED
+  REJECTED
+  CANCELLED
+}
+
 enum NotificationType {
   BOOKING_REQUEST
   BOOKING_APPROVED
@@ -139,6 +158,8 @@ model User {
   status               UserStatus             @default(ACTIVE)
   refreshTokenHash     String?
   lastLoginAt          DateTime?
+  analyticsConsentGranted Boolean             @default(false)
+  analyticsConsentUpdatedAt DateTime?
   createdAt            DateTime               @default(now())
   updatedAt            DateTime               @updatedAt
   profile              Profile?
@@ -155,6 +176,7 @@ model User {
   favorites            Favorite[]
   searchAlerts         SearchAlert[]
   supportConversations SupportConversation[]
+  privacyRequests      PrivacyRequest[]
 
   @@index([role, status])
 }
@@ -506,4 +528,21 @@ model SiteVisit {
   @@index([visitorId, createdAt])
   @@index([createdAt])
   @@index([isFirstVisit, createdAt])
+}
+
+model PrivacyRequest {
+  id              String               @id @default(uuid())
+  userId          String
+  type            PrivacyRequestType
+  status          PrivacyRequestStatus @default(OPEN)
+  notes           String?
+  resolutionNotes String?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  completedAt     DateTime?
+  user            User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@index([type, createdAt])
 }

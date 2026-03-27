@@ -38,6 +38,21 @@ export type VerificationStatus =
   | 'PENDING'
   | 'APPROVED'
   | 'REJECTED';
+export type PrivacyRequestType =
+  | 'ACCESS'
+  | 'PORTABILITY'
+  | 'DELETION'
+  | 'CORRECTION'
+  | 'RESTRICTION'
+  | 'OBJECTION'
+  | 'ANONYMIZATION'
+  | 'REVOCATION';
+export type PrivacyRequestStatus =
+  | 'OPEN'
+  | 'IN_REVIEW'
+  | 'COMPLETED'
+  | 'REJECTED'
+  | 'CANCELLED';
 
 export interface VehicleImage {
   id: string;
@@ -58,6 +73,8 @@ export interface Profile {
   driverLicenseNumber?: string | null;
   documentImageUrl?: string | null;
   driverLicenseImageUrl?: string | null;
+  hasDocumentImage?: boolean;
+  hasDriverLicenseImage?: boolean;
   documentVerificationStatus?: VerificationStatus;
   driverLicenseVerification?: VerificationStatus;
 }
@@ -115,6 +132,10 @@ export interface User {
   role: UserRole;
   status: string;
   profile: Profile | null;
+  lastLoginAt?: string | null;
+  createdAt?: string;
+  analyticsConsentGranted?: boolean;
+  analyticsConsentUpdatedAt?: string | null;
 }
 
 export interface PublicUserProfile {
@@ -139,8 +160,39 @@ export interface PublicUserProfile {
 
 export interface AuthResponse {
   accessToken: string;
-  refreshToken: string;
+  refreshToken?: string;
   user: User;
+}
+
+export interface PrivacyRequestItem {
+  id: string;
+  type: PrivacyRequestType;
+  status: PrivacyRequestStatus;
+  notes?: string | null;
+  resolutionNotes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string | null;
+}
+
+export interface PrivacyPolicySummary {
+  version: string;
+  contactEmail: string;
+  sections: Array<{
+    title: string;
+    summary: string;
+  }>;
+}
+
+export interface PrivacyPreferences {
+  analyticsConsentGranted: boolean;
+  analyticsConsentUpdatedAt?: string | null;
+}
+
+export interface PrivacyCenterOverview {
+  policy: PrivacyPolicySummary;
+  preferences: PrivacyPreferences;
+  requests: PrivacyRequestItem[];
 }
 
 export interface VehicleCardItem {

@@ -5,6 +5,7 @@ import { catchError, finalize, map, Observable, of, shareReplay, tap } from 'rxj
 import { environment } from '../../../environments/environment';
 import { AuthResponse, Profile, User, UserRole } from '../models/domain.models';
 import { AppLoggerService } from './app-logger.service';
+import { PrivacyPreferencesService } from './privacy-preferences.service';
 
 type LoginPayload = {
   email: string;
@@ -31,19 +32,19 @@ export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
   private readonly logger = inject(AppLoggerService);
-  private readonly storage = globalThis.localStorage;
+  private readonly privacyPreferencesService = inject(PrivacyPreferencesService);
+  private readonly storage = globalThis.sessionStorage;
+  private readonly persistentStorage = globalThis.localStorage;
 
   private readonly accessTokenKey = 'velo.accessToken';
-  private readonly refreshTokenKey = 'velo.refreshToken';
   private readonly userKey = 'velo.user';
+  private readonly sessionHintKey = 'velo.sessionHint';
 
   private readonly accessTokenSignal = signal<string | null>(
     this.readStoredValue(this.accessTokenKey),
   );
-  private readonly refreshTokenSignal = signal<string | null>(
-    this.readStoredValue(this.refreshTokenKey),
-  );
   private readonly currentUserSignal = signal<User | null>(this.readStoredUser());
+  private readonly sessionHintSignal = signal(this.readSessionHint());
   private readonly restoringSessionSignal = signal(false);
   private restoreSessionRequest$?: Observable<boolean>;
 
@@ -56,7 +57,7 @@ export class AuthService {
     this.hasValidAccessToken(this.accessTokenSignal()),
   );
   readonly hasSession = computed(
-    () => !!this.accessTokenSignal() || !!this.refreshTokenSignal(),
+    () => !!this.accessTokenSignal() || this.sessionHintSignal(),
   );
   readonly isRestoringSession = computed(() => this.restoringSessionSignal());
 
@@ -159,10 +160,8 @@ export class AuthService {
       });
     }
 
-    const refreshToken = this.refreshTokenSignal();
-
-    if (!refreshToken) {
-      this.logger.debug('auth', 'restore_session_no_refresh_token');
+    if (!this.sessionHintSignal() && !forceRefresh) {
+      this.logger.debug('auth', 'restore_session_without_hint');
       if (this.accessTokenSignal()) {
         this.clearSession();
       }
@@ -173,9 +172,7 @@ export class AuthService {
     this.restoringSessionSignal.set(true);
 
     this.restoreSessionRequest$ = this.http
-      .post<AuthResponse>(`${environment.apiBaseUrl}/auth/refresh`, {
-        refreshToken,
-      })
+      .post<AuthResponse>(`${environment.apiBaseUrl}/auth/refresh`, {})
       .pipe(
         tap({
           next: (response) => {
@@ -208,6 +205,9 @@ export class AuthService {
     this.logger.info('auth', 'logout_requested', {
       userId: this.currentUserSignal()?.id ?? null,
     });
+    this.http.post(`${environment.apiBaseUrl}/auth/logout`, {}).subscribe({
+      error: () => undefined,
+    });
     this.clearSession();
     this.router.navigate(['/auth/login']);
   }
@@ -217,19 +217,19 @@ export class AuthService {
       userId: this.currentUserSignal()?.id ?? null,
     });
     this.storage.removeItem(this.accessTokenKey);
-    this.storage.removeItem(this.refreshTokenKey);
     this.storage.removeItem(this.userKey);
+    this.persistentStorage.removeItem(this.sessionHintKey);
     this.accessTokenSignal.set(null);
-    this.refreshTokenSignal.set(null);
     this.currentUserSignal.set(null);
+    this.sessionHintSignal.set(false);
   }
 
   getAccessToken() {
     return this.accessTokenSignal();
   }
 
-  getRefreshToken() {
-    return this.refreshTokenSignal();
+  hasSessionHint() {
+    return this.sessionHintSignal();
   }
 
   getSessionUserId() {
@@ -256,16 +256,39 @@ export class AuthService {
       ...currentUser,
       profile: {
         ...currentUser.profile,
-        ...profile,
+        fullName: profile.fullName ?? currentUser.profile?.fullName ?? '',
+        phone: currentUser.profile?.phone ?? '',
+        city: profile.city ?? currentUser.profile?.city ?? '',
+        state: profile.state ?? currentUser.profile?.state ?? '',
+        bio: currentUser.profile?.bio ?? null,
+        avatarUrl: profile.avatarUrl ?? currentUser.profile?.avatarUrl ?? null,
+        documentNumber: null,
+        driverLicenseNumber: null,
+        documentImageUrl: null,
+        driverLicenseImageUrl: null,
+        hasDocumentImage:
+          profile.hasDocumentImage ?? currentUser.profile?.hasDocumentImage ?? false,
+        hasDriverLicenseImage:
+          profile.hasDriverLicenseImage
+          ?? currentUser.profile?.hasDriverLicenseImage
+          ?? false,
+        documentVerificationStatus:
+          profile.documentVerificationStatus
+          ?? currentUser.profile?.documentVerificationStatus
+          ?? 'NOT_SUBMITTED',
+        driverLicenseVerification:
+          profile.driverLicenseVerification
+          ?? currentUser.profile?.driverLicenseVerification
+          ?? 'NOT_SUBMITTED',
       },
     });
   }
 
   private setSession(response: AuthResponse) {
     this.storage.setItem(this.accessTokenKey, response.accessToken);
-    this.storage.setItem(this.refreshTokenKey, response.refreshToken);
     this.accessTokenSignal.set(response.accessToken);
-    this.refreshTokenSignal.set(response.refreshToken);
+    this.persistentStorage.setItem(this.sessionHintKey, '1');
+    this.sessionHintSignal.set(true);
     this.logger.debug('auth', 'session_updated', {
       userId: response.user.id,
       role: response.user.role,
@@ -274,12 +297,16 @@ export class AuthService {
   }
 
   private persistUser(user: User) {
-    this.storage.setItem(this.userKey, JSON.stringify(user));
+    const safeUser = this.toSafeSessionUser(user);
+    this.storage.setItem(this.userKey, JSON.stringify(safeUser));
     this.logger.debug('auth', 'user_persisted', {
-      userId: user.id,
-      role: user.role,
+      userId: safeUser.id,
+      role: safeUser.role,
     });
-    this.currentUserSignal.set(user);
+    this.privacyPreferencesService.hydrateAnalyticsConsent(
+      safeUser.analyticsConsentGranted,
+    );
+    this.currentUserSignal.set(safeUser);
   }
 
   private readStoredUser() {
@@ -289,6 +316,10 @@ export class AuthService {
 
   private readStoredValue(key: string) {
     return this.storage.getItem(key);
+  }
+
+  private readSessionHint() {
+    return this.persistentStorage.getItem(this.sessionHintKey) === '1';
   }
 
   private hasValidAccessToken(token: string | null) {
@@ -346,5 +377,38 @@ export class AuthService {
       status: 'ACTIVE',
       profile: null,
     } satisfies User;
+  }
+
+  private toSafeSessionUser(user: User): User {
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+      lastLoginAt: user.lastLoginAt ?? null,
+      createdAt: user.createdAt,
+      analyticsConsentGranted: user.analyticsConsentGranted,
+      analyticsConsentUpdatedAt: user.analyticsConsentUpdatedAt ?? null,
+      profile: user.profile
+        ? {
+            fullName: user.profile.fullName,
+            phone: '',
+            city: user.profile.city,
+            state: user.profile.state,
+            bio: null,
+            avatarUrl: user.profile.avatarUrl ?? null,
+            documentNumber: null,
+            driverLicenseNumber: null,
+            documentImageUrl: null,
+            driverLicenseImageUrl: null,
+            hasDocumentImage: false,
+            hasDriverLicenseImage: false,
+            documentVerificationStatus:
+              user.profile.documentVerificationStatus ?? 'NOT_SUBMITTED',
+            driverLicenseVerification:
+              user.profile.driverLicenseVerification ?? 'NOT_SUBMITTED',
+          }
+        : null,
+    };
   }
 }

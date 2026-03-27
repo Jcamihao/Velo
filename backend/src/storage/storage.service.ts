@@ -7,15 +7,28 @@ import { v4 as uuidv4 } from 'uuid';
 @Injectable()
 export class StorageService {
   private readonly logger = new Logger(StorageService.name);
-  private readonly bucket: string;
+  private readonly publicBucket: string;
+  private readonly privateBucket: string;
   private readonly publicUrl: string;
+  private readonly privateFileUrlExpiresInSeconds: number;
   private readonly client: MinioClient;
 
   constructor(private readonly configService: ConfigService) {
-    this.bucket = this.configService.get<string>('storage.bucket', 'velo');
+    this.publicBucket = this.configService.get<string>(
+      'storage.bucket',
+      'velo-public',
+    );
+    this.privateBucket = this.configService.get<string>(
+      'storage.privateBucket',
+      'velo-private',
+    );
     this.publicUrl = this.configService.get<string>(
       'storage.publicUrl',
-      'http://localhost:9000/velo',
+      'http://localhost:9000/velo-public',
+    );
+    this.privateFileUrlExpiresInSeconds = this.configService.get<number>(
+      'storage.privateFileUrlExpiresInSeconds',
+      600,
     );
     this.client = new MinioClient({
       endPoint: this.configService.get<string>('storage.endpoint', 'localhost'),
@@ -34,16 +47,12 @@ export class StorageService {
 
   async ensureBucketExists() {
     try {
-      const exists = await this.client.bucketExists(this.bucket);
-
-      if (!exists) {
-        await this.client.makeBucket(this.bucket);
-      }
-
-      await this.ensureBucketIsPublic();
+      await this.ensureBucket(this.publicBucket);
+      await this.ensureBucket(this.privateBucket);
+      await this.ensureBucketIsPublic(this.publicBucket);
     } catch (error) {
       this.logger.warn(
-        'Não foi possível validar/criar o bucket do MinIO. Uploads podem falhar até o serviço ficar disponível.',
+        'Não foi possível validar/criar os buckets do MinIO. Uploads podem falhar até o serviço ficar disponível.',
       );
     }
   }
@@ -55,15 +64,7 @@ export class StorageService {
     const extension = extname(file.originalname || '');
     const objectKey = `${folder}/${uuidv4()}${extension}`;
 
-    await this.client.putObject(
-      this.bucket,
-      objectKey,
-      file.buffer,
-      file.size,
-      {
-        'Content-Type': file.mimetype,
-      },
-    );
+    await this.putObject(this.publicBucket, objectKey, file);
 
     return {
       key: objectKey,
@@ -71,8 +72,18 @@ export class StorageService {
     };
   }
 
-  async deleteObject(objectKey: string) {
-    await this.client.removeObject(this.bucket, objectKey);
+  async uploadPrivateFile(
+    file: Express.Multer.File,
+    folder: 'documents',
+  ) {
+    const extension = extname(file.originalname || '');
+    const objectKey = `${folder}/${uuidv4()}${extension}`;
+
+    await this.putObject(this.privateBucket, objectKey, file);
+
+    return {
+      key: objectKey,
+    };
   }
 
   async deletePublicFileByUrl(url: string | null | undefined) {
@@ -82,10 +93,61 @@ export class StorageService {
       return;
     }
 
-    await this.deleteObject(objectKey);
+    await this.deleteObjectFromBucket(this.publicBucket, objectKey);
   }
 
-  private async ensureBucketIsPublic() {
+  async deleteObject(objectKey: string) {
+    await this.deleteObjectFromBucket(this.publicBucket, objectKey);
+  }
+
+  async deletePrivateFileByStoredValue(value: string | null | undefined) {
+    if (!value) {
+      return;
+    }
+
+    const legacyPublicObjectKey = this.extractObjectKeyFromPublicUrl(value);
+
+    if (legacyPublicObjectKey) {
+      await this.deleteObjectFromBucket(this.publicBucket, legacyPublicObjectKey);
+      return;
+    }
+
+    await this.deleteObjectFromBucket(this.privateBucket, value).catch((error) => {
+      this.logger.warn(
+        `Nao foi possivel remover o arquivo privado ${value}: ${
+          error instanceof Error ? error.message : 'Erro desconhecido'
+        }`,
+      );
+    });
+  }
+
+  async getPrivateFileUrl(value: string | null | undefined) {
+    if (!value) {
+      return null;
+    }
+
+    const legacyPublicUrl = this.normalizeLegacyPublicUrl(value);
+
+    if (legacyPublicUrl) {
+      return legacyPublicUrl;
+    }
+
+    return this.client.presignedGetObject(
+      this.privateBucket,
+      value,
+      this.privateFileUrlExpiresInSeconds,
+    );
+  }
+
+  private async ensureBucket(bucket: string) {
+    const exists = await this.client.bucketExists(bucket);
+
+    if (!exists) {
+      await this.client.makeBucket(bucket);
+    }
+  }
+
+  private async ensureBucketIsPublic(bucket: string) {
     const publicReadPolicy = {
       Version: '2012-10-17',
       Statement: [
@@ -95,7 +157,7 @@ export class StorageService {
             AWS: ['*'],
           },
           Action: ['s3:GetBucketLocation'],
-          Resource: [`arn:aws:s3:::${this.bucket}`],
+          Resource: [`arn:aws:s3:::${bucket}`],
         },
         {
           Effect: 'Allow',
@@ -103,15 +165,29 @@ export class StorageService {
             AWS: ['*'],
           },
           Action: ['s3:GetObject'],
-          Resource: [`arn:aws:s3:::${this.bucket}/*`],
+          Resource: [`arn:aws:s3:::${bucket}/*`],
         },
       ],
     };
 
     await this.client.setBucketPolicy(
-      this.bucket,
+      bucket,
       JSON.stringify(publicReadPolicy),
     );
+  }
+
+  private async putObject(
+    bucket: string,
+    objectKey: string,
+    file: Express.Multer.File,
+  ) {
+    await this.client.putObject(bucket, objectKey, file.buffer, file.size, {
+      'Content-Type': file.mimetype,
+    });
+  }
+
+  private async deleteObjectFromBucket(bucket: string, objectKey: string) {
+    await this.client.removeObject(bucket, objectKey);
   }
 
   private extractObjectKeyFromPublicUrl(url: string | null | undefined) {
@@ -146,5 +222,13 @@ export class StorageService {
       );
       return null;
     }
+  }
+
+  private normalizeLegacyPublicUrl(value: string) {
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+      return value;
+    }
+
+    return null;
   }
 }

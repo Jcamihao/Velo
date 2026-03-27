@@ -1,6 +1,6 @@
-import { Controller, Get, Param, Patch } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
+import { PrivacyRequestStatus, Role } from '@prisma/client';
 import { Roles } from '../common/decorators/roles.decorator';
 import { AdminService } from './admin.service';
 
@@ -33,6 +33,38 @@ export class AdminController {
   @ApiOperation({ summary: 'Lista reservas da plataforma' })
   getBookings() {
     return this.adminService.getBookings();
+  }
+
+  @Get('users/:id/verification-file')
+  @ApiOperation({ summary: 'Gera uma URL temporária para o documento ou CNH de um usuário' })
+  getUserVerificationFileUrl(
+    @Param('id') userId: string,
+    @Query('type') type: 'document' | 'driverLicense',
+  ) {
+    return this.adminService.getUserVerificationFileUrl(userId, type);
+  }
+
+  @Get('privacy/requests')
+  @ApiOperation({ summary: 'Lista solicitações LGPD para tratamento administrativo' })
+  getPrivacyRequests() {
+    return this.adminService.getPrivacyRequests();
+  }
+
+  @Patch('privacy/requests/:id')
+  @ApiOperation({ summary: 'Atualiza o status de uma solicitação LGPD' })
+  updatePrivacyRequest(
+    @Param('id') requestId: string,
+    @Body()
+    dto: {
+      status: PrivacyRequestStatus;
+      resolutionNotes?: string;
+    },
+  ) {
+    return this.adminService.updatePrivacyRequest(
+      requestId,
+      dto.status,
+      dto.resolutionNotes,
+    );
   }
 
   @Patch('users/:id/block')

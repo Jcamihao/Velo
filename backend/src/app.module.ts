@@ -17,6 +17,7 @@ import { storageConfig } from './config/storage.config';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProfilesModule } from './profiles/profiles.module';
+import { PrivacyModule } from './privacy/privacy.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { StorageModule } from './storage/storage.module';
 import { UsersModule } from './users/users.module';
@@ -43,6 +44,7 @@ import { SearchAlertsModule } from './search-alerts/search-alerts.module';
     StorageModule,
     UsersModule,
     ProfilesModule,
+    PrivacyModule,
     AuthModule,
     ChatModule,
     AvailabilityModule,

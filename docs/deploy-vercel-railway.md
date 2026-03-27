@@ -25,7 +25,12 @@ JWT_ACCESS_SECRET=troque_isto
 JWT_ACCESS_EXPIRES_IN=15m
 JWT_REFRESH_SECRET=troque_isto
 JWT_REFRESH_EXPIRES_IN=7d
+JWT_REFRESH_COOKIE_NAME=velo_refresh_token
+JWT_REFRESH_COOKIE_SECURE=true
+JWT_REFRESH_COOKIE_SAME_SITE=lax
 PLATFORM_FEE_RATE=0.12
+PRIVACY_CONTACT_EMAIL=privacidade@seudominio.com
+PRIVACY_POLICY_VERSION=2026-03-27
 
 REDIS_URL=redis://...
 CACHE_TTL_SECONDS=300
@@ -35,7 +40,9 @@ MINIO_PORT=443
 MINIO_USE_SSL=true
 MINIO_ACCESS_KEY=...
 MINIO_SECRET_KEY=...
-MINIO_BUCKET=velo
+MINIO_BUCKET=velo-public
+MINIO_PRIVATE_BUCKET=velo-private
+MINIO_PRIVATE_URL_EXPIRES_IN_SECONDS=600
 MINIO_PUBLIC_URL=https://SEU_BUCKET_PUBLICO
 ```
 
@@ -43,7 +50,7 @@ MINIO_PUBLIC_URL=https://SEU_BUCKET_PUBLICO
 
 - `DATABASE_URL` deve vir do PostgreSQL do Railway.
 - `REDIS_URL` deve vir do Redis do Railway.
-- O projeto precisa de storage compatível com S3 para upload de imagens. Se você não for usar MinIO fora do Docker, pode apontar essas variáveis para Cloudflare R2, AWS S3 ou outro provedor S3 compatível.
+- O projeto precisa de storage compatível com S3 para upload de imagens públicas e documentos privados. Se você não for usar MinIO fora do Docker, pode apontar essas variáveis para Cloudflare R2, AWS S3 ou outro provedor S3 compatível.
 - O `APP_URL` precisa ser a URL pública final do backend no Railway.
 - O container já sobe executando `prisma db push` antes da API.
 
@@ -79,3 +86,4 @@ Essas variáveis geram o arquivo `assets/app-config.js` no build e fazem o Angul
 - Frontend usando a URL do Railway, não `localhost`
 - WebSocket conectado na mesma base pública do backend
 - Bucket público de imagens configurado
+- Bucket privado de documentos configurado
