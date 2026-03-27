@@ -105,7 +105,7 @@ Endpoints principais implementados:
 - `PATCH /admin/users/:id/block`
 - `PATCH /admin/vehicles/:id/deactivate`
 
-Swagger fica disponível em `http://localhost:3000/api/docs`.
+No Docker Compose padrão, Swagger fica disponível em `http://localhost:3002/api/docs`.
 
 ## Frontend
 
@@ -139,15 +139,15 @@ cp .env.example .env
 docker compose up --build
 ```
 
-Frontend: `http://localhost:4200`  
-Backend: `http://localhost:3000/api/v1`  
-Swagger: `http://localhost:3000/api/docs`  
-MinIO Console: `http://localhost:9001`
+Frontend: `http://localhost:4202`  
+Backend: `http://localhost:3002/api/v1`  
+Swagger: `http://localhost:3002/api/docs`  
+MinIO Console: `http://localhost:9005`
 
 Se alguma porta já estiver em uso na sua máquina, ajuste no `.env` antes de subir. Exemplo:
 
 ```env
-POSTGRES_HOST_PORT=5433
+POSTGRES_HOST_PORT=5436
 ```
 
 ### Opção 2: apps locais + infra em containers

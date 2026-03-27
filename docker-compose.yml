@@ -6,7 +6,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-velo}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-velo}
     ports:
-      - '${POSTGRES_HOST_PORT:-5432}:5432'
+      - '${POSTGRES_HOST_PORT:-5435}:5432'
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -18,7 +18,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - '${REDIS_HOST_PORT:-6379}:6379'
+      - '${REDIS_HOST_PORT:-6382}:6379'
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
@@ -32,8 +32,8 @@ services:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
     ports:
-      - '${MINIO_API_HOST_PORT:-9000}:9000'
-      - '${MINIO_CONSOLE_HOST_PORT:-9001}:9001'
+      - '${MINIO_API_HOST_PORT:-9004}:9000'
+      - '${MINIO_CONSOLE_HOST_PORT:-9005}:9001'
     volumes:
       - minio-data:/data
 
@@ -60,7 +60,7 @@ services:
         condition: service_completed_successfully
     environment:
       PORT: ${PORT:-3000}
-      APP_URL: ${APP_URL:-http://localhost:3000}
+      APP_URL: ${APP_URL:-http://localhost:3002}
       DATABASE_URL: ${DATABASE_URL:-postgresql://velo:velo@postgres:5432/velo?schema=public}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-velo_access_secret}
       JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN:-15m}
@@ -75,17 +75,21 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
       MINIO_BUCKET: ${MINIO_BUCKET:-velo}
-      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9000/velo}
+      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9004/velo}
     ports:
-      - '${BACKEND_HOST_PORT:-3000}:3000'
+      - '${BACKEND_HOST_PORT:-3002}:3000'
 
   frontend:
     build:
       context: ./frontend
+      args:
+        FRONTEND_API_BASE_URL: ${FRONTEND_API_BASE_URL:-http://localhost:3002/api/v1}
+        FRONTEND_WS_BASE_URL: ${FRONTEND_WS_BASE_URL:-http://localhost:3002}
+        FRONTEND_CLIENT_LOGGING_ENABLED: ${FRONTEND_CLIENT_LOGGING_ENABLED:-true}
     depends_on:
       - backend
     ports:
-      - '${FRONTEND_HOST_PORT:-4200}:80'
+      - '${FRONTEND_HOST_PORT:-4202}:80'
 
 volumes:
   postgres-data:
