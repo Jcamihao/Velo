@@ -80,6 +80,22 @@
         </div>
       </button>
 
+      <button type="button" class="menu-link" *ngIf="authService.currentUser()" (click)="openPrivacyCenter()">
+        <span class="material-icons" aria-hidden="true">shield</span>
+        <div>
+          <strong>Central de privacidade</strong>
+          <small>Exportação, preferências e solicitações LGPD</small>
+        </div>
+      </button>
+
+      <button type="button" class="menu-link" (click)="openPrivacyPolicy()">
+        <span class="material-icons" aria-hidden="true">policy</span>
+        <div>
+          <strong>Privacidade</strong>
+          <small>Como a Velo trata e protege seus dados</small>
+        </div>
+      </button>
+
     </nav>
 
     <div class="menu-drawer__footer" *ngIf="!authService.currentUser()">
@@ -93,3 +109,66 @@
 </div>
 
 <app-bottom-nav *ngIf="showBottomNav()" [menuOpen]="menuOpen" (menuToggle)="toggleMenu()"></app-bottom-nav>
+
+<section class="privacy-banner" *ngIf="!privacyPreferencesService.hasAnsweredAnalyticsChoice()">
+  <div>
+    <strong>Preferências de privacidade</strong>
+    <p>
+      A Velo só ativa analytics não essencial com a sua permissão. Você pode mudar isso depois na central de privacidade.
+    </p>
+  </div>
+
+  <div class="privacy-banner__actions">
+    <button type="button" class="btn btn-secondary" (click)="setAnalyticsConsent(false)">
+      Recusar
+    </button>
+    <button type="button" class="btn btn-primary" (click)="setAnalyticsConsent(true)">
+      Permitir
+    </button>
+  </div>
+</section>
+
+<section
+  class="install-banner"
+  *ngIf="pwaInstallService.canShowBanner()"
+  [class.install-banner--stacked]="!privacyPreferencesService.hasAnsweredAnalyticsChoice()"
+>
+  <div>
+    <strong>Instale a Velo no celular</strong>
+    <p *ngIf="pwaInstallService.canPromptInstall(); else manualInstallHint">
+      Abra a Velo como aplicativo, com acesso direto pela tela inicial e experiência mais fluida no mobile.
+    </p>
+
+    <ng-template #manualInstallHint>
+      <p *ngIf="pwaInstallService.showIosInstallHint(); else androidInstallHint">
+        No iPhone, toque em Compartilhar e depois em "Adicionar à Tela de Início" para usar a Velo como app.
+      </p>
+    </ng-template>
+
+    <ng-template #androidInstallHint>
+      <p *ngIf="pwaInstallService.showAndroidInstallHint(); else genericInstallHint">
+        No Android, abra o menu do navegador e toque em "Instalar app" ou "Adicionar à tela inicial" se o botão ainda não aparecer.
+      </p>
+    </ng-template>
+
+    <ng-template #genericInstallHint>
+      <p>
+        Use o menu do navegador para adicionar a Velo à tela inicial enquanto o prompt automático de instalação não estiver disponível.
+      </p>
+    </ng-template>
+  </div>
+
+  <div class="install-banner__actions">
+    <button type="button" class="btn btn-secondary" (click)="dismissInstallBanner()">
+      Agora não
+    </button>
+    <button
+      *ngIf="pwaInstallService.canPromptInstall()"
+      type="button"
+      class="btn btn-primary"
+      (click)="installApp()"
+    >
+      Instalar
+    </button>
+  </div>
+</section>

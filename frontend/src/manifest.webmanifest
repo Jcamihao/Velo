@@ -1,18 +1,37 @@
 {
   "name": "Velo",
   "short_name": "Velo",
+  "id": "/",
+  "lang": "pt-BR",
   "theme_color": "#2563EB",
   "background_color": "#F9FAFB",
   "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui",
+    "browser"
+  ],
+  "orientation": "portrait",
   "scope": "/",
   "start_url": "/",
   "description": "Marketplace de aluguel de carros entre pessoas.",
+  "categories": [
+    "travel",
+    "lifestyle",
+    "business"
+  ],
   "icons": [
     {
       "src": "assets/logo_velo.png",
-      "sizes": "512x512",
+      "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "assets/icons/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
   ]
 }

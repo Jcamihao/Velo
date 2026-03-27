@@ -31,6 +31,7 @@ Marketplace MVP de aluguel de carros entre pessoas, inspirado no fluxo mobile da
 │       ├── reviews
 │       ├── notifications
 │       ├── admin
+│       ├── privacy
 │       ├── storage
 │       ├── cache-queue
 │       ├── common
@@ -76,7 +77,14 @@ Endpoints principais implementados:
 - `POST /auth/register`
 - `POST /auth/login`
 - `POST /auth/refresh`
+- `POST /auth/logout`
 - `GET /auth/me`
+- `GET /privacy/policy`
+- `GET /privacy/me`
+- `PATCH /privacy/me/preferences`
+- `GET /privacy/me/export`
+- `GET /privacy/me/requests`
+- `POST /privacy/me/requests`
 - `GET /vehicles`
 - `GET /vehicles/me`
 - `GET /vehicles/:id`
@@ -102,6 +110,7 @@ Endpoints principais implementados:
 - `GET /admin/users`
 - `GET /admin/vehicles`
 - `GET /admin/bookings`
+- `GET /admin/privacy/requests`
 - `PATCH /admin/users/:id/block`
 - `PATCH /admin/vehicles/:id/deactivate`
 
@@ -118,6 +127,8 @@ Fluxos disponíveis no Angular:
 - login e cadastro
 - minhas reservas
 - perfil com notificações
+- política de privacidade pública
+- central de privacidade autenticada
 - painel do proprietário
 - painel admin
 
@@ -129,6 +140,11 @@ Componentes obrigatórios implementados:
 - galeria de imagens
 - botão fixo mobile
 - bottom navigation
+
+Preparação mobile adicional:
+
+- base do Capacitor configurada para iOS em `frontend/capacitor.config.ts`
+- projeto nativo iOS gerado em `frontend/ios`
 
 ## Rodando localmente
 
@@ -178,6 +194,17 @@ Credenciais sugeridas:
 
 Os wireframes textuais mobile first estão em [docs/wireframes.md](./docs/wireframes.md).
 
+## Privacidade e LGPD
+
+- política resumida: [docs/privacy-policy.md](./docs/privacy-policy.md)
+- operação e atendimento: [docs/lgpd-operations.md](./docs/lgpd-operations.md)
+- retenção de dados: [docs/data-retention.md](./docs/data-retention.md)
+- playbook de QA: [docs/qa-playbook.md](./docs/qa-playbook.md)
+
 ## Deploy
 
 Guia de produção para frontend no Vercel e backend no Railway em [docs/deploy-vercel-railway.md](./docs/deploy-vercel-railway.md).
+
+## iOS com Capacitor
+
+Guia para abrir o Velo no Xcode e testar em iPhone em [docs/ios-capacitor.md](./docs/ios-capacitor.md).

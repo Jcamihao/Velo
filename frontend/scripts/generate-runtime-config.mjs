@@ -10,11 +10,11 @@ const outputPath = path.join(projectRoot, 'src', 'assets', 'app-config.js');
 const apiBaseUrl =
   process.env.FRONTEND_API_BASE_URL ??
   process.env.API_BASE_URL ??
-  'http://localhost:3000/api/v1';
+  'http://localhost:3002/api/v1';
 const wsBaseUrl =
   process.env.FRONTEND_WS_BASE_URL ??
   process.env.WS_BASE_URL ??
-  'http://localhost:3000';
+  'http://localhost:3002';
 const clientLoggingEnabled =
   (process.env.FRONTEND_CLIENT_LOGGING_ENABLED ??
     process.env.CLIENT_LOGGING_ENABLED ??

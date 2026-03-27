@@ -6,6 +6,8 @@
     "build": "npm --prefix backend run build && npm --prefix frontend run build",
     "dev:backend": "npm --prefix backend run start:dev",
     "dev:frontend": "npm --prefix frontend run start",
+    "ios:prepare": "npm --prefix frontend run ios:prepare",
+    "ios:open": "npm --prefix frontend run cap:open:ios",
     "dev:infra": "docker compose up -d --force-recreate postgres redis minio minio-create-bucket",
     "compose:up": "docker compose up --build",
     "compose:down": "docker compose down -v",

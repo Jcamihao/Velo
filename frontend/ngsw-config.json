@@ -29,16 +29,39 @@
   ],
   "dataGroups": [
     {
-      "name": "api",
+      "name": "public-catalog",
       "urls": [
-        "http://localhost:3000/api/v1/**"
+        "/api/v1/vehicles",
+        "/api/v1/vehicles/**",
+        "http://localhost:3002/api/v1/vehicles",
+        "http://localhost:3002/api/v1/vehicles/**",
+        "http://127.0.0.1:3002/api/v1/vehicles",
+        "http://127.0.0.1:3002/api/v1/vehicles/**"
       ],
       "cacheConfig": {
-        "maxSize": 30,
-        "maxAge": "1h",
+        "maxSize": 40,
+        "maxAge": "30m",
+        "timeout": "10s",
+        "strategy": "freshness"
+      }
+    },
+    {
+      "name": "public-content",
+      "urls": [
+        "/api/v1/privacy/policy",
+        "/api/v1/reviews/vehicle/**",
+        "http://localhost:3002/api/v1/privacy/policy",
+        "http://localhost:3002/api/v1/reviews/vehicle/**",
+        "http://127.0.0.1:3002/api/v1/privacy/policy",
+        "http://127.0.0.1:3002/api/v1/reviews/vehicle/**"
+      ],
+      "cacheConfig": {
+        "maxSize": 20,
+        "maxAge": "12h",
         "timeout": "10s",
         "strategy": "freshness"
       }
     }
-  ]
+  ],
+  "navigationRequestStrategy": "freshness"
 }

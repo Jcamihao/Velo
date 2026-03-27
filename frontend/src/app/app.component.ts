@@ -6,6 +6,9 @@ import { filter, map, startWith } from 'rxjs';
 import { AuthService } from './core/services/auth.service';
 import { AnalyticsTrackingService } from './core/services/analytics-tracking.service';
 import { AppLoggerService } from './core/services/app-logger.service';
+import { PwaInstallService } from './core/services/pwa-install.service';
+import { PrivacyApiService } from './core/services/privacy-api.service';
+import { PrivacyPreferencesService } from './core/services/privacy-preferences.service';
 import { RouteTraceService } from './core/services/route-trace.service';
 import { BottomNavComponent } from './shared/components/bottom-nav.component';
 
@@ -20,6 +23,9 @@ export class AppComponent {
   private readonly router = inject(Router);
   private readonly logger = inject(AppLoggerService);
   private readonly analyticsTrackingService = inject(AnalyticsTrackingService);
+  private readonly privacyApiService = inject(PrivacyApiService);
+  protected readonly pwaInstallService = inject(PwaInstallService);
+  protected readonly privacyPreferencesService = inject(PrivacyPreferencesService);
   private readonly routeTraceService = inject(RouteTraceService);
   protected readonly authService = inject(AuthService);
   protected menuOpen = false;
@@ -125,6 +131,48 @@ export class AppComponent {
   protected goToLogin() {
     this.closeMenu();
     this.router.navigate(['/auth/login']);
+  }
+
+  protected openPrivacyPolicy() {
+    this.closeMenu();
+    this.router.navigate(['/privacy']);
+  }
+
+  protected openPrivacyCenter() {
+    this.closeMenu();
+
+    if (!this.authService.hasSession()) {
+      this.router.navigate(['/auth/login']);
+      return;
+    }
+
+    this.router.navigate(['/privacy-center']);
+  }
+
+  protected setAnalyticsConsent(granted: boolean) {
+    this.privacyPreferencesService.setAnalyticsConsent(granted);
+
+    if (this.authService.isAuthenticated()) {
+      this.privacyApiService.updateMyPreferences(granted).subscribe({
+        error: () => undefined,
+      });
+    }
+
+    if (granted) {
+      this.analyticsTrackingService.trackCurrentSession(
+        globalThis.location?.pathname
+          ? `${globalThis.location.pathname}${globalThis.location.search}`
+          : '/',
+      );
+    }
+  }
+
+  protected async installApp() {
+    await this.pwaInstallService.promptInstall();
+  }
+
+  protected dismissInstallBanner() {
+    this.pwaInstallService.dismissBanner();
   }
 
   readonly showBottomNav = () => {
