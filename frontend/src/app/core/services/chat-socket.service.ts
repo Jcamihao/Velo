@@ -1,6 +1,6 @@
 import { inject, Injectable, NgZone, signal } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
-import { Socket, io } from 'socket.io-client';
+import type { Socket } from 'socket.io-client';
 import { environment } from '../../../environments/environment';
 import { ChatMessage } from '../models/domain.models';
 import { AppLoggerService } from './app-logger.service';
@@ -13,6 +13,9 @@ export class ChatSocketService {
   private readonly zone = inject(NgZone);
 
   private socket?: Socket;
+  private socketBootstrapPromise: Promise<void> | null = null;
+  private socketBootstrapToken = 0;
+  private readonly pendingConversationJoins = new Set<string>();
   private readonly messageSubject = new Subject<ChatMessage>();
   private readonly conversationUpdatedSubject = new Subject<{
     conversationId: string;
@@ -50,26 +53,86 @@ export class ChatSocketService {
       return;
     }
 
-    this.socket = io(environment.wsBaseUrl, {
-      transports: ['websocket'],
-      auth: {
-        token,
-      },
-      withCredentials: true,
-    });
+    if (this.socketBootstrapPromise) {
+      return;
+    }
+
     this.transportConnectedSignal.set(false);
     this.selfPresenceSignal.set(false);
 
-    this.socket.on('connect', () => {
+    const bootstrapToken = ++this.socketBootstrapToken;
+    this.socketBootstrapPromise = this.bootstrapSocket(bootstrapToken);
+  }
+
+  joinConversation(conversationId: string) {
+    this.connect();
+    this.pendingConversationJoins.add(conversationId);
+    this.logger.info('chat-socket', 'join_conversation_requested', {
+      conversationId,
+    });
+
+    if (this.socket?.connected) {
+      this.flushPendingConversationJoins();
+    }
+  }
+
+  isConnected() {
+    return this.transportConnectedSignal();
+  }
+
+  isConfirmedOnline() {
+    return this.selfPresenceSignal();
+  }
+
+  disconnect() {
+    this.logger.info('chat-socket', 'disconnect_requested');
+    this.socketBootstrapToken += 1;
+    this.socketBootstrapPromise = null;
+    this.pendingConversationJoins.clear();
+    this.transportConnectedSignal.set(false);
+    this.selfPresenceSignal.set(false);
+    this.socket?.disconnect();
+    this.socket = undefined;
+  }
+
+  private async bootstrapSocket(bootstrapToken: number) {
+    try {
+      const { io } = await import('socket.io-client');
+      const token = this.authService.getAccessToken();
+
+      if (!token || bootstrapToken !== this.socketBootstrapToken || this.socket) {
+        return;
+      }
+
+      const socket = io(environment.wsBaseUrl, {
+        transports: ['websocket'],
+        auth: {
+          token,
+        },
+        withCredentials: true,
+      });
+
+      this.socket = socket;
+      this.bindSocketEvents(socket);
+    } finally {
+      if (bootstrapToken === this.socketBootstrapToken) {
+        this.socketBootstrapPromise = null;
+      }
+    }
+  }
+
+  private bindSocketEvents(socket: Socket) {
+    socket.on('connect', () => {
       this.zone.run(() => {
         this.transportConnectedSignal.set(true);
         this.logger.info('chat-socket', 'connected', {
-          socketId: this.socket?.id ?? null,
+          socketId: socket.id ?? null,
         });
+        this.flushPendingConversationJoins();
       });
     });
 
-    this.socket.on('disconnect', (reason) => {
+    socket.on('disconnect', (reason) => {
       this.zone.run(() => {
         this.transportConnectedSignal.set(false);
         this.selfPresenceSignal.set(false);
@@ -79,7 +142,7 @@ export class ChatSocketService {
       });
     });
 
-    this.socket.on('connect_error', (error) => {
+    socket.on('connect_error', (error) => {
       this.zone.run(() => {
         this.transportConnectedSignal.set(false);
         this.selfPresenceSignal.set(false);
@@ -89,7 +152,7 @@ export class ChatSocketService {
       });
     });
 
-    this.socket.on('chat:error', (payload: { message?: string }) => {
+    socket.on('chat:error', (payload: { message?: string }) => {
       this.zone.run(() => {
         this.logger.warn('chat-socket', 'server_error', {
           message: payload?.message ?? 'Erro desconhecido',
@@ -97,7 +160,7 @@ export class ChatSocketService {
       });
     });
 
-    this.socket.on('chat:presence:self', (payload: { isOnline?: boolean }) => {
+    socket.on('chat:presence:self', (payload: { isOnline?: boolean }) => {
       this.zone.run(() => {
         this.selfPresenceSignal.set(!!payload?.isOnline);
         this.logger.debug('chat-socket', 'self_presence_updated', {
@@ -106,7 +169,7 @@ export class ChatSocketService {
       });
     });
 
-    this.socket.on(
+    socket.on(
       'chat:presence-updated',
       (payload: { userId?: string; isOnline?: boolean }) => {
         this.zone.run(() => {
@@ -126,7 +189,7 @@ export class ChatSocketService {
       },
     );
 
-    this.socket.on('chat:message', (message: ChatMessage) => {
+    socket.on('chat:message', (message: ChatMessage) => {
       this.zone.run(() => {
         this.logger.debug('chat-socket', 'message_received', {
           conversationId: message.conversationId,
@@ -137,7 +200,7 @@ export class ChatSocketService {
       });
     });
 
-    this.socket.on(
+    socket.on(
       'chat:conversation-updated',
       (payload: { conversationId: string }) => {
         this.zone.run(() => {
@@ -148,27 +211,16 @@ export class ChatSocketService {
     );
   }
 
-  joinConversation(conversationId: string) {
-    this.connect();
-    this.logger.info('chat-socket', 'join_conversation_requested', {
-      conversationId,
+  private flushPendingConversationJoins() {
+    if (!this.socket?.connected || !this.pendingConversationJoins.size) {
+      return;
+    }
+
+    const pendingConversationIds = [...this.pendingConversationJoins];
+    this.pendingConversationJoins.clear();
+
+    pendingConversationIds.forEach((conversationId) => {
+      this.socket?.emit('chat:join', { conversationId });
     });
-    this.socket?.emit('chat:join', { conversationId });
-  }
-
-  isConnected() {
-    return this.transportConnectedSignal();
-  }
-
-  isConfirmedOnline() {
-    return this.selfPresenceSignal();
-  }
-
-  disconnect() {
-    this.logger.info('chat-socket', 'disconnect_requested');
-    this.transportConnectedSignal.set(false);
-    this.selfPresenceSignal.set(false);
-    this.socket?.disconnect();
-    this.socket = undefined;
   }
 }

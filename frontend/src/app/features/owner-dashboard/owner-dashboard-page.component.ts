@@ -50,6 +50,20 @@ type IdlePeriodItem = {
   label: string;
 };
 
+type ScheduleSummary = {
+  booked: number;
+  blocked: number;
+  free: number;
+};
+
+type FinancialSnapshot = {
+  revenue: number;
+  bookingCount: number;
+  occupancyRate: number;
+  averageTicket: number;
+  longestIdleGapDays: number;
+};
+
 type OwnerViewMode = 'dashboard' | 'ads';
 
 @Component({
@@ -219,7 +233,10 @@ type OwnerViewMode = 'dashboard' | 'ads';
           </div>
 
           <div class="publication-checklist">
-            <article class="publication-item" *ngFor="let item of publicationChecklist">
+            <article
+              class="publication-item"
+              *ngFor="let item of publicationChecklist; trackBy: trackByChecklistTitle"
+            >
               <span class="publication-item__icon" [class.publication-item__icon--done]="item.done">
                 {{ item.done ? 'OK' : '!' }}
               </span>
@@ -233,7 +250,7 @@ type OwnerViewMode = 'dashboard' | 'ads';
 
           <div class="publication-suggestions" *ngIf="publicationSuggestions.length">
             <strong>Prioridades agora</strong>
-            <p *ngFor="let suggestion of publicationSuggestions">{{ suggestion }}</p>
+            <p *ngFor="let suggestion of publicationSuggestions; trackBy: trackByString">{{ suggestion }}</p>
           </div>
         </section>
 
@@ -569,7 +586,10 @@ type OwnerViewMode = 'dashboard' | 'ads';
           </p>
 
           <div class="addon-list" *ngIf="vehicleDraft.addons.length">
-            <article class="addon-row" *ngFor="let addon of vehicleDraft.addons; let index = index">
+            <article
+              class="addon-row"
+              *ngFor="let addon of vehicleDraft.addons; let index = index; trackBy: trackByAddon"
+            >
               <div class="form-grid">
                 <label>
                   <span>Nome</span>
@@ -617,7 +637,10 @@ type OwnerViewMode = 'dashboard' | 'ads';
           </p>
 
           <div class="media-grid" *ngIf="editingVehicle?.images?.length || pendingVehiclePreviews.length">
-            <article class="media-card" *ngFor="let image of editingVehicle?.images; let index = index">
+            <article
+              class="media-card"
+              *ngFor="let image of editingVehicle?.images; let index = index; trackBy: trackById"
+            >
               <img [src]="image.url" [alt]="image.alt || vehicleDraft.title || 'Foto do veículo'" />
               <span class="media-badge" *ngIf="index === 0">Capa</span>
               <button
@@ -630,7 +653,10 @@ type OwnerViewMode = 'dashboard' | 'ads';
               </button>
             </article>
 
-            <article class="media-card media-card--pending" *ngFor="let preview of pendingVehiclePreviews; let index = index">
+            <article
+              class="media-card media-card--pending"
+              *ngFor="let preview of pendingVehiclePreviews; let index = index; trackBy: trackByPreview"
+            >
               <img [src]="preview.url" [alt]="preview.name" />
               <span class="media-badge media-badge--pending">Nova</span>
               <button type="button" class="media-card__action" (click)="removePendingVehicleFile(index)">
@@ -685,7 +711,11 @@ type OwnerViewMode = 'dashboard' | 'ads';
           Selecione um anúncio para editar, revisar fotos ou alterar a publicação.
         </p>
 
-        <article class="vehicle-row" *ngFor="let vehicle of vehicles" [class.vehicle-row--editing]="vehicle.id === editingVehicleId">
+        <article
+          class="vehicle-row"
+          *ngFor="let vehicle of vehicles; trackBy: trackById"
+          [class.vehicle-row--editing]="vehicle.id === editingVehicleId"
+        >
           <div class="vehicle-row__media">
             <img [src]="vehicle.coverImage || fallbackImage" [alt]="vehicle.title" />
           </div>
@@ -761,7 +791,7 @@ type OwnerViewMode = 'dashboard' | 'ads';
           <label>
             <span>Veículo</span>
             <select [(ngModel)]="selectedVehicleId" (ngModelChange)="loadSelectedVehicleAvailability()">
-              <option *ngFor="let vehicle of manageableVehicles" [value]="vehicle.id">
+              <option *ngFor="let vehicle of manageableVehicles; trackBy: trackById" [value]="vehicle.id">
                 {{ vehicle.title }}
               </option>
             </select>
@@ -800,7 +830,7 @@ type OwnerViewMode = 'dashboard' | 'ads';
 
         <p class="state-message" *ngIf="availabilityLoading">Carregando calendário...</p>
         <div class="blocked-date-list" *ngIf="!availabilityLoading && blockedDates.length">
-          <article class="blocked-date-item" *ngFor="let period of blockedDates">
+          <article class="blocked-date-item" *ngFor="let period of blockedDates; trackBy: trackByBlockedDate">
             <strong>{{ period.startDate | date: 'dd/MM/yyyy' }} até {{ period.endDate | date: 'dd/MM/yyyy' }}</strong>
             <span>{{ period.reason || 'Bloqueio manual do proprietário' }}</span>
           </article>
@@ -835,11 +865,11 @@ type OwnerViewMode = 'dashboard' | 'ads';
         </div>
 
         <div class="calendar-grid" *ngIf="selectedAvailability; else emptyCalendar">
-          <span class="calendar-weekday" *ngFor="let weekday of calendarWeekdays">{{ weekday }}</span>
+          <span class="calendar-weekday" *ngFor="let weekday of calendarWeekdays; trackBy: trackByString">{{ weekday }}</span>
 
           <article
             class="calendar-day"
-            *ngFor="let day of calendarDays"
+            *ngFor="let day of calendarDays; trackBy: trackByCalendarDay"
             [class.calendar-day--outside]="!day.inCurrentMonth"
             [class.calendar-day--booked]="day.state === 'booked'"
             [class.calendar-day--blocked]="day.state === 'blocked'"
@@ -877,7 +907,7 @@ type OwnerViewMode = 'dashboard' | 'ads';
           </div>
 
           <div class="idle-period-list" *ngIf="idlePeriods.length; else noIdlePeriods">
-            <article class="idle-period-item" *ngFor="let period of idlePeriods">
+            <article class="idle-period-item" *ngFor="let period of idlePeriods; trackBy: trackByIdlePeriod">
               <strong>{{ period.label }}</strong>
               <span>{{ period.startDate | date: 'dd/MM' }} até {{ period.endDate | date: 'dd/MM' }}</span>
             </article>
@@ -900,7 +930,7 @@ type OwnerViewMode = 'dashboard' | 'ads';
         </p>
         <p class="feedback feedback--error" *ngIf="loadError">{{ loadError }}</p>
 
-        <article class="booking-row" *ngFor="let booking of bookings">
+        <article class="booking-row" *ngFor="let booking of bookings; trackBy: trackById">
           <div>
             <strong>{{ booking.vehicle.title }}</strong>
             <p>{{ booking.renter.fullName || booking.renter.email }}</p>
@@ -1723,6 +1753,62 @@ export class OwnerDashboardPageComponent implements OnDestroy {
   private readonly availabilityApiService = inject(AvailabilityApiService);
   private readonly vehiclesApiService = inject(VehiclesApiService);
   private readonly bookingsApiService = inject(BookingsApiService);
+  private readonly calendarMonthFormatter = new Intl.DateTimeFormat('pt-BR', {
+    month: 'long',
+    year: 'numeric',
+  });
+  private readonly shortDateFormatter = new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: 'short',
+  });
+  private readonly emptyScheduleSummary: ScheduleSummary = {
+    booked: 0,
+    blocked: 0,
+    free: 0,
+  };
+  private readonly emptyFinancialSnapshot: FinancialSnapshot = {
+    revenue: 0,
+    bookingCount: 0,
+    occupancyRate: 0,
+    averageTicket: 0,
+    longestIdleGapDays: 0,
+  };
+  private bookingStatusSummaryCacheSource: Booking[] | null = null;
+  private bookingStatusSummaryCache = {
+    pending: 0,
+    approved: 0,
+    completed: 0,
+  };
+  private manageableVehiclesCacheSource: OwnerVehicleItem[] | null = null;
+  private manageableVehiclesCache: OwnerVehicleItem[] = [];
+  private editingVehicleCacheSource: OwnerVehicleItem[] | null = null;
+  private editingVehicleCacheId: string | null = null;
+  private editingVehicleCache: OwnerVehicleItem | null = null;
+  private selectedVehicleCacheSource: OwnerVehicleItem[] | null = null;
+  private selectedVehicleCacheId = '';
+  private selectedVehicleCache: OwnerVehicleItem | null = null;
+  private calendarMonthLabelCacheValue = '';
+  private calendarMonthLabelCache = '';
+  private publicationChecklistCacheKey = '';
+  private publicationChecklistCache: PublicationChecklistItem[] = [];
+  private publicationChecklistSummaryCacheSource: PublicationChecklistItem[] | null = null;
+  private publicationChecklistSummaryCache = {
+    completed: 0,
+    percentage: 0,
+    suggestions: [] as string[],
+  };
+  private calendarDaysCacheMonth = '';
+  private calendarDaysCacheAvailability: VehicleAvailabilityResponse | null = null;
+  private calendarDaysCache: CalendarDayItem[] = [];
+  private scheduleSummaryCacheSource: CalendarDayItem[] | null = null;
+  private scheduleSummaryCache: ScheduleSummary = this.emptyScheduleSummary;
+  private idlePeriodsCacheSource: CalendarDayItem[] | null = null;
+  private idlePeriodsCache: IdlePeriodItem[] = [];
+  private financialSnapshotCacheMonth = '';
+  private financialSnapshotCacheBookings: Booking[] | null = null;
+  private financialSnapshotCacheVehicles: OwnerVehicleItem[] | null = null;
+  private financialSnapshotCacheIdlePeriods: IdlePeriodItem[] | null = null;
+  private financialSnapshotCache: FinancialSnapshot = this.emptyFinancialSnapshot;
 
   protected readonly fallbackImage =
     'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=80';
@@ -1821,15 +1907,15 @@ export class OwnerDashboardPageComponent implements OnDestroy {
   }
 
   protected get pendingCount() {
-    return this.bookings.filter((booking) => booking.status === 'PENDING').length;
+    return this.bookingStatusSummary.pending;
   }
 
   protected get approvedCount() {
-    return this.bookings.filter((booking) => booking.status === 'APPROVED').length;
+    return this.bookingStatusSummary.approved;
   }
 
   protected get completedCount() {
-    return this.bookings.filter((booking) => booking.status === 'COMPLETED').length;
+    return this.bookingStatusSummary.completed;
   }
 
   protected get isEditingVehicle() {
@@ -1861,25 +1947,75 @@ export class OwnerDashboardPageComponent implements OnDestroy {
   }
 
   protected get editingVehicle() {
-    return this.vehicles.find((vehicle) => vehicle.id === this.editingVehicleId) ?? null;
+    if (
+      this.editingVehicleCacheSource === this.vehicles &&
+      this.editingVehicleCacheId === this.editingVehicleId
+    ) {
+      return this.editingVehicleCache;
+    }
+
+    this.editingVehicleCacheSource = this.vehicles;
+    this.editingVehicleCacheId = this.editingVehicleId;
+    this.editingVehicleCache =
+      this.vehicles.find((vehicle) => vehicle.id === this.editingVehicleId) ?? null;
+
+    return this.editingVehicleCache;
   }
 
   protected get manageableVehicles() {
-    return this.vehicles.filter((vehicle) => vehicle.isActive);
+    if (this.manageableVehiclesCacheSource === this.vehicles) {
+      return this.manageableVehiclesCache;
+    }
+
+    this.manageableVehiclesCacheSource = this.vehicles;
+    this.manageableVehiclesCache = this.vehicles.filter((vehicle) => vehicle.isActive);
+    return this.manageableVehiclesCache;
   }
 
   protected get selectedVehicle() {
-    return this.manageableVehicles.find((vehicle) => vehicle.id === this.selectedVehicleId) ?? null;
+    const manageableVehicles = this.manageableVehicles;
+
+    if (
+      this.selectedVehicleCacheSource === manageableVehicles &&
+      this.selectedVehicleCacheId === this.selectedVehicleId
+    ) {
+      return this.selectedVehicleCache;
+    }
+
+    this.selectedVehicleCacheSource = manageableVehicles;
+    this.selectedVehicleCacheId = this.selectedVehicleId;
+    this.selectedVehicleCache =
+      manageableVehicles.find((vehicle) => vehicle.id === this.selectedVehicleId) ?? null;
+
+    return this.selectedVehicleCache;
   }
 
   protected get calendarMonthLabel() {
-    return new Intl.DateTimeFormat('pt-BR', {
-      month: 'long',
-      year: 'numeric',
-    }).format(this.getMonthStart(this.calendarMonth));
+    if (this.calendarMonthLabelCacheValue === this.calendarMonth) {
+      return this.calendarMonthLabelCache;
+    }
+
+    this.calendarMonthLabelCacheValue = this.calendarMonth;
+    this.calendarMonthLabelCache = this.calendarMonthFormatter.format(
+      this.getMonthStart(this.calendarMonth),
+    );
+
+    return this.calendarMonthLabelCache;
   }
 
   protected get financialSnapshot() {
+    const manageableVehicles = this.manageableVehicles;
+    const idlePeriods = this.idlePeriods;
+
+    if (
+      this.financialSnapshotCacheMonth === this.calendarMonth &&
+      this.financialSnapshotCacheBookings === this.bookings &&
+      this.financialSnapshotCacheVehicles === manageableVehicles &&
+      this.financialSnapshotCacheIdlePeriods === idlePeriods
+    ) {
+      return this.financialSnapshotCache;
+    }
+
     const monthStart = this.getMonthStart(this.calendarMonth);
     const monthEnd = this.getNextMonthStart(monthStart);
     const relevantBookings = this.bookings.filter((booking) => {
@@ -1909,9 +2045,13 @@ export class OwnerDashboardPageComponent implements OnDestroy {
         this.countOverlapDays(booking.startDate, booking.endDate, monthStart, monthEnd),
       0,
     );
-    const capacityDays = daysInMonth * Math.max(this.manageableVehicles.length, 1);
+    const capacityDays = daysInMonth * Math.max(manageableVehicles.length, 1);
 
-    return {
+    this.financialSnapshotCacheMonth = this.calendarMonth;
+    this.financialSnapshotCacheBookings = this.bookings;
+    this.financialSnapshotCacheVehicles = manageableVehicles;
+    this.financialSnapshotCacheIdlePeriods = idlePeriods;
+    this.financialSnapshotCache = {
       revenue: Number(revenue.toFixed(2)),
       bookingCount: relevantBookings.length,
       occupancyRate: capacityDays
@@ -1920,11 +2060,13 @@ export class OwnerDashboardPageComponent implements OnDestroy {
       averageTicket: relevantBookings.length
         ? Number((revenue / relevantBookings.length).toFixed(2))
         : 0,
-      longestIdleGapDays: this.idlePeriods.reduce(
+      longestIdleGapDays: idlePeriods.reduce(
         (longest, period) => Math.max(longest, period.totalDays),
         0,
       ),
     };
+
+    return this.financialSnapshotCache;
   }
 
   protected get publicationChecklist() {
@@ -1943,8 +2085,24 @@ export class OwnerDashboardPageComponent implements OnDestroy {
       this.vehicleDraft.firstBookingDiscountPercent > 0 ||
       this.vehicleDraft.weeklyDiscountPercent > 0 ||
       (!!this.vehicleDraft.couponCode && this.vehicleDraft.couponDiscountPercent > 0);
+    const checklistCacheKey = [
+      totalPhotos,
+      descriptionLength,
+      hasPickupPoint ? 1 : 0,
+      hasCoordinates ? 1 : 0,
+      hasTitleContext ? 1 : 0,
+      hasConversionBoost ? 1 : 0,
+      this.vehicleDraft.vehicleType,
+      this.vehicleDraft.motorcycleStyle ?? '',
+      this.vehicleDraft.engineCc ?? '',
+    ].join('|');
 
-    const checklist: PublicationChecklistItem[] = [
+    if (this.publicationChecklistCacheKey === checklistCacheKey) {
+      return this.publicationChecklistCache;
+    }
+
+    this.publicationChecklistCacheKey = checklistCacheKey;
+    this.publicationChecklistCache = [
       {
         title: 'Fotos do anúncio',
         description:
@@ -1994,24 +2152,19 @@ export class OwnerDashboardPageComponent implements OnDestroy {
       },
     ];
 
-    return checklist;
+    return this.publicationChecklistCache;
   }
 
   protected get publicationChecklistCompleted() {
-    return this.publicationChecklist.filter((item) => item.done).length;
+    return this.publicationChecklistSummary.completed;
   }
 
   protected get publicationReadinessPercentage() {
-    return Math.round(
-      (this.publicationChecklistCompleted / Math.max(this.publicationChecklist.length, 1)) * 100,
-    );
+    return this.publicationChecklistSummary.percentage;
   }
 
   protected get publicationSuggestions() {
-    return this.publicationChecklist
-      .filter((item) => !item.done)
-      .map((item) => item.description)
-      .slice(0, 3);
+    return this.publicationChecklistSummary.suggestions;
   }
 
   protected get calendarDays(): CalendarDayItem[] {
@@ -2019,12 +2172,21 @@ export class OwnerDashboardPageComponent implements OnDestroy {
       return [];
     }
 
+    if (
+      this.calendarDaysCacheMonth === this.calendarMonth &&
+      this.calendarDaysCacheAvailability === this.selectedAvailability
+    ) {
+      return this.calendarDaysCache;
+    }
+
     const monthStart = this.getMonthStart(this.calendarMonth);
     const startOffset = (monthStart.getDay() + 6) % 7;
     const gridStart = new Date(monthStart);
     gridStart.setDate(monthStart.getDate() - startOffset);
 
-    return Array.from({ length: 42 }, (_, index) => {
+    this.calendarDaysCacheMonth = this.calendarMonth;
+    this.calendarDaysCacheAvailability = this.selectedAvailability;
+    this.calendarDaysCache = Array.from({ length: 42 }, (_, index) => {
       const day = new Date(gridStart);
       day.setDate(gridStart.getDate() + index);
       const date = this.formatDateKey(day);
@@ -2056,10 +2218,19 @@ export class OwnerDashboardPageComponent implements OnDestroy {
         isToday: date === this.today,
       };
     });
+
+    return this.calendarDaysCache;
   }
 
   protected get monthlyScheduleSummary() {
-    return this.calendarDays
+    const calendarDays = this.calendarDays;
+
+    if (this.scheduleSummaryCacheSource === calendarDays) {
+      return this.scheduleSummaryCache;
+    }
+
+    this.scheduleSummaryCacheSource = calendarDays;
+    this.scheduleSummaryCache = calendarDays
       .filter((day) => day.inCurrentMonth)
       .reduce(
         (summary, day) => {
@@ -2074,16 +2245,22 @@ export class OwnerDashboardPageComponent implements OnDestroy {
           return summary;
         },
         {
-          booked: 0,
-          blocked: 0,
-          free: 0,
+          ...this.emptyScheduleSummary,
         },
       );
+
+    return this.scheduleSummaryCache;
   }
 
   protected get idlePeriods(): IdlePeriodItem[] {
     if (!this.selectedAvailability) {
       return [];
+    }
+
+    const calendarDays = this.calendarDays;
+
+    if (this.idlePeriodsCacheSource === calendarDays) {
+      return this.idlePeriodsCache;
     }
 
     const periods: IdlePeriodItem[] = [];
@@ -2103,7 +2280,7 @@ export class OwnerDashboardPageComponent implements OnDestroy {
       });
     };
 
-    this.calendarDays
+    calendarDays
       .filter((day) => day.inCurrentMonth)
       .forEach((day) => {
         if (day.state === 'free') {
@@ -2119,11 +2296,14 @@ export class OwnerDashboardPageComponent implements OnDestroy {
 
     pushPeriod(
       currentStart
-        ? this.calendarDays.filter((day) => day.inCurrentMonth).at(-1)?.date ?? currentStart
+        ? calendarDays.filter((day) => day.inCurrentMonth).at(-1)?.date ?? currentStart
         : null,
     );
 
-    return periods;
+    this.idlePeriodsCacheSource = calendarDays;
+    this.idlePeriodsCache = periods;
+
+    return this.idlePeriodsCache;
   }
 
   protected saveVehicle() {
@@ -2419,6 +2599,38 @@ export class OwnerDashboardPageComponent implements OnDestroy {
 
   protected transmissionLabel(transmission: TransmissionType) {
     return this.transmissionOptions.find((option) => option.value === transmission)?.label ?? transmission;
+  }
+
+  protected trackById(_index: number, item: { id: string }) {
+    return item.id;
+  }
+
+  protected trackByString(_index: number, value: string) {
+    return value;
+  }
+
+  protected trackByChecklistTitle(_index: number, item: PublicationChecklistItem) {
+    return item.title;
+  }
+
+  protected trackByAddon(index: number, item: VehicleAddon) {
+    return item.id || `${item.name}-${index}`;
+  }
+
+  protected trackByPreview(_index: number, item: { name: string; url: string }) {
+    return item.url;
+  }
+
+  protected trackByBlockedDate(_index: number, item: { id: string; startDate: string; endDate: string }) {
+    return item.id || `${item.startDate}-${item.endDate}`;
+  }
+
+  protected trackByCalendarDay(_index: number, item: CalendarDayItem) {
+    return item.date;
+  }
+
+  protected trackByIdlePeriod(_index: number, item: IdlePeriodItem) {
+    return `${item.startDate}-${item.endDate}`;
   }
 
   protected approve(bookingId: string) {
@@ -2841,5 +3053,55 @@ export class OwnerDashboardPageComponent implements OnDestroy {
 
   private normalizeCouponCode(value: string | null | undefined) {
     return (value || '').trim().toUpperCase();
+  }
+
+  private get bookingStatusSummary() {
+    if (this.bookingStatusSummaryCacheSource === this.bookings) {
+      return this.bookingStatusSummaryCache;
+    }
+
+    this.bookingStatusSummaryCacheSource = this.bookings;
+    this.bookingStatusSummaryCache = this.bookings.reduce(
+      (summary, booking) => {
+        if (booking.status === 'PENDING') {
+          summary.pending += 1;
+        } else if (booking.status === 'APPROVED') {
+          summary.approved += 1;
+        } else if (booking.status === 'COMPLETED') {
+          summary.completed += 1;
+        }
+
+        return summary;
+      },
+      {
+        pending: 0,
+        approved: 0,
+        completed: 0,
+      },
+    );
+
+    return this.bookingStatusSummaryCache;
+  }
+
+  private get publicationChecklistSummary() {
+    const checklist = this.publicationChecklist;
+
+    if (this.publicationChecklistSummaryCacheSource === checklist) {
+      return this.publicationChecklistSummaryCache;
+    }
+
+    const completed = checklist.filter((item) => item.done).length;
+
+    this.publicationChecklistSummaryCacheSource = checklist;
+    this.publicationChecklistSummaryCache = {
+      completed,
+      percentage: Math.round((completed / Math.max(checklist.length, 1)) * 100),
+      suggestions: checklist
+        .filter((item) => !item.done)
+        .map((item) => item.description)
+        .slice(0, 3),
+    };
+
+    return this.publicationChecklistSummaryCache;
   }
 }

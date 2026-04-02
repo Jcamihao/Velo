@@ -12,6 +12,31 @@ import { VehicleDetail } from '../../core/models/domain.models';
 import { FixedActionButtonComponent } from '../../shared/components/fixed-action-button.component';
 import { ImageGalleryComponent } from '../../shared/components/image-gallery.component';
 
+type DetailFactItem = {
+  icon: string;
+  label: string;
+  value: string;
+};
+
+type PromotionDetailItem = {
+  title: string;
+  description: string;
+  code: string | null;
+};
+
+type PricingRuleHighlightItem = {
+  title: string;
+  description: string;
+};
+
+type RatingDistributionItem = {
+  stars: number;
+  count: number;
+  percentage: number;
+};
+
+type StarIcon = 'star' | 'star_half' | 'star_border';
+
 @Component({
   selector: 'app-vehicle-detail-page',
   standalone: true,
@@ -68,7 +93,10 @@ import { ImageGalleryComponent } from '../../shared/components/image-gallery.com
         </section>
 
         <div class="detail-stage__promotions" *ngIf="promotionHighlights.length">
-          <span class="detail-stage__promo" *ngFor="let promotion of promotionHighlights">
+          <span
+            class="detail-stage__promo"
+            *ngFor="let promotion of promotionHighlights; trackBy: trackByString"
+          >
             {{ promotion }}
           </span>
         </div>
@@ -82,7 +110,7 @@ import { ImageGalleryComponent } from '../../shared/components/image-gallery.com
         </header>
 
         <div class="detail-facts">
-          <article class="detail-fact" *ngFor="let detail of visibleDetailItems">
+          <article class="detail-fact" *ngFor="let detail of visibleDetailItems; trackBy: trackByDetailLabel">
             <span class="material-icons" aria-hidden="true">{{ detail.icon }}</span>
             <small>{{ detail.label }}</small>
             <strong>{{ detail.value }}</strong>
@@ -107,7 +135,7 @@ import { ImageGalleryComponent } from '../../shared/components/image-gallery.com
         <section class="detail-info-card" *ngIf="promotionDetails.length">
           <span class="detail-info-card__eyebrow">Promoções ativas</span>
           <div class="detail-promo-list">
-            <article class="detail-promo" *ngFor="let promotion of promotionDetails">
+            <article class="detail-promo" *ngFor="let promotion of promotionDetails; trackBy: trackByTitle">
               <strong>{{ promotion.title }}</strong>
               <p>{{ promotion.description }}</p>
               <span *ngIf="promotion.code">{{ promotion.code }}</span>
@@ -118,7 +146,7 @@ import { ImageGalleryComponent } from '../../shared/components/image-gallery.com
         <section class="detail-info-card" *ngIf="pricingRuleHighlights.length">
           <span class="detail-info-card__eyebrow">Preço dinâmico</span>
           <div class="detail-promo-list">
-            <article class="detail-promo" *ngFor="let rule of pricingRuleHighlights">
+            <article class="detail-promo" *ngFor="let rule of pricingRuleHighlights; trackBy: trackByTitle">
               <strong>{{ rule.title }}</strong>
               <p>{{ rule.description }}</p>
             </article>
@@ -128,7 +156,7 @@ import { ImageGalleryComponent } from '../../shared/components/image-gallery.com
         <section class="detail-info-card" *ngIf="vehicle.addons.length">
           <span class="detail-info-card__eyebrow">Itens extras</span>
           <div class="detail-addon-list">
-            <article class="detail-addon" *ngFor="let addon of vehicle.addons">
+            <article class="detail-addon" *ngFor="let addon of vehicle.addons; trackBy: trackByAddon">
               <strong>{{ addon.name }}</strong>
               <p>{{ addon.description || 'Adicional opcional para a reserva.' }}</p>
               <span>{{ addon.price | currency: 'BRL' : 'symbol' : '1.2-2' }}</span>
@@ -164,7 +192,7 @@ import { ImageGalleryComponent } from '../../shared/components/image-gallery.com
                 <div class="review-summary__stars" aria-label="Nota média do carro">
                   <span
                     class="material-icons"
-                    *ngFor="let star of averageRatingStars"
+                    *ngFor="let star of averageRatingStars; trackBy: trackByIndex"
                     aria-hidden="true"
                   >
                     {{ star }}
@@ -186,7 +214,7 @@ import { ImageGalleryComponent } from '../../shared/components/image-gallery.com
               <div class="review-summary__distribution">
                 <div
                   class="review-summary__bar-row"
-                  *ngFor="let item of ratingDistribution"
+                  *ngFor="let item of ratingDistribution; trackBy: trackByStars"
                 >
                   <div class="review-summary__bar-track">
                     <span
@@ -218,12 +246,12 @@ import { ImageGalleryComponent } from '../../shared/components/image-gallery.com
           </section>
 
           <div class="review-list" *ngIf="highlightedReviews.length">
-            <article class="review review--snippet" *ngFor="let review of highlightedReviews">
+            <article class="review review--snippet" *ngFor="let review of highlightedReviews; trackBy: trackById">
               <div class="review__rating-row">
                 <div class="review__stars">
                   <span
                     class="material-icons"
-                    *ngFor="let star of reviewStars(review.rating)"
+                    *ngFor="let star of reviewStars(review.rating); trackBy: trackByIndex"
                     aria-hidden="true"
                   >
                     {{ star }}
@@ -250,7 +278,7 @@ import { ImageGalleryComponent } from '../../shared/components/image-gallery.com
                   <div class="review-summary__stars" aria-label="Sem avaliações">
                     <span
                       class="material-icons"
-                      *ngFor="let star of emptyRatingStars"
+                    *ngFor="let star of emptyRatingStars; trackBy: trackByIndex"
                       aria-hidden="true"
                     >
                       {{ star }}
@@ -263,7 +291,7 @@ import { ImageGalleryComponent } from '../../shared/components/image-gallery.com
                 <div class="review-summary__distribution">
                   <div
                     class="review-summary__bar-row"
-                    *ngFor="let item of emptyRatingDistribution"
+                    *ngFor="let item of emptyRatingDistribution; trackBy: trackByStars"
                   >
                     <div class="review-summary__bar-track"></div>
                     <span class="review-summary__bar-label">{{ item.stars }}</span>
@@ -959,6 +987,41 @@ export class VehicleDetailPageComponent {
   private readonly favoritesService = inject(FavoritesService);
   private readonly logger = inject(AppLoggerService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly idleScheduler = (
+    globalThis as typeof globalThis & {
+      requestIdleCallback?: (callback: () => void) => number;
+    }
+  ).requestIdleCallback;
+  private readonly emptyStarIcons = this.buildStarIcons(0);
+  private readonly emptyRatingDistributionValue: RatingDistributionItem[] = [5, 4, 3, 2, 1].map(
+    (stars) => ({
+      stars,
+      count: 0,
+      percentage: 0,
+    }),
+  );
+  private readonly reviewStarsCache = new Map<number, StarIcon[]>();
+  private detailItemsCacheVehicle?: VehicleDetail;
+  private detailItemsCache: DetailFactItem[] = [];
+  private visibleDetailItemsCacheSource: DetailFactItem[] | null = null;
+  private visibleDetailItemsCacheShowAll = false;
+  private visibleDetailItemsCache: DetailFactItem[] = [];
+  private promotionHighlightsCacheVehicle?: VehicleDetail;
+  private promotionHighlightsCache: string[] = [];
+  private promotionDetailsCacheVehicle?: VehicleDetail;
+  private promotionDetailsCache: PromotionDetailItem[] = [];
+  private pricingRuleHighlightsCacheVehicle?: VehicleDetail;
+  private pricingRuleHighlightsCache: PricingRuleHighlightItem[] = [];
+  private reviewAnalyticsCacheVehicle?: VehicleDetail;
+  private reviewAnalyticsCache = {
+    totalReviewCount: 0,
+    displayRating: 0,
+    recommendationPercentage: 0,
+    ratingDistribution: this.emptyRatingDistributionValue,
+    highlightedReviews: [] as VehicleDetail['reviews'],
+    reviewHighlightSummary: '',
+    averageRatingStars: this.emptyStarIcons,
+  };
 
   protected vehicle?: VehicleDetail;
   protected readonly collapsedDetailCount = 6;
@@ -976,7 +1039,7 @@ export class VehicleDetailPageComponent {
         .getById(vehicleId)
         .subscribe((vehicle) => {
           this.vehicle = vehicle;
-          this.chatInboxService.ensureReady().subscribe();
+          this.scheduleInboxWarmup();
         });
     });
   }
@@ -1054,7 +1117,11 @@ export class VehicleDetailPageComponent {
       return [];
     }
 
-    const items = [
+    if (this.detailItemsCacheVehicle === this.vehicle) {
+      return this.detailItemsCache;
+    }
+
+    const items: DetailFactItem[] = [
       {
         icon: 'category',
         label: 'Categoria',
@@ -1134,7 +1201,10 @@ export class VehicleDetailPageComponent {
       });
     }
 
-    return items;
+    this.detailItemsCacheVehicle = this.vehicle;
+    this.detailItemsCache = items;
+
+    return this.detailItemsCache;
   }
 
   protected get promotionHighlights() {
@@ -1142,7 +1212,12 @@ export class VehicleDetailPageComponent {
       return [];
     }
 
-    return [
+    if (this.promotionHighlightsCacheVehicle === this.vehicle) {
+      return this.promotionHighlightsCache;
+    }
+
+    this.promotionHighlightsCacheVehicle = this.vehicle;
+    this.promotionHighlightsCache = [
       this.vehicle.firstBookingDiscountPercent
         ? `Primeira reserva ${this.vehicle.firstBookingDiscountPercent}% off`
         : '',
@@ -1153,6 +1228,8 @@ export class VehicleDetailPageComponent {
         ? `Cupom ${this.vehicle.couponDiscountPercent}% off`
         : '',
     ].filter(Boolean);
+
+    return this.promotionHighlightsCache;
   }
 
   protected get promotionDetails() {
@@ -1160,7 +1237,12 @@ export class VehicleDetailPageComponent {
       return [];
     }
 
-    return [
+    if (this.promotionDetailsCacheVehicle === this.vehicle) {
+      return this.promotionDetailsCache;
+    }
+
+    this.promotionDetailsCacheVehicle = this.vehicle;
+    this.promotionDetailsCache = [
       this.vehicle.firstBookingDiscountPercent
         ? {
             title: 'Desconto de primeira reserva',
@@ -1182,7 +1264,9 @@ export class VehicleDetailPageComponent {
             code: this.vehicle.couponCode,
           }
         : null,
-    ].filter((promotion): promotion is NonNullable<typeof promotion> => !!promotion);
+    ].filter((promotion): promotion is PromotionDetailItem => !!promotion);
+
+    return this.promotionDetailsCache;
   }
 
   protected get pricingRuleHighlights() {
@@ -1190,7 +1274,12 @@ export class VehicleDetailPageComponent {
       return [];
     }
 
-    return [
+    if (this.pricingRuleHighlightsCacheVehicle === this.vehicle) {
+      return this.pricingRuleHighlightsCache;
+    }
+
+    this.pricingRuleHighlightsCacheVehicle = this.vehicle;
+    this.pricingRuleHighlightsCache = [
       this.vehicle.weekendSurchargePercent
         ? {
             title: 'Fim de semana',
@@ -1215,123 +1304,64 @@ export class VehicleDetailPageComponent {
             description: `${this.vehicle.advanceBookingDiscountPercent}% de desconto para reservas feitas com ${this.vehicle.advanceBookingDaysThreshold} dia(s) ou mais.`,
           }
         : null,
-    ].filter((rule): rule is NonNullable<typeof rule> => !!rule);
+    ].filter((rule): rule is PricingRuleHighlightItem => !!rule);
+
+    return this.pricingRuleHighlightsCache;
   }
 
   protected get visibleDetailItems() {
-    return this.showAllDetails
-      ? this.detailItems
-      : this.detailItems.slice(0, this.collapsedDetailCount);
+    const detailItems = this.detailItems;
+
+    if (
+      this.visibleDetailItemsCacheSource === detailItems &&
+      this.visibleDetailItemsCacheShowAll === this.showAllDetails
+    ) {
+      return this.visibleDetailItemsCache;
+    }
+
+    this.visibleDetailItemsCacheSource = detailItems;
+    this.visibleDetailItemsCacheShowAll = this.showAllDetails;
+    this.visibleDetailItemsCache = this.showAllDetails
+      ? detailItems
+      : detailItems.slice(0, this.collapsedDetailCount);
+
+    return this.visibleDetailItemsCache;
   }
 
   protected get totalReviewCount() {
-    if (!this.vehicle) {
-      return 0;
-    }
-
-    return this.vehicle.reviewsCount || this.vehicle.reviews.length;
+    return this.reviewAnalytics.totalReviewCount;
   }
 
   protected get displayRating() {
-    if (!this.vehicle) {
-      return 0;
-    }
-
-    if (this.vehicle.ratingAverage) {
-      return this.vehicle.ratingAverage;
-    }
-
-    if (!this.vehicle.reviews.length) {
-      return 0;
-    }
-
-    const total = this.vehicle.reviews.reduce((sum, review) => sum + review.rating, 0);
-    return total / this.vehicle.reviews.length;
+    return this.reviewAnalytics.displayRating;
   }
 
   protected get averageRatingStars() {
-    return this.buildStarIcons(this.displayRating);
+    return this.reviewAnalytics.averageRatingStars;
   }
 
   protected get emptyRatingStars() {
-    return this.buildStarIcons(0);
+    return this.emptyStarIcons;
   }
 
   protected get recommendationPercentage() {
-    if (!this.vehicle) {
-      return 0;
-    }
-
-    if (this.vehicle.reviews.length) {
-      const positiveReviews = this.vehicle.reviews.filter((review) => review.rating >= 4).length;
-      return Math.round((positiveReviews / this.vehicle.reviews.length) * 100);
-    }
-
-    return Math.round((this.displayRating / 5) * 100);
+    return this.reviewAnalytics.recommendationPercentage;
   }
 
   protected get ratingDistribution() {
-    if (!this.vehicle?.reviews.length) {
-      return this.emptyRatingDistribution;
-    }
-
-    const total = this.vehicle.reviews.length;
-
-    return [5, 4, 3, 2, 1].map((stars) => {
-      const count = this.vehicle!.reviews.filter((review) => review.rating === stars).length;
-      return {
-        stars,
-        count,
-        percentage: total ? Math.round((count / total) * 100) : 0,
-      };
-    });
+    return this.reviewAnalytics.ratingDistribution;
   }
 
   protected get emptyRatingDistribution() {
-    return [5, 4, 3, 2, 1].map((stars) => ({
-      stars,
-      count: 0,
-      percentage: 0,
-    }));
+    return this.emptyRatingDistributionValue;
   }
 
   protected get highlightedReviews() {
-    if (!this.vehicle) {
-      return [];
-    }
-
-    return [...this.vehicle.reviews]
-      .filter((review) => review.comment?.trim())
-      .sort((left, right) => {
-        if (right.rating !== left.rating) {
-          return right.rating - left.rating;
-        }
-
-        return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
-      })
-      .slice(0, 2);
+    return this.reviewAnalytics.highlightedReviews;
   }
 
   protected get reviewHighlightSummary() {
-    const tone =
-      this.recommendationPercentage >= 85
-        ? 'muito positiva'
-        : this.recommendationPercentage >= 65
-          ? 'positiva'
-          : 'mista';
-
-    const topExcerpt = this.highlightedReviews[0]?.comment?.trim();
-    const leadSnippet = topExcerpt
-      ? `Destaque recorrente: ${this.excerptReview(topExcerpt, 120)}`
-      : '';
-
-    return [
-      `Com base nas avaliações recebidas, a percepção sobre este carro é ${tone}.`,
-      `${this.recommendationPercentage}% das notas ficaram entre 4 e 5 estrelas.`,
-      leadSnippet,
-    ]
-      .filter(Boolean)
-      .join(' ');
+    return this.reviewAnalytics.reviewHighlightSummary;
   }
 
   protected toggleDetails() {
@@ -1407,7 +1437,13 @@ export class VehicleDetailPageComponent {
   }
 
   protected reviewStars(rating: number) {
-    return this.buildStarIcons(rating);
+    const normalizedRating = Math.max(0, Math.min(5, rating));
+
+    if (!this.reviewStarsCache.has(normalizedRating)) {
+      this.reviewStarsCache.set(normalizedRating, this.buildStarIcons(normalizedRating));
+    }
+
+    return this.reviewStarsCache.get(normalizedRating) ?? this.emptyStarIcons;
   }
 
   protected excerptReview(comment?: string | null, maxLength = 180) {
@@ -1420,7 +1456,7 @@ export class VehicleDetailPageComponent {
     return `${text.slice(0, maxLength).trimEnd()}...`;
   }
 
-  private buildStarIcons(rating: number) {
+  private buildStarIcons(rating: number): StarIcon[] {
     const normalizedRating = Math.max(0, Math.min(5, rating));
     const fullStars = Math.floor(normalizedRating);
     const hasHalfStar = normalizedRating - fullStars >= 0.5;
@@ -1564,6 +1600,34 @@ export class VehicleDetailPageComponent {
     this.favoritesService.toggleFavorite(this.vehicle);
   }
 
+  protected trackByIndex(index: number) {
+    return index;
+  }
+
+  protected trackById(_index: number, item: { id: string }) {
+    return item.id;
+  }
+
+  protected trackByString(_index: number, value: string) {
+    return value;
+  }
+
+  protected trackByTitle(_index: number, item: { title: string }) {
+    return item.title;
+  }
+
+  protected trackByStars(_index: number, item: { stars: number }) {
+    return item.stars;
+  }
+
+  protected trackByDetailLabel(_index: number, item: DetailFactItem) {
+    return item.label;
+  }
+
+  protected trackByAddon(index: number, item: { id?: string; name: string }) {
+    return item.id || `${item.name}-${index}`;
+  }
+
   private startChatFlow() {
     if (!this.vehicle) {
       return;
@@ -1599,5 +1663,104 @@ export class VehicleDetailPageComponent {
           });
         },
       });
+  }
+
+  private scheduleInboxWarmup() {
+    if (!this.authService.hasSession()) {
+      return;
+    }
+
+    if (this.idleScheduler) {
+      this.idleScheduler(() => {
+        this.chatInboxService.ensureReady().subscribe();
+      });
+      return;
+    }
+
+    globalThis.setTimeout(() => {
+      this.chatInboxService.ensureReady().subscribe();
+    }, 900);
+  }
+
+  private get reviewAnalytics() {
+    if (!this.vehicle) {
+      return {
+        totalReviewCount: 0,
+        displayRating: 0,
+        recommendationPercentage: 0,
+        ratingDistribution: this.emptyRatingDistributionValue,
+        highlightedReviews: [] as VehicleDetail['reviews'],
+        reviewHighlightSummary: '',
+        averageRatingStars: this.emptyStarIcons,
+      };
+    }
+
+    if (this.reviewAnalyticsCacheVehicle === this.vehicle) {
+      return this.reviewAnalyticsCache;
+    }
+
+    const totalReviewCount = this.vehicle.reviewsCount || this.vehicle.reviews.length;
+    const displayRating = this.vehicle.ratingAverage
+      ? this.vehicle.ratingAverage
+      : this.vehicle.reviews.length
+        ? this.vehicle.reviews.reduce((sum, review) => sum + review.rating, 0) /
+          this.vehicle.reviews.length
+        : 0;
+    const recommendationPercentage = this.vehicle.reviews.length
+      ? Math.round(
+          (this.vehicle.reviews.filter((review) => review.rating >= 4).length /
+            this.vehicle.reviews.length) *
+            100,
+        )
+      : Math.round((displayRating / 5) * 100);
+    const ratingDistribution = this.vehicle.reviews.length
+      ? [5, 4, 3, 2, 1].map((stars) => {
+          const count = this.vehicle!.reviews.filter((review) => review.rating === stars).length;
+          return {
+            stars,
+            count,
+            percentage: Math.round((count / this.vehicle!.reviews.length) * 100),
+          };
+        })
+      : this.emptyRatingDistributionValue;
+    const highlightedReviews = [...this.vehicle.reviews]
+      .filter((review) => review.comment?.trim())
+      .sort((left, right) => {
+        if (right.rating !== left.rating) {
+          return right.rating - left.rating;
+        }
+
+        return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
+      })
+      .slice(0, 2);
+    const tone =
+      recommendationPercentage >= 85
+        ? 'muito positiva'
+        : recommendationPercentage >= 65
+          ? 'positiva'
+          : 'mista';
+    const topExcerpt = highlightedReviews[0]?.comment?.trim();
+    const leadSnippet = topExcerpt
+      ? `Destaque recorrente: ${this.excerptReview(topExcerpt, 120)}`
+      : '';
+
+    this.reviewAnalyticsCacheVehicle = this.vehicle;
+    this.reviewAnalyticsCache = {
+      totalReviewCount,
+      displayRating,
+      recommendationPercentage,
+      ratingDistribution,
+      highlightedReviews,
+      reviewHighlightSummary: [
+        `Com base nas avaliações recebidas, a percepção sobre este carro é ${tone}.`,
+        `${recommendationPercentage}% das notas ficaram entre 4 e 5 estrelas.`,
+        leadSnippet,
+      ]
+        .filter(Boolean)
+        .join(' '),
+      averageRatingStars: this.reviewStars(displayRating),
+    };
+
+    return this.reviewAnalyticsCache;
   }
 }

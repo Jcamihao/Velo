@@ -38,6 +38,11 @@ export class BottomNavComponent {
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
   private readonly chatInboxService = inject(ChatInboxService);
+  private readonly idleScheduler = (
+    globalThis as typeof globalThis & {
+      requestIdleCallback?: (callback: () => void) => number;
+    }
+  ).requestIdleCallback;
 
   @Input() menuOpen = false;
   @Output() menuToggle = new EventEmitter<void>();
@@ -51,7 +56,20 @@ export class BottomNavComponent {
   ] as const;
 
   constructor() {
-    this.chatInboxService.ensureReady().subscribe();
+    if (!this.authService.hasSession()) {
+      return;
+    }
+
+    if (this.idleScheduler) {
+      this.idleScheduler(() => {
+        this.chatInboxService.ensureReady().subscribe();
+      });
+      return;
+    }
+
+    globalThis.setTimeout(() => {
+      this.chatInboxService.ensureReady().subscribe();
+    }, 1200);
   }
 
   protected handleItemClick(item: (typeof this.items)[number]) {

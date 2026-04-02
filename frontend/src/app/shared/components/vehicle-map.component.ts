@@ -9,7 +9,10 @@ import {
   SimpleChanges,
   ViewChild,
 } from '@angular/core';
-import * as L from 'leaflet';
+
+type LeafletModule = typeof import('leaflet');
+type LeafletLayerGroup = import('leaflet').LayerGroup;
+type LeafletMap = import('leaflet').Map;
 
 type VehicleMapMarker = {
   id: string;
@@ -44,24 +47,14 @@ export class VehicleMapComponent implements AfterViewInit, OnChanges, OnDestroy 
   @Input() centerLongitude?: number | null;
   @Input() zoom = 12;
 
-  private map?: L.Map;
-  private markerLayer = L.layerGroup();
+  private leaflet?: LeafletModule;
+  private map?: LeafletMap;
+  private markerLayer?: LeafletLayerGroup;
+  private mapInitializationPromise: Promise<void> | null = null;
+  private destroyed = false;
 
-  ngAfterViewInit() {
-    if (!this.mapRef) {
-      return;
-    }
-
-    this.map = L.map(this.mapRef.nativeElement, {
-      zoomControl: true,
-      attributionControl: true,
-    });
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors',
-    }).addTo(this.map);
-
-    this.markerLayer.addTo(this.map);
+  async ngAfterViewInit() {
+    await this.ensureMapReady();
     this.renderMarkers();
   }
 
@@ -70,15 +63,23 @@ export class VehicleMapComponent implements AfterViewInit, OnChanges, OnDestroy 
   }
 
   ngOnDestroy() {
+    this.destroyed = true;
+    this.mapInitializationPromise = null;
     this.map?.remove();
+    this.map = undefined;
+    this.markerLayer = undefined;
+    this.leaflet = undefined;
   }
 
   private renderMarkers() {
-    if (!this.map) {
+    if (!this.map || !this.markerLayer || !this.leaflet) {
       return;
     }
 
-    this.markerLayer.clearLayers();
+    const leaflet = this.leaflet;
+    const markerLayer = this.markerLayer;
+
+    markerLayer.clearLayers();
 
     const validMarkers = this.markers.filter(
       (marker) =>
@@ -86,8 +87,8 @@ export class VehicleMapComponent implements AfterViewInit, OnChanges, OnDestroy 
     );
 
     validMarkers.forEach((marker) => {
-      const leafletMarker = L.marker([marker.latitude, marker.longitude], {
-        icon: L.divIcon({
+      const leafletMarker = leaflet.marker([marker.latitude, marker.longitude], {
+        icon: leaflet.divIcon({
           className: 'vehicle-map__marker',
           html: '<span style="display:block;width:14px;height:14px;border-radius:999px;background:#1f8cff;border:3px solid #fff;box-shadow:0 10px 20px rgba(31,140,255,.35);"></span>',
           iconSize: [20, 20],
@@ -99,7 +100,7 @@ export class VehicleMapComponent implements AfterViewInit, OnChanges, OnDestroy 
         `<strong>${marker.title}</strong><br/>${marker.city}, ${marker.state}`,
       );
 
-      this.markerLayer.addLayer(leafletMarker);
+      markerLayer.addLayer(leafletMarker);
     });
 
     if (
@@ -124,7 +125,7 @@ export class VehicleMapComponent implements AfterViewInit, OnChanges, OnDestroy 
     }
 
     if (validMarkers.length > 1) {
-      const bounds = L.latLngBounds(
+      const bounds = leaflet.latLngBounds(
         validMarkers.map((marker) => [marker.latitude, marker.longitude] as [number, number]),
       );
       this.map.fitBounds(bounds.pad(0.2));
@@ -132,5 +133,42 @@ export class VehicleMapComponent implements AfterViewInit, OnChanges, OnDestroy 
     }
 
     this.map.setView([-23.55052, -46.633308], 10);
+  }
+
+  private async ensureMapReady() {
+    if (this.map || !this.mapRef || this.destroyed) {
+      return;
+    }
+
+    if (this.mapInitializationPromise) {
+      await this.mapInitializationPromise;
+      return;
+    }
+
+    this.mapInitializationPromise = this.initializeMap();
+    await this.mapInitializationPromise;
+  }
+
+  private async initializeMap() {
+    const leaflet = await import('leaflet');
+
+    if (this.destroyed || !this.mapRef || this.map) {
+      return;
+    }
+
+    this.leaflet = leaflet;
+    this.map = leaflet.map(this.mapRef.nativeElement, {
+      zoomControl: true,
+      attributionControl: true,
+    });
+
+    leaflet
+      .tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+      })
+      .addTo(this.map);
+
+    this.markerLayer = leaflet.layerGroup();
+    this.markerLayer.addTo(this.map);
   }
 }
