@@ -13,7 +13,7 @@ import { PrivacyApiService } from '../../core/services/privacy-api.service';
     <main class="page privacy-page">
       <section class="privacy-hero">
         <span class="eyebrow">Privacidade</span>
-        <h1>Como a Velo trata os seus dados</h1>
+        <h1>Como a Triluga trata os seus dados</h1>
         <p>
           Transparência, minimização e controle do titular fazem parte do produto.
         </p>
@@ -27,7 +27,7 @@ import { PrivacyApiService } from '../../core/services/privacy-api.service';
             <a class="btn btn-primary" routerLink="/auth/login">Entrar para gerenciar preferências</a>
           </ng-template>
 
-          <a class="btn btn-secondary" routerLink="/">Voltar para a Velo</a>
+          <a class="btn btn-secondary" routerLink="/">Voltar para a Triluga</a>
         </div>
       </section>
 
@@ -62,7 +62,7 @@ import { PrivacyApiService } from '../../core/services/privacy-api.service';
       .privacy-page {
         display: grid;
         gap: 18px;
-        padding: 20px 16px 40px;
+        padding: 20px 12px 40px;
       }
 
       .privacy-hero,
@@ -71,7 +71,7 @@ import { PrivacyApiService } from '../../core/services/privacy-api.service';
         gap: 14px;
         padding: 22px 20px;
         border-radius: 26px;
-        background: rgba(255, 255, 255, 0.98);
+        background: var(--glass-surface-strong);
         border: 1px solid var(--glass-border);
         box-shadow: var(--shadow-soft);
       }
@@ -147,7 +147,7 @@ export class PrivacyPageComponent {
       error: () => {
         this.policy = {
           version: '2026-03-27',
-          contactEmail: 'privacidade@velo.local',
+          contactEmail: 'privacidade@triluga.local',
           sections: [
             {
               title: 'Dados coletados',

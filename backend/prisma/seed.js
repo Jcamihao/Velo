@@ -48,6 +48,9 @@ async function createUserWithProfile({
   role,
   fullName,
   phone,
+  zipCode,
+  addressLine,
+  addressComplement,
   city,
   state,
 }) {
@@ -61,8 +64,24 @@ async function createUserWithProfile({
       passwordHash,
       profile: {
         upsert: {
-          update: { fullName, phone, city, state },
-          create: { fullName, phone, city, state },
+          update: {
+            fullName,
+            phone,
+            zipCode,
+            addressLine,
+            addressComplement,
+            city,
+            state,
+          },
+          create: {
+            fullName,
+            phone,
+            zipCode,
+            addressLine,
+            addressComplement,
+            city,
+            state,
+          },
         },
       },
     },
@@ -71,7 +90,15 @@ async function createUserWithProfile({
       passwordHash,
       role,
       profile: {
-        create: { fullName, phone, city, state },
+        create: {
+          fullName,
+          phone,
+          zipCode,
+          addressLine,
+          addressComplement,
+          city,
+          state,
+        },
       },
     },
     include: {
@@ -81,31 +108,40 @@ async function createUserWithProfile({
 }
 
 async function main() {
-  const [admin, owner, renter] = await Promise.all([
+  const [admin, listingUser, bookingUser] = await Promise.all([
     createUserWithProfile({
-      email: 'admin@velo.local',
+      email: 'admin@triluga.local',
       password: 'Admin123!',
       role: Role.ADMIN,
-      fullName: 'Velo Admin',
+      fullName: 'Admin Triluga',
       phone: '+55 11 90000-0001',
+      zipCode: '01001-000',
+      addressLine: 'Praça da Sé',
+      addressComplement: 'Sala administrativa',
       city: 'Sao Paulo',
       state: 'SP',
     }),
     createUserWithProfile({
-      email: 'owner@velo.local',
-      password: 'Owner123!',
-      role: Role.OWNER,
+      email: 'mariana@triluga.local',
+      password: 'User123!',
+      role: Role.USER,
       fullName: 'Mariana Costa',
       phone: '+55 11 90000-0002',
+      zipCode: '01310-100',
+      addressLine: 'Avenida Paulista',
+      addressComplement: 'Apto 84',
       city: 'Sao Paulo',
       state: 'SP',
     }),
     createUserWithProfile({
-      email: 'renter@velo.local',
-      password: 'Renter123!',
-      role: Role.RENTER,
+      email: 'lucas@triluga.local',
+      password: 'User123!',
+      role: Role.USER,
       fullName: 'Lucas Almeida',
       phone: '+55 11 90000-0003',
+      zipCode: '13010-111',
+      addressLine: 'Rua Conceição',
+      addressComplement: 'Casa 2',
       city: 'Campinas',
       state: 'SP',
     }),
@@ -120,14 +156,14 @@ async function main() {
   await prisma.vehicleAvailability.deleteMany();
   await prisma.vehicleBlockedDate.deleteMany();
   await prisma.vehicle.deleteMany({
-    where: { ownerId: owner.id },
+    where: { ownerId: listingUser.id },
   });
   await prisma.notification.deleteMany();
 
   const vehicles = await prisma.$transaction([
     prisma.vehicle.create({
       data: {
-        ownerId: owner.id,
+        ownerId: listingUser.id,
         title: 'Jeep Renegade Longitude 2022',
         brand: 'Jeep',
         model: 'Renegade',
@@ -177,7 +213,7 @@ async function main() {
     }),
     prisma.vehicle.create({
       data: {
-        ownerId: owner.id,
+        ownerId: listingUser.id,
         title: 'Chevrolet Onix LT 2023',
         brand: 'Chevrolet',
         model: 'Onix',
@@ -220,7 +256,7 @@ async function main() {
     }),
     prisma.vehicle.create({
       data: {
-        ownerId: owner.id,
+        ownerId: listingUser.id,
         title: 'Yamaha NMAX 160 ABS 2024',
         brand: 'Yamaha',
         model: 'NMAX 160',
@@ -277,8 +313,8 @@ async function main() {
   const completedBooking = await prisma.booking.create({
     data: {
       vehicleId: vehicles[1].id,
-      ownerId: owner.id,
-      renterId: renter.id,
+      ownerId: listingUser.id,
+      renterId: bookingUser.id,
       startDate: new Date('2026-03-01T10:00:00.000Z'),
       endDate: new Date('2026-03-04T10:00:00.000Z'),
       totalDays: 3,
@@ -291,16 +327,16 @@ async function main() {
       completedAt: new Date('2026-03-04T12:00:00.000Z'),
       statusHistory: {
         create: [
-          { toStatus: BookingStatus.PENDING, changedById: renter.id },
+          { toStatus: BookingStatus.PENDING, changedById: bookingUser.id },
           {
             fromStatus: BookingStatus.PENDING,
             toStatus: BookingStatus.APPROVED,
-            changedById: owner.id,
+            changedById: listingUser.id,
           },
           {
             fromStatus: BookingStatus.APPROVED,
             toStatus: BookingStatus.COMPLETED,
-            changedById: owner.id,
+            changedById: listingUser.id,
           },
         ],
       },
@@ -319,8 +355,8 @@ async function main() {
       review: {
         create: {
           vehicleId: vehicles[1].id,
-          authorId: renter.id,
-          ownerId: owner.id,
+          authorId: bookingUser.id,
+          ownerId: listingUser.id,
           rating: 5,
           comment:
             'Carro impecável e entrega super tranquila. Repetiria a locação com certeza.',
@@ -340,13 +376,13 @@ async function main() {
   await prisma.notification.createMany({
     data: [
       {
-        userId: owner.id,
+        userId: listingUser.id,
         type: NotificationType.BOOKING_COMPLETED,
         title: 'Locação concluída',
         message: `A reserva ${completedBooking.id} foi concluída com sucesso.`,
       },
       {
-        userId: renter.id,
+        userId: bookingUser.id,
         type: NotificationType.REVIEW_CREATED,
         title: 'Avaliação registrada',
         message: 'Sua avaliação foi registrada e já aparece no anúncio.',
@@ -355,7 +391,7 @@ async function main() {
         userId: admin.id,
         type: NotificationType.SYSTEM_ALERT,
         title: 'Seed carregado',
-        message: 'O ambiente local da Velo foi populado com dados iniciais.',
+        message: 'O ambiente local da Triluga foi populado com dados iniciais.',
       },
     ],
   });

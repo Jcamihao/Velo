@@ -20,7 +20,7 @@ export class AuthController {
 
   @Public()
   @Post('register')
-  @ApiOperation({ summary: 'Cria uma nova conta OWNER ou RENTER' })
+  @ApiOperation({ summary: 'Cria uma nova conta de usuário' })
   async register(
     @Body() dto: RegisterDto,
     @Res({ passthrough: true }) response: Response,
@@ -90,7 +90,7 @@ export class AuthController {
 
   private setRefreshCookie(response: Response, refreshToken: string) {
     response.cookie(
-      this.configService.get<string>('auth.refreshCookieName', 'velo_refresh_token'),
+      this.configService.get<string>('auth.refreshCookieName', 'triluga_refresh_token'),
       refreshToken,
       {
         httpOnly: true,
@@ -108,7 +108,7 @@ export class AuthController {
 
   private clearRefreshCookie(response: Response) {
     response.clearCookie(
-      this.configService.get<string>('auth.refreshCookieName', 'velo_refresh_token'),
+      this.configService.get<string>('auth.refreshCookieName', 'triluga_refresh_token'),
       {
         httpOnly: true,
         secure: this.configService.get<boolean>('auth.refreshCookieSecure', false),
@@ -124,7 +124,7 @@ export class AuthController {
     const cookieHeader = request.headers.cookie ?? '';
     const cookieName = this.configService.get<string>(
       'auth.refreshCookieName',
-      'velo_refresh_token',
+      'triluga_refresh_token',
     );
 
     for (const rawPart of cookieHeader.split(';')) {

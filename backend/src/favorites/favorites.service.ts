@@ -26,6 +26,11 @@ export class FavoritesService {
             owner: {
               include: {
                 profile: true,
+                userReviewsReceived: {
+                  select: {
+                    rating: true,
+                  },
+                },
               },
             },
           },
@@ -36,7 +41,9 @@ export class FavoritesService {
       },
     });
 
-    return favorites.map((favorite) => this.mapVehicleSummary(favorite.vehicle));
+    return favorites.map((favorite) =>
+      this.mapVehicleSummary(favorite.vehicle),
+    );
   }
 
   async addFavorite(userId: string, vehicleId: string) {
@@ -56,6 +63,11 @@ export class FavoritesService {
         owner: {
           include: {
             profile: true,
+            userReviewsReceived: {
+              select: {
+                rating: true,
+              },
+            },
           },
         },
       },
@@ -124,8 +136,7 @@ export class FavoritesService {
       weekendSurchargePercent: vehicle.weekendSurchargePercent ?? 0,
       holidaySurchargePercent: vehicle.holidaySurchargePercent ?? 0,
       highDemandSurchargePercent: vehicle.highDemandSurchargePercent ?? 0,
-      advanceBookingDiscountPercent:
-        vehicle.advanceBookingDiscountPercent ?? 0,
+      advanceBookingDiscountPercent: vehicle.advanceBookingDiscountPercent ?? 0,
       advanceBookingDaysThreshold: vehicle.advanceBookingDaysThreshold ?? 0,
       motorcycleStyle: vehicle.motorcycleStyle,
       engineCc: vehicle.engineCc,
@@ -139,9 +150,31 @@ export class FavoritesService {
       owner: {
         id: vehicle.owner.id,
         fullName: vehicle.owner.profile?.fullName ?? null,
+        avatarUrl: vehicle.owner.profile?.avatarUrl ?? null,
         city: vehicle.owner.profile?.city ?? null,
         state: vehicle.owner.profile?.state ?? null,
+        ratingAverage: this.calculateOwnerRatingAverage(
+          vehicle.owner.userReviewsReceived,
+        ),
+        reviewsCount: Array.isArray(vehicle.owner.userReviewsReceived)
+          ? vehicle.owner.userReviewsReceived.length
+          : 0,
       },
     };
+  }
+
+  private calculateOwnerRatingAverage(reviews: Array<{ rating: number }> = []) {
+    if (!reviews.length) {
+      return 0;
+    }
+
+    return Number(
+      (
+        reviews.reduce(
+          (total, review) => total + Number(review.rating ?? 0),
+          0,
+        ) / reviews.length
+      ).toFixed(1),
+    );
   }
 }

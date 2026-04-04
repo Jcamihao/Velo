@@ -1,10 +1,10 @@
-# Política de Privacidade da Velo
+# Política de Privacidade da Triluga
 
 Versão: `2026-03-27`
 
 ## 1. Escopo
 
-Esta política resume como a Velo trata dados pessoais para operar o marketplace de aluguel de veículos entre pessoas.
+Esta política resume como a Triluga trata dados pessoais para operar o marketplace de aluguel de veículos entre pessoas.
 
 ## 2. Dados tratados
 
@@ -45,7 +45,7 @@ O titular pode solicitar:
 - oposição ou restrição de tratamento, quando cabível
 - revogação do consentimento para analytics não essencial
 
-A Velo expõe uma central de privacidade no produto e um fluxo administrativo para acompanhamento dessas solicitações.
+A Triluga expõe uma central de privacidade no produto e um fluxo administrativo para acompanhamento dessas solicitações.
 
 ## 6. Retenção
 
@@ -65,6 +65,6 @@ Controles mínimos adotados no produto:
 
 Contato operacional sugerido para privacidade:
 
-- `privacidade@velo.local`
+- `privacidade@triluga.local`
 
 O endereço definitivo deve ser configurado antes de produção.

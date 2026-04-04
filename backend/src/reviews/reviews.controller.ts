@@ -1,11 +1,10 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public } from '../common/decorators/public.decorator';
-import { Roles } from '../common/decorators/roles.decorator';
 import { AuthenticatedUser } from '../common/interfaces/authenticated-user.interface';
 import { CreateReviewDto } from './dto/create-review.dto';
+import { CreateUserReviewDto } from './dto/create-user-review.dto';
 import { ReviewsService } from './reviews.service';
 
 @ApiTags('reviews')
@@ -15,13 +14,21 @@ export class ReviewsController {
 
   @Post()
   @ApiBearerAuth()
-  @Roles(Role.RENTER, Role.OWNER)
   @ApiOperation({ summary: 'Cria uma avaliação ao final da locação' })
-  create(
-    @CurrentUser() user: AuthenticatedUser,
-    @Body() dto: CreateReviewDto,
-  ) {
+  create(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateReviewDto) {
     return this.reviewsService.create(user.sub, dto);
+  }
+
+  @Post('user')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Cria uma avaliação geral para o anunciante ao final da locação',
+  })
+  createUserReview(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: CreateUserReviewDto,
+  ) {
+    return this.reviewsService.createUserReview(user.sub, dto);
   }
 
   @Public()

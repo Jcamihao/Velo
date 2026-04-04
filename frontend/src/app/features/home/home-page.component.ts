@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { AuthService } from '../../core/services/auth.service';
 import { VehiclesApiService } from '../../core/services/vehicles-api.service';
 import { SearchHeaderComponent } from '../../shared/components/search-header.component';
 import { VehicleCardComponent } from '../../shared/components/vehicle-card.component';
@@ -67,25 +66,42 @@ const POPULAR_BRANDS: BrandShortcut[] = [
   imports: [CommonModule, SearchHeaderComponent, VehicleCardComponent],
   template: `
     <main class="page home-page">
-      <app-search-header (search)="goToSearch($event)" (filters)="goToSearch({})" />
+      <app-search-header
+        [minimal]="true"
+        [showFiltersAction]="false"
+        [showMeta]="false"
+        (search)="goToSearch($event)"
+        (filters)="goToSearch({})"
+      />
 
-      <section class="owner-entry" *ngIf="isOwner">
-        <div>
-          <span class="owner-entry__eyebrow">Anunciar carro</span>
-          <h2>Publique e gerencie seus anúncios aqui</h2>
-          <p>Cadastre o veículo, envie fotos, publique o anúncio e acompanhe as reservas no mesmo fluxo.</p>
+      <article class="home-hero">
+        <span class="home-hero__eyebrow">Comece por aqui</span>
+        <h2>Menos distração. Mais saída.</h2>
+        <p>Escolha um tipo de veículo ou entre direto por marca.</p>
+
+        <div class="home-hero__actions">
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="goToSearch({ vehicleType: 'CAR' })"
+          >
+            Buscar carros
+          </button>
+          <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="goToSearch({ vehicleType: 'MOTORCYCLE' })"
+          >
+            Explorar motos
+          </button>
         </div>
-
-        <button type="button" class="btn btn-primary" (click)="goToOwnerAnnouncements()">
-          Abrir central de anúncios
-        </button>
-      </section>
+      </article>
 
       <section class="brands-section">
         <div class="section-title section-title--compact">
           <div>
             <span>Marcas</span>
-            <h2>Escolha seu estilo</h2>
+            <h2>Ir por marca</h2>
           </div>
         </div>
 
@@ -118,8 +134,12 @@ const POPULAR_BRANDS: BrandShortcut[] = [
                     stroke-linejoin="round"
                   >
                     <circle cx="12" cy="12" r="8.8"></circle>
-                    <path d="M7.55 7.45 10.45 12.1 12 9.35 13.55 12.1 16.45 7.45"></path>
-                    <path d="M6.7 8.45 9.9 16 12 12.35 14.1 16 17.3 8.45"></path>
+                    <path
+                      d="M7.55 7.45 10.45 12.1 12 9.35 13.55 12.1 16.45 7.45"
+                    ></path>
+                    <path
+                      d="M6.7 8.45 9.9 16 12 12.35 14.1 16 17.3 8.45"
+                    ></path>
                   </g>
 
                   <g *ngSwitchCase="'byd'">
@@ -140,7 +160,7 @@ const POPULAR_BRANDS: BrandShortcut[] = [
                       font-size="10.5"
                       font-weight="800"
                       letter-spacing="1.2"
-                      font-family="Inter, Arial, sans-serif"
+                      font-family="Panton Text, Sora, Arial, sans-serif"
                       fill="currentColor"
                     >
                       BYD
@@ -157,7 +177,7 @@ const POPULAR_BRANDS: BrandShortcut[] = [
       <section class="section-title">
         <div>
           <span>Disponíveis</span>
-          <h2>Veículos disponíveis</h2>
+          <h2>Em destaque</h2>
         </div>
         <a (click)="goToSearch({})">Ver tudo</a>
       </section>
@@ -174,70 +194,84 @@ const POPULAR_BRANDS: BrandShortcut[] = [
     `
       .home-page {
         display: grid;
-        gap: 18px;
+        gap: 20px;
         width: 100%;
         margin: 0 auto;
-        padding: 20px 16px 40px;
+        padding: 20px 12px 40px;
       }
 
-      .section-title h2 {
-        margin: 4px 0 0;
+      .home-hero,
+      .brands-section {
+        position: relative;
+        overflow: hidden;
+        border-radius: 24px;
+        border: 1px solid rgba(70, 89, 83, 0.08);
+        box-shadow: var(--shadow-soft);
       }
 
-      .owner-entry {
+      .home-hero {
         display: grid;
         gap: 12px;
-        padding: 18px;
-        border-radius: 24px;
-        background: linear-gradient(180deg, #4f4445 0%, #3a3132 100%);
-        box-shadow: 0 22px 38px rgba(20, 11, 11, 0.22);
-        color: #fff;
+        padding: 20px 18px;
+        background: rgba(250, 253, 252, 0.96);
+        color: var(--text-primary);
       }
 
-      .owner-entry h2,
-      .owner-entry p {
+      .home-hero h2 {
         margin: 0;
-        color: #fff;
+        max-width: 14ch;
+        font-size: 34px;
+        line-height: 0.98;
+        color: var(--text-primary);
       }
 
-      .owner-entry__eyebrow {
+      .home-hero p {
+        margin: 0;
+        max-width: 36ch;
+        color: rgba(64, 84, 79, 0.76);
+        line-height: 1.5;
+      }
+
+      .home-hero__eyebrow {
         display: inline-flex;
         width: fit-content;
-        margin-bottom: 8px;
-        padding: 8px 12px;
+        padding: 7px 12px;
         border-radius: 999px;
-        background: rgba(255, 255, 255, 0.12);
+        background: #f1f7f4;
+        border: 1px solid rgba(70, 89, 83, 0.08);
+        color: #427a6d;
         font-size: 11px;
         font-weight: 700;
         letter-spacing: 0.08em;
         text-transform: uppercase;
       }
 
-      .owner-entry .btn {
-        width: fit-content;
-        background: #fff;
-        color: var(--primary);
-        justify-self: start;
+      .home-hero__actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
       }
 
-      .brands-section,
+      .brands-section {
+        display: grid;
+        gap: 14px;
+        padding: 18px;
+        background: rgba(250, 253, 252, 0.96);
+      }
+
       .section-title,
       .vehicle-grid {
         position: relative;
         z-index: 1;
       }
 
-      .brands-section {
-        display: grid;
-        gap: 14px;
-      }
-
       .brands-rail {
         display: grid;
         grid-auto-flow: column;
-        grid-auto-columns: 88px;
-        gap: 14px;
+        grid-auto-columns: 92px;
+        gap: 12px;
         overflow-x: auto;
+        padding-bottom: 2px;
       }
 
       .brand-chip {
@@ -254,12 +288,13 @@ const POPULAR_BRANDS: BrandShortcut[] = [
       .brand-chip__icon {
         display: grid;
         place-items: center;
-        width: 72px;
-        height: 72px;
-        border-radius: 18px;
-        background: rgba(255, 255, 255, 0.98);
+        width: 78px;
+        height: 78px;
+        border-radius: 24px;
+        background: linear-gradient(180deg, #eff6f3 0%, #dce8e3 100%);
         color: var(--primary);
-        box-shadow: 0 14px 28px rgba(90, 115, 145, 0.14);
+        border: 1px solid rgba(103, 203, 176, 0.12);
+        box-shadow: 0 16px 30px rgba(29, 41, 37, 0.08);
       }
 
       .brand-chip__icon svg {
@@ -274,8 +309,8 @@ const POPULAR_BRANDS: BrandShortcut[] = [
 
       .brand-chip__label {
         font-size: 12px;
-        color: rgba(255, 245, 244, 0.84);
-        font-weight: 600;
+        color: rgba(56, 76, 71, 0.88);
+        font-weight: 700;
       }
 
       .section-title {
@@ -292,15 +327,15 @@ const POPULAR_BRANDS: BrandShortcut[] = [
       .section-title span {
         display: inline-flex;
         align-items: center;
-        color: rgba(255, 255, 255, 0.8);
+        color: rgba(103, 203, 176, 0.72);
         font-size: 12px;
         font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.08em;
+        letter-spacing: 0.12em;
       }
 
       .section-title a {
-        color: #ffd2cd;
+        color: var(--primary);
         font-size: 13px;
         font-weight: 700;
         cursor: pointer;
@@ -310,25 +345,31 @@ const POPULAR_BRANDS: BrandShortcut[] = [
       .section-title h2 {
         margin: 6px 0 0;
         font-size: 24px;
-        color: #fff;
+        color: var(--text-primary);
+      }
+
+      .home-page > .section-title span {
+        color: rgba(55, 98, 87, 0.78);
+      }
+
+      .home-page > .section-title h2 {
+        color: #26322f;
       }
 
       .vehicle-grid {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
-        gap: 10px;
+        gap: 12px;
       }
 
       @media (min-width: 768px) {
         .home-page {
-          gap: 20px;
+          gap: 22px;
           padding-bottom: 48px;
         }
 
-        .owner-entry {
-          grid-template-columns: minmax(0, 1fr) auto;
-          align-items: end;
-          gap: 18px;
+        .home-hero {
+          padding: 24px;
         }
 
         .vehicle-grid {
@@ -343,77 +384,56 @@ const POPULAR_BRANDS: BrandShortcut[] = [
           padding: 28px 20px 56px;
         }
 
-        .section-title h2 {
-          font-size: 28px;
+        .home-hero {
+          padding: 28px;
         }
 
-        .owner-entry {
-          padding: 22px 24px;
+        .home-hero h2 {
+          font-size: 40px;
+        }
+
+        .brands-section {
+          padding: 20px 18px;
         }
 
         .brands-rail {
           grid-auto-flow: initial;
-          grid-template-columns: repeat(7, minmax(0, 1fr));
+          grid-template-columns: repeat(5, minmax(0, 1fr));
           overflow: visible;
         }
 
         .brand-chip__icon {
-          width: 78px;
-          height: 78px;
-          border-radius: 22px;
+          width: 84px;
+          height: 84px;
+          border-radius: 26px;
         }
 
         .vehicle-grid {
-          grid-template-columns: repeat(3, minmax(0, 1fr));
+          grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 16px;
         }
       }
-
     `,
   ],
 })
 export class HomePageComponent {
-  private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly vehiclesApiService = inject(VehiclesApiService);
 
   protected readonly fallbackImage =
     'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=80';
-  protected readonly popularBrands = POPULAR_BRANDS;
+  protected readonly popularBrands = POPULAR_BRANDS.slice(0, 5);
   protected featuredVehicles: VehicleCardItem[] = [];
 
   constructor() {
     this.vehiclesApiService
-      .search({ limit: 6 })
+      .search({ limit: 4 })
       .subscribe((response) => (this.featuredVehicles = response.items));
-  }
-
-  protected get isOwner() {
-    return (
-      (this.authService.currentUser()?.role ?? this.authService.getSessionRole()) ===
-      'OWNER'
-    );
   }
 
   protected goToSearch(params: Record<string, string | undefined>) {
     this.router.navigate(['/search'], {
       queryParams: params,
     });
-  }
-
-  protected goToOwnerAnnouncements() {
-    if (!this.authService.hasSession()) {
-      this.router.navigate(['/auth/login'], {
-        queryParams: { redirectTo: '/anunciar-carro' },
-      });
-      return;
-    }
-
-    if (this.isOwner) {
-      this.router.navigate(['/anunciar-carro']);
-      return;
-    }
-
-    this.router.navigate(['/anunciar']);
   }
 }

@@ -128,7 +128,7 @@ import { AdminApiService } from '../../core/services/admin-api.service';
       .admin-page {
         display: grid;
         gap: 18px;
-        padding: 20px 16px 32px;
+        padding: 20px 12px 32px;
       }
 
       .admin-hero,

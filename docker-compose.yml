@@ -2,15 +2,16 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-velo}
-      POSTGRES_USER: ${POSTGRES_USER:-velo}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-velo}
+      POSTGRES_DB: ${POSTGRES_DB:-triluga}
+      POSTGRES_USER: ${POSTGRES_USER:-triluga}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-triluga}
     ports:
       - '${POSTGRES_HOST_PORT:-5435}:5432'
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-velo} -d ${POSTGRES_DB:-velo}']
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-triluga} -d ${POSTGRES_DB:-triluga}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -44,8 +45,9 @@ services:
     entrypoint: >
       /bin/sh -c "
       until /usr/bin/mc alias set local http://minio:9000 ${MINIO_ACCESS_KEY:-minioadmin} ${MINIO_SECRET_KEY:-minioadmin}; do sleep 1; done &&
-      /usr/bin/mc mb --ignore-existing local/${MINIO_BUCKET:-velo} &&
-      /usr/bin/mc anonymous set download local/${MINIO_BUCKET:-velo}
+      /usr/bin/mc mb --ignore-existing local/${MINIO_BUCKET:-triluga-public} &&
+      /usr/bin/mc mb --ignore-existing local/${MINIO_PRIVATE_BUCKET:-triluga-private} &&
+      /usr/bin/mc anonymous set download local/${MINIO_BUCKET:-triluga-public}
       "
 
   backend:
@@ -61,10 +63,11 @@ services:
     environment:
       PORT: ${PORT:-3000}
       APP_URL: ${APP_URL:-http://localhost:3002}
-      DATABASE_URL: ${DATABASE_URL:-postgresql://velo:velo@postgres:5432/velo?schema=public}
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-velo_access_secret}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://triluga:triluga@postgres:5432/triluga?schema=public}
+      SHADOW_DATABASE_URL: ${SHADOW_DATABASE_URL:-postgresql://triluga:triluga@postgres:5432/triluga_shadow?schema=public}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-triluga_access_secret}
       JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN:-15m}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-velo_refresh_secret}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-triluga_refresh_secret}
       JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
       PLATFORM_FEE_RATE: ${PLATFORM_FEE_RATE:-0.12}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
@@ -74,8 +77,9 @@ services:
       MINIO_USE_SSL: ${MINIO_USE_SSL:-false}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
-      MINIO_BUCKET: ${MINIO_BUCKET:-velo}
-      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9004/velo}
+      MINIO_BUCKET: ${MINIO_BUCKET:-triluga-public}
+      MINIO_PRIVATE_BUCKET: ${MINIO_PRIVATE_BUCKET:-triluga-private}
+      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9004/triluga-public}
     ports:
       - '${BACKEND_HOST_PORT:-3002}:3000'
 

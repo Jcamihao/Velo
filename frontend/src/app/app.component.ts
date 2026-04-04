@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -11,15 +11,17 @@ import { PrivacyApiService } from './core/services/privacy-api.service';
 import { PrivacyPreferencesService } from './core/services/privacy-preferences.service';
 import { RouteTraceService } from './core/services/route-trace.service';
 import { BottomNavComponent } from './shared/components/bottom-nav.component';
+import { CompareTrayComponent } from './shared/components/compare-tray.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, BottomNavComponent],
+  imports: [CommonModule, RouterOutlet, BottomNavComponent, CompareTrayComponent],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
+  protected readonly pullRefreshThreshold = 88;
   private readonly router = inject(Router);
   private readonly logger = inject(AppLoggerService);
   private readonly analyticsTrackingService = inject(AnalyticsTrackingService);
@@ -29,6 +31,11 @@ export class AppComponent {
   private readonly routeTraceService = inject(RouteTraceService);
   protected readonly authService = inject(AuthService);
   protected menuOpen = false;
+  protected readonly routeStage = signal<'a' | 'b'>('a');
+  protected readonly pullDistance = signal(0);
+  protected readonly isPullRefreshing = signal(false);
+  private pullStartY: number | null = null;
+  private pullEligible = false;
   readonly currentUrl = toSignal(
     this.router.events.pipe(
       filter((event) => event instanceof NavigationEnd),
@@ -49,10 +56,14 @@ export class AppComponent {
       authenticated: this.authService.isAuthenticated(),
     });
 
+    this.router.events
+      .pipe(filter((event) => event instanceof NavigationEnd))
+      .subscribe(() => {
+        this.menuOpen = false;
+        this.routeStage.set(this.routeStage() === 'a' ? 'b' : 'a');
+      });
+
     if (!this.authService.hasSession()) {
-      this.router.events
-        .pipe(filter((event) => event instanceof NavigationEnd))
-        .subscribe(() => (this.menuOpen = false));
       return;
     }
 
@@ -69,9 +80,6 @@ export class AppComponent {
       error: () => undefined,
     });
 
-    this.router.events
-      .pipe(filter((event) => event instanceof NavigationEnd))
-      .subscribe(() => (this.menuOpen = false));
   }
 
   protected toggleMenu() {
@@ -105,22 +113,13 @@ export class AppComponent {
     }
 
     this.closeMenu();
-
-    if ((user?.role ?? role) === 'OWNER') {
-      this.router.navigate(['/anunciar-carro']);
-      return;
-    }
-
-    this.router.navigate(['/anunciar']);
+    this.router.navigate(['/anunciar-carro']);
   }
 
   protected openOwnerDashboard() {
-    const user = this.authService.currentUser();
-    const role = this.authService.getSessionRole();
-
-    if ((user?.role ?? role) !== 'OWNER') {
+    if (!this.authService.hasSession()) {
       this.closeMenu();
-      this.router.navigate(['/anunciar']);
+      this.router.navigate(['/auth/login']);
       return;
     }
 
@@ -236,7 +235,98 @@ export class AppComponent {
     return fullName ? `Foto de perfil de ${fullName}` : 'Foto de perfil';
   }
 
-  protected get isOwnerSession() {
-    return (this.authService.currentUser()?.role ?? this.authService.getSessionRole()) === 'OWNER';
+  protected get menuTitle() {
+    return this.authService.currentUser()?.profile?.fullName?.trim() || 'Triluga';
+  }
+
+  protected get showMenuBrand() {
+    return !this.authService.currentUser()?.profile?.fullName?.trim();
+  }
+
+  protected get hasDashboardAccess() {
+    return !!(
+      this.authService.currentUser() ??
+      this.authService.getSessionRole()
+    );
+  }
+
+  protected handlePullStart(event: TouchEvent) {
+    if (!this.canUsePullToRefresh()) {
+      this.pullStartY = null;
+      this.pullEligible = false;
+      return;
+    }
+
+    this.pullStartY = event.touches[0]?.clientY ?? null;
+    this.pullEligible = globalThis.scrollY <= 0;
+  }
+
+  protected handlePullMove(event: TouchEvent) {
+    if (
+      !this.pullEligible ||
+      this.pullStartY === null ||
+      this.isPullRefreshing()
+    ) {
+      return;
+    }
+
+    const currentY = event.touches[0]?.clientY ?? this.pullStartY;
+    const delta = currentY - this.pullStartY;
+
+    if (delta <= 0 || globalThis.scrollY > 0) {
+      this.pullDistance.set(0);
+      return;
+    }
+
+    const softenedDistance = Math.min(116, delta * 0.45);
+    this.pullDistance.set(softenedDistance);
+
+    if (softenedDistance > 6) {
+      event.preventDefault();
+    }
+  }
+
+  protected handlePullEnd() {
+    if (this.isPullRefreshing()) {
+      return;
+    }
+
+    if (this.pullDistance() >= this.pullRefreshThreshold) {
+      this.isPullRefreshing.set(true);
+      this.pullDistance.set(this.pullRefreshThreshold);
+      globalThis.setTimeout(() => {
+        globalThis.location.reload();
+      }, 180);
+    } else {
+      this.resetPullState();
+    }
+  }
+
+  protected handlePullCancel() {
+    if (!this.isPullRefreshing()) {
+      this.resetPullState();
+    }
+  }
+
+  private resetPullState() {
+    this.pullStartY = null;
+    this.pullEligible = false;
+    this.pullDistance.set(0);
+  }
+
+  private canUsePullToRefresh() {
+    if (this.menuOpen) {
+      return false;
+    }
+
+    if (/^\/chat\/[^/]+/.test(this.currentUrl())) {
+      return false;
+    }
+
+    if (typeof globalThis.matchMedia !== 'function') {
+      return false;
+    }
+
+    return globalThis.matchMedia('(pointer: coarse)').matches;
   }
 }

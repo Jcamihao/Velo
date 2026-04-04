@@ -8,7 +8,7 @@ function isLocalHost(hostname: string) {
 
 function resolvePublicStorageUrl() {
   const fallbackPublicUrl =
-    process.env.MINIO_PUBLIC_URL ?? 'http://localhost:9000/velo-public';
+    process.env.MINIO_PUBLIC_URL ?? 'http://localhost:9000/triluga-public';
   const frontendApiBaseUrl = process.env.FRONTEND_APP_API_BASE_URL;
 
   if (!frontendApiBaseUrl) {
@@ -36,8 +36,8 @@ export const storageConfig = registerAs('storage', () => ({
   useSSL: process.env.MINIO_USE_SSL === 'true',
   accessKey: process.env.MINIO_ACCESS_KEY ?? 'minioadmin',
   secretKey: process.env.MINIO_SECRET_KEY ?? 'minioadmin',
-  bucket: process.env.MINIO_BUCKET ?? 'velo-public',
-  privateBucket: process.env.MINIO_PRIVATE_BUCKET ?? 'velo-private',
+  bucket: process.env.MINIO_BUCKET ?? 'triluga-public',
+  privateBucket: process.env.MINIO_PRIVATE_BUCKET ?? 'triluga-private',
   privateFileUrlExpiresInSeconds: parseInt(
     process.env.MINIO_PRIVATE_URL_EXPIRES_IN_SECONDS ?? '600',
     10,

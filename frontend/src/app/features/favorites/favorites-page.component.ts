@@ -37,7 +37,7 @@ import { VehicleCardComponent } from '../../shared/components/vehicle-card.compo
       .favorites-page {
         display: grid;
         gap: 18px;
-        padding: 20px 16px 40px;
+        padding: 20px 12px 40px;
       }
 
       .favorites-card,

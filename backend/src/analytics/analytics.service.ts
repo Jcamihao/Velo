@@ -54,8 +54,8 @@ export class AnalyticsService {
       firstTimeVisitors,
       registeredUsers,
       registeredListings,
-      renters,
-      owners,
+      commonUsers,
+      admins,
     ] = await Promise.all([
       this.prisma.siteVisit.count({
         where: siteVisitWhere,
@@ -75,13 +75,13 @@ export class AnalyticsService {
       this.prisma.user.count({
         where: {
           ...userWhere,
-          role: Role.RENTER,
+          role: Role.USER,
         },
       }),
       this.prisma.user.count({
         where: {
           ...userWhere,
-          role: Role.OWNER,
+          role: Role.ADMIN,
         },
       }),
     ]);
@@ -91,8 +91,8 @@ export class AnalyticsService {
       firstTimeVisitors,
       registeredUsers,
       registeredListings,
-      renters,
-      owners,
+      commonUsers,
+      admins,
       period,
       generatedAt: new Date().toISOString(),
     };

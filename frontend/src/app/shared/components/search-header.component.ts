@@ -10,24 +10,35 @@ import { AuthService } from '../../core/services/auth.service';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink],
   template: `
-    <section class="search-header">
+    <section class="search-header" [class.search-header--minimal]="minimal">
       <div class="search-header__nav-shell">
+        <div class="search-header__signals" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+
         <header class="search-header__nav">
           <a
             class="search-header__brand"
             routerLink="/"
-            aria-label="Ir para a Home da Velo"
+            aria-label="Ir para a Home da Triluga"
           >
-            <img src="assets/logo_velo.png" alt="Velo" />
+            <span class="search-header__brand-mark">
+              <img src="assets/branding/triluga-mark.svg" alt="Triluga" />
+            </span>
           </a>
 
           <form class="search-header__searchbar" (ngSubmit)="submit()">
-            <span class="material-icons" aria-hidden="true">search</span>
+            <span class="material-icons" aria-hidden="true">travel_explore</span>
             <input
               name="query"
               [(ngModel)]="query"
               placeholder="Buscar anúncio, marca ou cidade"
             />
+            <button *ngIf="!minimal" type="submit" class="search-header__search-submit">
+              Buscar
+            </button>
           </form>
 
           <button
@@ -44,10 +55,28 @@ import { AuthService } from '../../core/services/auth.service';
           </button>
         </header>
 
-        <div class="search-header__copy" *ngIf="title || subtitle">
-          <span class="search-header__eyebrow">Velo</span>
+        <div class="search-header__copy" *ngIf="!minimal && (title || subtitle)">
+          <div class="search-header__copy-top">
+            <span class="search-header__eyebrow">Linha de saída</span>
+
+            <button
+              *ngIf="showFiltersAction"
+              type="button"
+              class="search-header__filters-link"
+              (click)="filters.emit()"
+            >
+              Tunar busca
+            </button>
+          </div>
+
           <h1>{{ title }}</h1>
           <p *ngIf="subtitle">{{ subtitle }}</p>
+
+          <div class="search-header__meta" *ngIf="showMeta">
+            <span *ngIf="query">Termo: {{ query }}</span>
+            <span *ngIf="activeFiltersLabel">{{ activeFiltersLabel }}</span>
+            <span *ngIf="!query && !activeFiltersLabel">Explore por cidade, estilo ou período</span>
+          </div>
         </div>
       </div>
 
@@ -144,81 +173,122 @@ import { AuthService } from '../../core/services/auth.service';
         position: relative;
         overflow: hidden;
         display: grid;
-        gap: 16px;
+        gap: 20px;
         width: 100%;
-        padding: calc(14px + env(safe-area-inset-top, 0px)) 12px 18px;
-        border-radius: 24px;
-        background: linear-gradient(180deg, #473d3e 0%, #362e2f 100%);
-        box-shadow: 0 26px 48px rgba(20, 11, 11, 0.24);
+        padding: calc(16px + env(safe-area-inset-top, 0px)) 12px 22px;
+        border: 1px solid rgba(103, 203, 176, 0.12);
+        border-radius: 32px;
+        background:
+          linear-gradient(135deg, rgba(88, 181, 158, 0.1), transparent 44%),
+          radial-gradient(circle at top right, rgba(88, 181, 158, 0.14), transparent 34%),
+          linear-gradient(180deg, #fbfdfc 0%, #eef5f2 100%);
+        box-shadow: 0 32px 60px rgba(29, 41, 37, 0.12);
       }
 
-      .search-header__nav-shell::before,
-      .search-header__nav-shell::after {
-        content: '';
+      .search-header__signals {
         position: absolute;
-        background: linear-gradient(180deg, #ff5b45 0%, #ff2f22 100%);
+        inset: 0;
         pointer-events: none;
       }
 
-      .search-header__nav-shell::before {
-        top: -20px;
-        right: -22px;
-        width: 146px;
-        height: 104px;
-        border-radius: 0 0 0 88px;
-        transform: rotate(-7deg);
+      .search-header__signals span {
+        position: absolute;
+        border-radius: 999px;
+        background: linear-gradient(90deg, transparent, rgba(103, 203, 176, 0.34), transparent);
       }
 
-      .search-header__nav-shell::after {
-        left: -28px;
-        bottom: 56px;
-        width: 96px;
-        height: 36px;
-        border-radius: 0 20px 20px 0;
-        transform: rotate(-6deg);
+      .search-header__signals span:nth-child(1) {
+        top: 24px;
+        right: -24px;
+        width: 156px;
+        height: 2px;
+        transform: rotate(-12deg);
+      }
+
+      .search-header__signals span:nth-child(2) {
+        left: -22px;
+        bottom: 70px;
+        width: 124px;
+        height: 2px;
+        transform: rotate(14deg);
+      }
+
+      .search-header__signals span:nth-child(3) {
+        right: 60px;
+        bottom: 20px;
+        width: 88px;
+        height: 88px;
+        border: 1px solid rgba(103, 203, 176, 0.16);
+        background: transparent;
+        opacity: 0.6;
       }
 
       .search-header__nav {
         display: grid;
-        grid-template-columns: 48px minmax(0, 1fr) 48px;
-        align-items: center;
-        gap: 8px;
-        width: 100%;
-        margin: 0 auto;
+        gap: 10px;
         position: relative;
         z-index: 1;
+      }
+
+      .search-header--minimal .search-header__nav-shell {
+        gap: 0;
+        padding-bottom: 14px;
+      }
+
+      .search-header--minimal .search-header__nav {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+      }
+
+      .search-header--minimal .search-header__brand-mark {
+        width: clamp(42px, 8vw, 54px);
+      }
+
+      .search-header--minimal .search-header__brand-copy {
+        display: none;
       }
 
       .search-header__brand {
         display: inline-flex;
         align-items: center;
-        justify-content: center;
-        width: 48px;
-        height: 48px;
-        border-radius: 14px;
-        background: rgba(255, 255, 255, 0.98);
-        box-shadow: 0 16px 28px rgba(28, 17, 18, 0.14);
+        gap: 0;
+        width: fit-content;
+        min-width: 0;
+        color: var(--text-primary);
+        text-decoration: none;
       }
 
-      .search-header__brand img {
-        width: 36px;
-        height: 36px;
+      .search-header__brand-mark {
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-start;
+        width: clamp(48px, 9vw, 64px);
+        height: auto;
+        min-width: 0;
+        flex: 0 1 auto;
+      }
+
+      .search-header__brand-mark img {
+        width: 100%;
+        height: auto;
+        display: block;
         object-fit: contain;
+        object-position: left center;
+        filter: drop-shadow(0 14px 20px rgba(50, 128, 106, 0.16));
       }
 
       .search-header__searchbar {
         display: grid;
         grid-template-columns: auto minmax(0, 1fr);
+        gap: 10px;
         align-items: center;
-        gap: 8px;
         min-width: 0;
-        min-height: 48px;
-        padding: 0 11px;
-        border-radius: 16px;
-        background: rgba(255, 255, 255, 0.98);
-        border: 1px solid var(--glass-border);
-        box-shadow: 0 16px 28px rgba(28, 17, 18, 0.12);
-        overflow: hidden;
+        min-height: 62px;
+        padding: 0 14px;
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.82);
+        border: 1px solid rgba(103, 203, 176, 0.14);
+        box-shadow: none;
       }
 
       .search-header__searchbar .material-icons {
@@ -236,27 +306,41 @@ import { AuthService } from '../../core/services/auth.service';
         padding: 0;
         background: transparent;
         box-shadow: none;
-        font: inherit;
-        font-size: 14px;
         color: var(--text-primary);
+        font-size: 13px;
       }
 
       .search-header__searchbar input::placeholder {
         color: var(--text-secondary);
       }
 
+      .search-header__search-submit {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        min-width: 118px;
+        min-height: 44px;
+        padding: 0 18px;
+        border: 0;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #8ad8c7 0%, #58b59e 100%);
+        color: #0b110d;
+        font-size: 12px;
+        font-weight: 700;
+        box-shadow: 0 12px 24px rgba(88, 181, 158, 0.18);
+      }
+
       .search-header__notifications-trigger {
         position: relative;
         display: inline-grid;
         place-items: center;
-        width: 48px;
-        height: 48px;
-        border: 0;
-        border-radius: 14px;
-        background: rgba(255, 255, 255, 0.98);
-        color: var(--primary);
-        box-shadow: 0 16px 28px rgba(28, 17, 18, 0.14);
-        overflow: hidden;
+        width: 58px;
+        height: 58px;
+        border: 1px solid rgba(103, 203, 176, 0.14);
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.84);
+        color: var(--text-primary);
+        box-shadow: none;
       }
 
       .search-header__notifications-trigger .material-icons {
@@ -279,42 +363,83 @@ import { AuthService } from '../../core/services/auth.service';
       }
 
       .search-header__copy {
-        display: grid;
-        gap: 8px;
         position: relative;
         z-index: 1;
-        padding: 2px 2px 0;
+        display: grid;
+        gap: 10px;
         min-width: 0;
+      }
+
+      .search-header__copy-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
       }
 
       .search-header__eyebrow {
         display: inline-flex;
         width: fit-content;
-        padding: 7px 12px;
+        padding: 8px 14px;
         border-radius: 999px;
-        background: rgba(255, 255, 255, 0.12);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        color: rgba(255, 255, 255, 0.92);
-        font-size: 11px;
+        background: rgba(88, 181, 158, 0.1);
+        border: 1px solid rgba(103, 203, 176, 0.14);
+        color: #427a6d;
+        font-size: 10px;
         font-weight: 700;
-        letter-spacing: 0.08em;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
+      }
+
+      .search-header__filters-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 38px;
+        padding: 0 14px;
+        border: 1px solid rgba(103, 203, 176, 0.14);
+        border-radius: 999px;
+        background: rgba(88, 181, 158, 0.08);
+        color: #335d53;
+        font-size: 12px;
+        font-weight: 700;
       }
 
       h1 {
         margin: 0;
-        max-width: 12ch;
-        font-size: 26px;
-        line-height: 0.98;
-        color: #fff;
+        max-width: 13ch;
+        font-size: 34px;
+        line-height: 0.94;
+        color: var(--text-primary);
         overflow-wrap: anywhere;
       }
 
       p {
         margin: 0;
-        max-width: 31ch;
-        color: rgba(255, 255, 255, 0.76);
+        max-width: 42ch;
+        color: rgba(64, 84, 79, 0.76);
         font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .search-header__meta {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .search-header__meta span {
+        display: inline-flex;
+        align-items: center;
+        min-height: 32px;
+        padding: 0 12px;
+        border-radius: 999px;
+        background: #eef5f2;
+        border: 1px solid rgba(103, 203, 176, 0.1);
+        color: #537069;
+        font-size: 11px;
+        font-weight: 500;
       }
 
       .notifications-overlay {
@@ -327,9 +452,7 @@ import { AuthService } from '../../core/services/auth.service';
         position: absolute;
         inset: 0;
         border: 0;
-        background: rgba(15, 23, 42, 0.24);
-        backdrop-filter: blur(6px);
-        -webkit-backdrop-filter: blur(6px);
+        background: rgba(36, 49, 45, 0.18);
       }
 
       .notifications-drawer {
@@ -340,11 +463,13 @@ import { AuthService } from '../../core/services/auth.service';
         width: min(100vw, 100vw);
         display: grid;
         grid-template-rows: auto auto 1fr;
-        gap: 16px;
+        gap: 18px;
         padding: calc(18px + env(safe-area-inset-top, 0px)) 16px calc(20px + env(safe-area-inset-bottom, 0px));
-        background: rgba(255, 255, 255, 0.99);
-        border-left: 1px solid var(--glass-border);
-        box-shadow: -20px 0 40px rgba(90, 115, 145, 0.12);
+        background:
+          radial-gradient(circle at top, rgba(88, 181, 158, 0.08), transparent 26%),
+          linear-gradient(180deg, rgba(251, 253, 252, 0.98), rgba(237, 245, 242, 0.98));
+        border-left: 1px solid rgba(103, 203, 176, 0.12);
+        box-shadow: -20px 0 40px rgba(29, 41, 37, 0.1);
       }
 
       .notifications-drawer__head {
@@ -369,7 +494,7 @@ import { AuthService } from '../../core/services/auth.service';
         height: 42px;
         border: 0;
         border-radius: 14px;
-        background: var(--surface-muted);
+        background: #edf4f1;
         color: var(--text-primary);
       }
 
@@ -385,8 +510,8 @@ import { AuthService } from '../../core/services/auth.service';
         align-content: start;
         padding: 18px;
         border-radius: 22px;
-        background: var(--surface-muted);
-        border: 1px solid var(--glass-border-soft);
+        background: rgba(255, 255, 255, 0.86);
+        border: 1px solid rgba(103, 203, 176, 0.1);
       }
 
       .notifications-drawer__empty strong,
@@ -412,8 +537,8 @@ import { AuthService } from '../../core/services/auth.service';
         gap: 12px;
         padding: 16px;
         border-radius: 20px;
-        background: var(--surface-muted);
-        border: 1px solid var(--glass-border-soft);
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(70, 89, 83, 0.08);
       }
 
       .notifications-drawer__item p,
@@ -427,108 +552,88 @@ import { AuthService } from '../../core/services/auth.service';
       }
 
       .notifications-drawer__item--unread {
-        border-color: rgba(31, 140, 255, 0.2);
-        box-shadow: inset 0 0 0 1px rgba(31, 140, 255, 0.08);
+        border-color: rgba(103, 203, 176, 0.28);
+        box-shadow: inset 0 0 0 1px rgba(103, 203, 176, 0.08);
       }
 
-      @media (min-width: 481px) {
+      @media (min-width: 640px) {
         .search-header__nav-shell {
-          gap: 18px;
-          padding: 18px 16px 24px;
-          border-radius: 28px;
+          gap: 22px;
+          padding: 22px 20px 28px;
         }
 
         .search-header__nav {
           grid-template-columns: auto minmax(0, 1fr) auto;
-          gap: 14px;
-        }
-
-        .search-header__brand,
-        .search-header__notifications-trigger {
-          width: 64px;
-          height: 64px;
-          border-radius: 18px;
-        }
-
-        .search-header__brand img {
-          width: 52px;
-          height: 52px;
+          align-items: center;
+          gap: 16px;
         }
 
         .search-header__searchbar {
-          gap: 10px;
-          min-height: 64px;
+          grid-template-columns: auto minmax(0, 1fr) auto;
           padding: 0 18px;
-          border-radius: 18px;
         }
 
-        .search-header__searchbar input {
-          font-size: 16px;
+        .search-header__search-submit {
+          display: inline-flex;
         }
 
-        .search-header__notifications-trigger .material-icons {
-          font-size: 24px;
+        .search-header--minimal .search-header__nav-shell {
+          gap: 0;
+          padding-bottom: 20px;
         }
 
-        .search-header__copy {
-          padding: 2px 4px 0;
+        .search-header--minimal .search-header__searchbar {
+          grid-template-columns: auto minmax(0, 1fr);
         }
 
         h1 {
-          font-size: 34px;
-        }
-
-        p {
-          font-size: 14px;
+          max-width: 15ch;
+          font-size: 44px;
         }
 
         .notifications-drawer {
-          width: min(92vw, 388px);
+          width: min(92vw, 400px);
           padding: 24px 18px 32px;
         }
       }
 
       @media (min-width: 960px) {
         .search-header__nav-shell {
-          gap: 24px;
-          padding: 24px 26px 30px;
-          border-radius: 34px;
+          gap: 26px;
+          padding: 28px 30px 32px;
+          border-radius: 38px;
         }
 
-        .search-header__nav {
-          gap: 16px;
+        .search-header__brand-mark {
+          width: 190px;
         }
 
-        .search-header__brand,
         .search-header__notifications-trigger {
-          width: 72px;
-          height: 72px;
+          width: 68px;
+          height: 68px;
           border-radius: 22px;
-        }
-
-        .search-header__brand img {
-          width: 58px;
-          height: 58px;
         }
 
         .search-header__searchbar {
           min-height: 72px;
           padding: 0 22px;
-          border-radius: 22px;
+          border-radius: 24px;
         }
 
-        .search-header__copy {
-          gap: 10px;
-          padding: 6px 6px 0;
+        .search-header__searchbar input {
+          font-size: 16px;
+        }
+
+        .search-header--minimal .search-header__nav-shell {
+          padding-bottom: 24px;
         }
 
         h1 {
-          max-width: 16ch;
-          font-size: clamp(40px, 4.2vw, 56px);
+          font-size: clamp(48px, 4.6vw, 64px);
         }
 
         p {
-          max-width: 56ch;
+          max-width: 58ch;
           font-size: 15px;
         }
 
@@ -545,12 +650,15 @@ export class SearchHeaderComponent {
   protected readonly notificationsService = inject(NotificationsCenterService);
   private readonly router = inject(Router);
 
-  @Input() title = 'Encontre um veículo em poucos cliques';
+  @Input() title = 'Escolha seu próximo volante com energia de pista';
   @Input() subtitle =
-    'Pesquise por cidade, período e preço com a mesma agilidade de um app.';
+    'Pesquise por cidade, período e faixa de preço em uma vitrine mais leve, menta e precisa.';
   @Input() query = '';
   @Input() startDate = '';
   @Input() endDate = '';
+  @Input() showFiltersAction = true;
+  @Input() showMeta = true;
+  @Input() minimal = false;
 
   @Output() search = new EventEmitter<{
     q: string;

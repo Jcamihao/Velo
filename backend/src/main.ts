@@ -77,7 +77,7 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionLoggingFilter());
 
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('Velo API')
+    .setTitle('Triluga API')
     .setDescription('API do marketplace de aluguel de carros entre pessoas.')
     .setVersion('1.0.0')
     .addBearerAuth()
@@ -91,6 +91,6 @@ async function bootstrap() {
   });
 
   await app.listen(port);
-  logger.log(`Velo API running at ${appUrl}/api/v1`);
+  logger.log(`Triluga API running at ${appUrl}/api/v1`);
 }
 bootstrap();

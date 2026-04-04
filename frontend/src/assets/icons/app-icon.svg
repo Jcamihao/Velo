@@ -1,19 +1,13 @@
 <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <g fill="#072C49">
-    <circle cx="174" cy="118" r="54"/>
-    <circle cx="174" cy="118" r="16" fill="white"/>
-    <path d="M222 100H374L392 118L374 136H222V100Z"/>
-    <path d="M356 136H386V150H356V136Z"/>
-    <path d="M328 136H354V150H328V136Z"/>
-    <path d="M300 136H326V150H300V136Z"/>
-    <path d="M144 148L92 182C86 186 84 194 89 200C94 206 102 208 108 204L161 170C167 166 169 158 164 152C159 146 151 144 144 148Z"/>
-    <path d="M184 234C198 206 223 186 254 186H288C319 186 344 206 358 234L376 292V382C376 396 364 408 350 408H334C320 408 308 396 308 382V370H204V382C204 396 192 408 178 408H162C148 408 136 396 136 382V292L154 234H184Z"/>
-    <path d="M208 232C216 214 233 202 252 202H290C309 202 326 214 334 232L347 264H195L208 232Z" fill="white"/>
-    <path d="M176 290H218L194 320H166C158 320 152 314 152 306C152 297 159 290 168 290H176Z" fill="white"/>
-    <path d="M336 290H344C353 290 360 297 360 306C360 314 354 320 346 320H318L336 290Z" fill="white"/>
-    <rect x="224" y="338" width="64" height="12" rx="6" fill="white"/>
-  </g>
-  <path d="M120 208C88 240 82 292 108 334" stroke="#072C49" stroke-width="18" stroke-linecap="round"/>
-  <path d="M302 176C350 174 392 188 426 212" stroke="#072C49" stroke-width="18" stroke-linecap="round"/>
-  <path d="M392 222C428 250 438 302 414 340" stroke="#072C49" stroke-width="18" stroke-linecap="round"/>
+  <defs>
+    <linearGradient id="mintGradient" x1="56" y1="88" x2="430" y2="374" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#B9F6E3"/>
+      <stop offset="0.42" stop-color="#76E6BE"/>
+      <stop offset="1" stop-color="#4FC88A"/>
+    </linearGradient>
+  </defs>
+  <rect x="74" y="196" width="120" height="18" rx="9" fill="url(#mintGradient)"/>
+  <rect x="98" y="232" width="100" height="18" rx="9" fill="url(#mintGradient)"/>
+  <rect x="126" y="268" width="72" height="18" rx="9" fill="url(#mintGradient)"/>
+  <path d="M138 146H408C392 186 350 214 292 214H246L206 336C186 352 160 366 134 370L170 214H144C123 214 108 200 108 182C108 162 123 146 144 146H138Z" fill="url(#mintGradient)"/>
 </svg>

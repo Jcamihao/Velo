@@ -4,7 +4,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { UserStatus, VerificationStatus } from '@prisma/client';
+import { BookingStatus, UserStatus, VerificationStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -27,7 +27,8 @@ export class ProfilesService {
   }
 
   async getPublicProfile(userId: string) {
-    const [user, reviewsAggregate, vehicles] = await Promise.all([
+    const [user, reviewsAggregate, reviews, vehicles, ownerBookings] =
+      await Promise.all([
       this.prisma.user.findFirst({
         where: {
           id: userId,
@@ -39,9 +40,9 @@ export class ProfilesService {
           profile: true,
         },
       }),
-      this.prisma.review.aggregate({
+      this.prisma.userReview.aggregate({
         where: {
-          ownerId: userId,
+          targetUserId: userId,
         },
         _avg: {
           rating: true,
@@ -49,6 +50,22 @@ export class ProfilesService {
         _count: {
           rating: true,
         },
+      }),
+      this.prisma.userReview.findMany({
+        where: {
+          targetUserId: userId,
+        },
+        include: {
+          author: {
+            include: {
+              profile: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        take: 12,
       }),
       this.prisma.vehicle.findMany({
         where: {
@@ -68,6 +85,26 @@ export class ProfilesService {
           createdAt: 'desc',
         },
       }),
+      this.prisma.booking.findMany({
+        where: {
+          ownerId: userId,
+        },
+        select: {
+          id: true,
+          status: true,
+          createdAt: true,
+          statusHistory: {
+            select: {
+              toStatus: true,
+              changedById: true,
+              changedAt: true,
+            },
+            orderBy: {
+              changedAt: 'asc',
+            },
+          },
+        },
+      }),
     ]);
 
     if (!user) {
@@ -75,18 +112,90 @@ export class ProfilesService {
     }
 
     const documentStatus =
-      user.profile?.documentVerificationStatus ?? VerificationStatus.NOT_SUBMITTED;
+      user.profile?.documentVerificationStatus ??
+      VerificationStatus.NOT_SUBMITTED;
     const driverLicenseStatus =
-      user.profile?.driverLicenseVerification ?? VerificationStatus.NOT_SUBMITTED;
+      user.profile?.driverLicenseVerification ??
+      VerificationStatus.NOT_SUBMITTED;
+    const ownerResponseStatuses: BookingStatus[] = [
+      BookingStatus.APPROVED,
+      BookingStatus.REJECTED,
+      BookingStatus.CANCELLED,
+    ];
+    const decisionStatuses: BookingStatus[] = [
+      BookingStatus.APPROVED,
+      BookingStatus.IN_PROGRESS,
+      BookingStatus.COMPLETED,
+      BookingStatus.REJECTED,
+    ];
+    const approvedStatuses: BookingStatus[] = [
+      BookingStatus.APPROVED,
+      BookingStatus.IN_PROGRESS,
+      BookingStatus.COMPLETED,
+    ];
+    const completedBookingsCount = ownerBookings.filter(
+      (booking) => booking.status === BookingStatus.COMPLETED,
+    ).length;
+    const responseDelaysInHours = ownerBookings
+      .map((booking) => {
+        const ownerResponse = booking.statusHistory.find(
+          (event) =>
+            event.changedById === userId &&
+            ownerResponseStatuses.includes(event.toStatus),
+        );
+
+        if (!ownerResponse) {
+          return null;
+        }
+
+        return Number(
+          (
+            (ownerResponse.changedAt.getTime() - booking.createdAt.getTime()) /
+            (1000 * 60 * 60)
+          ).toFixed(1),
+        );
+      })
+      .filter((value): value is number => value !== null);
+    const responseRate = this.toPercentage(
+      responseDelaysInHours.length,
+      ownerBookings.length,
+    );
+    const decisionBookings = ownerBookings.filter((booking) =>
+      decisionStatuses.includes(booking.status),
+    );
+    const approvedDecisionCount = decisionBookings.filter((booking) =>
+      approvedStatuses.includes(booking.status),
+    ).length;
+    const approvalRate = this.toPercentage(
+      approvedDecisionCount,
+      decisionBookings.length,
+    );
+    const ownerCancelledCount = ownerBookings.filter((booking) =>
+      booking.statusHistory.some(
+        (event) =>
+          event.toStatus === BookingStatus.CANCELLED &&
+          event.changedById === userId,
+      ),
+    ).length;
+    const cancellationRate = this.toPercentage(
+      ownerCancelledCount,
+      ownerBookings.length,
+    );
+    const averageResponseHours = responseDelaysInHours.length
+      ? Number(
+          (
+            responseDelaysInHours.reduce((total, value) => total + value, 0) /
+            responseDelaysInHours.length
+          ).toFixed(1),
+        )
+      : null;
 
     return {
       id: user.id,
       role: user.role,
       memberSince: user.createdAt,
       fullName:
-        user.profile?.fullName?.trim() ||
-        user.email.split('@')[0] ||
-        'Usuário',
+        user.profile?.fullName?.trim() || user.email.split('@')[0] || 'Usuário',
       avatarUrl: user.profile?.avatarUrl ?? null,
       bio: user.profile?.bio ?? null,
       city: user.profile?.city ?? null,
@@ -94,6 +203,26 @@ export class ProfilesService {
       ratingAverage: Number((reviewsAggregate._avg.rating ?? 0).toFixed(1)),
       reviewsCount: reviewsAggregate._count.rating,
       activeListingsCount: vehicles.length,
+      trustMetrics: {
+        completedBookingsCount,
+        responseRate,
+        averageResponseHours,
+        approvalRate,
+        cancellationRate,
+      },
+      reviews: reviews.map((review) => ({
+        id: review.id,
+        rating: review.rating,
+        comment: review.comment ?? null,
+        createdAt: review.createdAt,
+        author: {
+          id: review.author.id,
+          fullName: review.author.profile?.fullName?.trim() || 'Usuário',
+          avatarUrl: review.author.profile?.avatarUrl ?? null,
+          city: review.author.profile?.city ?? null,
+          state: review.author.profile?.state ?? null,
+        },
+      })),
       verification: {
         documentStatus,
         driverLicenseStatus,
@@ -141,8 +270,11 @@ export class ProfilesService {
         owner: {
           id: user.id,
           fullName: user.profile?.fullName ?? null,
+          avatarUrl: user.profile?.avatarUrl ?? null,
           city: user.profile?.city ?? null,
           state: user.profile?.state ?? null,
+          ratingAverage: Number((reviewsAggregate._avg.rating ?? 0).toFixed(1)),
+          reviewsCount: reviewsAggregate._count.rating,
         },
       })),
     };
@@ -156,6 +288,9 @@ export class ProfilesService {
         userId,
         fullName: dto.fullName ?? '',
         phone: dto.phone ?? '',
+        zipCode: dto.zipCode,
+        addressLine: dto.addressLine,
+        addressComplement: dto.addressComplement,
         city: dto.city ?? '',
         state: dto.state ?? '',
         bio: dto.bio,
@@ -184,7 +319,10 @@ export class ProfilesService {
       },
     });
 
-    const uploadedFile = await this.storageService.uploadPublicFile(file, 'users');
+    const uploadedFile = await this.storageService.uploadPublicFile(
+      file,
+      'users',
+    );
 
     const updatedProfile = await this.prisma.profile.upsert({
       where: { userId },
@@ -195,6 +333,9 @@ export class ProfilesService {
         userId,
         fullName: '',
         phone: '',
+        zipCode: null,
+        addressLine: null,
+        addressComplement: null,
         city: '',
         state: '',
         avatarUrl: uploadedFile.url,
@@ -284,6 +425,14 @@ export class ProfilesService {
     return VerificationStatus.NOT_SUBMITTED;
   }
 
+  private toPercentage(part: number, total: number) {
+    if (!total) {
+      return 0;
+    }
+
+    return Math.round((part / total) * 100);
+  }
+
   private async uploadVerificationDocument(
     userId: string,
     file: Express.Multer.File,
@@ -294,7 +443,9 @@ export class ProfilesService {
     }
 
     if (!file.mimetype?.startsWith('image/')) {
-      throw new BadRequestException('Envie uma imagem válida para verificação.');
+      throw new BadRequestException(
+        'Envie uma imagem válida para verificação.',
+      );
     }
 
     const currentProfile = await this.prisma.profile.findUnique({
@@ -337,6 +488,9 @@ export class ProfilesService {
               userId,
               fullName: '',
               phone: '',
+              zipCode: null,
+              addressLine: null,
+              addressComplement: null,
               city: '',
               state: '',
               documentImageUrl: uploadedFile.key,
@@ -346,6 +500,9 @@ export class ProfilesService {
               userId,
               fullName: '',
               phone: '',
+              zipCode: null,
+              addressLine: null,
+              addressComplement: null,
               city: '',
               state: '',
               driverLicenseImageUrl: uploadedFile.key,
@@ -356,20 +513,25 @@ export class ProfilesService {
     return this.mapPrivateProfile(profile);
   }
 
-  private mapPrivateProfile(profile: {
-    fullName: string;
-    phone: string;
-    city: string;
-    state: string;
-    bio?: string | null;
-    avatarUrl?: string | null;
-    documentNumber?: string | null;
-    driverLicenseNumber?: string | null;
-    documentImageUrl?: string | null;
-    driverLicenseImageUrl?: string | null;
-    documentVerificationStatus?: VerificationStatus;
-    driverLicenseVerification?: VerificationStatus;
-  } | null) {
+  private mapPrivateProfile(
+    profile: {
+      fullName: string;
+      phone: string;
+      zipCode?: string | null;
+      addressLine?: string | null;
+      addressComplement?: string | null;
+      city: string;
+      state: string;
+      bio?: string | null;
+      avatarUrl?: string | null;
+      documentNumber?: string | null;
+      driverLicenseNumber?: string | null;
+      documentImageUrl?: string | null;
+      driverLicenseImageUrl?: string | null;
+      documentVerificationStatus?: VerificationStatus;
+      driverLicenseVerification?: VerificationStatus;
+    } | null,
+  ) {
     if (!profile) {
       return null;
     }
@@ -377,6 +539,9 @@ export class ProfilesService {
     return {
       fullName: profile.fullName,
       phone: profile.phone,
+      zipCode: profile.zipCode ?? null,
+      addressLine: profile.addressLine ?? null,
+      addressComplement: profile.addressComplement ?? null,
       city: profile.city,
       state: profile.state,
       bio: profile.bio ?? null,

@@ -28,6 +28,7 @@ import { AdminModule } from './admin/admin.module';
 import { FavoritesModule } from './favorites/favorites.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { SearchAlertsModule } from './search-alerts/search-alerts.module';
+import { LookupsModule } from './lookups/lookups.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { SearchAlertsModule } from './search-alerts/search-alerts.module';
     FavoritesModule,
     AnalyticsModule,
     SearchAlertsModule,
+    LookupsModule,
     NotificationsModule,
     BookingsModule,
     ReviewsModule,

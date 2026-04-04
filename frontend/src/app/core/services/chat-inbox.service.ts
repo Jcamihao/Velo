@@ -27,11 +27,14 @@ export class ChatInboxService {
   );
 
   constructor() {
-    effect(() => {
-      if (!this.authService.hasSession()) {
-        this.clear();
-      }
-    });
+    effect(
+      () => {
+        if (!this.authService.hasSession()) {
+          this.clear();
+        }
+      },
+      { allowSignalWrites: true },
+    );
 
     this.chatSocketService.conversationUpdated$.subscribe(() => {
       if (this.initialized) {

@@ -1,0 +1,13 @@
+<svg width="302" height="184" viewBox="0 0 302 184" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="trilugaMarkGradient" x1="8" y1="8" x2="260" y2="180" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#B9F6E3"/>
+      <stop offset="0.42" stop-color="#76E6BE"/>
+      <stop offset="1" stop-color="#4FC88A"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="34" width="126" height="14" rx="7" fill="url(#trilugaMarkGradient)"/>
+  <rect x="24" y="68" width="104" height="14" rx="7" fill="url(#trilugaMarkGradient)"/>
+  <rect x="52" y="102" width="78" height="14" rx="7" fill="url(#trilugaMarkGradient)"/>
+  <path d="M64 0H302C290 30 257 50 210 50H170L136 156C120 170 98 180 74 184L104 50H76C59 50 46 40 46 26C46 11 59 0 76 0H64Z" fill="url(#trilugaMarkGradient)"/>
+</svg>

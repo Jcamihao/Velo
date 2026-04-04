@@ -12,7 +12,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       ignoreExpiration: false,
       secretOrKey:
         configService.get<string>('auth.accessSecret') ??
-        'velo_access_secret',
+        'triluga_access_secret',
     });
   }
 

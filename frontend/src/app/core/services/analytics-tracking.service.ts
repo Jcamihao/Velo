@@ -12,8 +12,8 @@ export class AnalyticsTrackingService {
   private readonly storage = globalThis.localStorage;
   private readonly sessionStorageRef = globalThis.sessionStorage;
 
-  private readonly visitorIdKey = 'velo.analytics.visitorId';
-  private readonly sessionTrackedKey = 'velo.analytics.sessionTracked';
+  private readonly visitorIdKey = 'triluga.analytics.visitorId';
+  private readonly sessionTrackedKey = 'triluga.analytics.sessionTracked';
 
   trackCurrentSession(path: string) {
     if (!this.privacyPreferencesService.analyticsConsentGranted()) {

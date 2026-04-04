@@ -44,8 +44,8 @@ async function getAnalyticsSummary(period) {
     firstTimeVisitors,
     registeredUsers,
     registeredListings,
-    renters,
-    owners,
+    commonUsers,
+    admins,
   ] = await Promise.all([
     prisma.siteVisit.count({
       where: siteVisitWhere,
@@ -60,10 +60,10 @@ async function getAnalyticsSummary(period) {
       where: vehicleWhere,
     }),
     prisma.user.count({
-      where: { ...userWhere, role: Role.RENTER },
+      where: { ...userWhere, role: Role.USER },
     }),
     prisma.user.count({
-      where: { ...userWhere, role: Role.OWNER },
+      where: { ...userWhere, role: Role.ADMIN },
     }),
   ]);
 
@@ -72,8 +72,8 @@ async function getAnalyticsSummary(period) {
     firstTimeVisitors,
     registeredUsers,
     registeredListings,
-    renters,
-    owners,
+    commonUsers,
+    admins,
     period,
     periodLabel: PERIOD_LABELS[period],
     generatedAt: new Date(),
@@ -86,8 +86,8 @@ function buildRows(summary) {
     ['Visitantes pela primeira vez', summary.firstTimeVisitors],
     ['Usuarios cadastrados', summary.registeredUsers],
     ['Anuncios cadastrados', summary.registeredListings],
-    ['Usuarios locatarios', summary.renters],
-    ['Usuarios proprietarios', summary.owners],
+    ['Usuarios comuns', summary.commonUsers],
+    ['Administradores', summary.admins],
   ];
 }
 

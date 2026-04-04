@@ -64,7 +64,7 @@ import { ChatSocketService } from '../../core/services/chat-socket.service';
 
               <div class="conversation-card__content">
                 <div class="conversation-card__top">
-                  <strong>{{ conversation.otherParticipant.fullName || conversation.otherParticipant.email }}</strong>
+                  <strong class="profile-name-text">{{ conversation.otherParticipant.fullName || conversation.otherParticipant.email }}</strong>
                   <span>{{ (conversation.lastMessageAt || conversation.updatedAt) | date: 'HH:mm' }}</span>
                 </div>
 
@@ -104,7 +104,7 @@ import { ChatSocketService } from '../../core/services/chat-socket.service';
                   />
 
                   <div class="chat-thread__summary">
-                    <h2>{{ selectedConversation.otherParticipant.fullName || selectedConversation.otherParticipant.email }}</h2>
+                    <h2 class="profile-name-text">{{ selectedConversation.otherParticipant.fullName || selectedConversation.otherParticipant.email }}</h2>
                     <p>
                       <span
                         class="chat-thread__presence"
@@ -168,7 +168,7 @@ import { ChatSocketService } from '../../core/services/chat-socket.service';
                 [class.message--mine]="message.sender.id === currentUserId"
               >
                 <div class="message__bubble">
-                  <strong *ngIf="message.sender.id !== currentUserId">
+                  <strong class="profile-name-text" *ngIf="message.sender.id !== currentUserId">
                     {{ message.sender.fullName || message.sender.email }}
                   </strong>
                   <p>{{ message.content }}</p>
@@ -376,8 +376,8 @@ import { ChatSocketService } from '../../core/services/chat-socket.service';
       }
 
       .conversation-card--active {
-        border-color: rgba(31, 140, 255, 0.24);
-        background: rgba(31, 140, 255, 0.08);
+        border-color: rgba(88, 181, 158, 0.24);
+        background: rgba(88, 181, 158, 0.08);
       }
 
       .conversation-card__image {
@@ -608,12 +608,12 @@ import { ChatSocketService } from '../../core/services/chat-socket.service';
 
       .message--mine .message__bubble {
         border-radius: 22px 22px 8px 22px;
-        background: linear-gradient(180deg, #2495ff 0%, #1a81f7 100%);
-        color: #fff;
+        background: linear-gradient(180deg, #8ad8c7 0%, #58b59e 100%);
+        color: #123128;
       }
 
       .message--mine .message__bubble span {
-        color: rgba(255, 255, 255, 0.82);
+        color: rgba(18, 49, 40, 0.72);
       }
 
       .message__bubble p {

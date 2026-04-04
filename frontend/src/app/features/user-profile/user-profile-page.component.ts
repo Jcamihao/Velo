@@ -22,11 +22,14 @@ import { VehicleCardComponent } from '../../shared/components/vehicle-card.compo
         <p>Estamos buscando o histórico público e os anúncios desse perfil.</p>
       </section>
 
-      <section class="user-profile-shell glass-panel-strong" *ngIf="!isLoading && errorMessage">
+      <section
+        class="user-profile-shell glass-panel-strong"
+        *ngIf="!isLoading && errorMessage"
+      >
         <span class="eyebrow">Perfil</span>
         <h1>Perfil indisponível</h1>
         <p>{{ errorMessage }}</p>
-        <a class="btn btn-secondary" routerLink="/chat">Voltar</a>
+        <a class="btn btn-secondary" routerLink="/search">Voltar</a>
       </section>
 
       <ng-container *ngIf="!isLoading && profile">
@@ -40,20 +43,22 @@ import { VehicleCardComponent } from '../../shared/components/vehicle-card.compo
 
             <div class="user-profile-hero__copy">
               <span class="eyebrow">{{ roleLabel(profile.role) }}</span>
-              <h1>{{ profile.fullName }}</h1>
+              <h1 class="profile-name-text">{{ profile.fullName }}</h1>
               <p class="user-profile-hero__since">
-                Na Velo desde {{ memberSinceLabel(profile.memberSince) }}
+                Na Triluga desde {{ memberSinceLabel(profile.memberSince) }}
               </p>
               <p *ngIf="locationLabel(profile)">{{ locationLabel(profile) }}</p>
             </div>
           </div>
 
-          <p class="user-profile-hero__bio" *ngIf="profile.bio">{{ profile.bio }}</p>
+          <p class="user-profile-hero__bio" *ngIf="profile.bio">
+            {{ profile.bio }}
+          </p>
 
           <div class="user-profile-stats">
             <article>
               <strong>{{ scoreLabel(profile) }}</strong>
-              <span>Pontuação</span>
+              <span>Avaliação geral</span>
             </article>
             <article>
               <strong>{{ profile.reviewsCount }}</strong>
@@ -69,14 +74,182 @@ import { VehicleCardComponent } from '../../shared/components/vehicle-card.compo
         <section class="user-profile-section glass-panel-strong">
           <div class="user-profile-section__header">
             <div>
+              <span class="eyebrow">Dados básicos</span>
+              <h2>Informações públicas</h2>
+            </div>
+          </div>
+
+          <div class="user-profile-facts">
+            <article>
+              <strong>{{ profile.state || '--' }}</strong>
+              <span>UF</span>
+            </article>
+            <article>
+              <strong>{{ profile.city || '--' }}</strong>
+              <span>Cidade</span>
+            </article>
+            <article>
+              <strong>{{ memberSinceLabel(profile.memberSince) }}</strong>
+              <span>Membro desde</span>
+            </article>
+          </div>
+        </section>
+
+        <section class="user-profile-section glass-panel-strong">
+          <div class="user-profile-section__header">
+            <div>
+              <span class="eyebrow">Confiança operacional</span>
+              <h2>Como esse anunciante conduz as reservas</h2>
+            </div>
+          </div>
+
+          <div class="user-profile-trust-grid">
+            <article class="user-profile-trust-card">
+              <strong>{{
+                profile.trustMetrics.completedBookingsCount
+              }}</strong>
+              <span>locações concluídas</span>
+              <small>Histórico público finalizado na plataforma.</small>
+            </article>
+
+            <article class="user-profile-trust-card">
+              <strong>{{ profile.trustMetrics.responseRate }}%</strong>
+              <span>taxa de resposta</span>
+              <small>Pedidos que receberam uma resposta do anunciante.</small>
+            </article>
+
+            <article class="user-profile-trust-card">
+              <strong>{{ averageResponseLabel(profile) }}</strong>
+              <span>tempo médio de resposta</span>
+              <small>Calculado a partir da primeira decisão em cada pedido.</small>
+            </article>
+
+            <article class="user-profile-trust-card">
+              <strong>{{ profile.trustMetrics.approvalRate }}%</strong>
+              <span>taxa de aprovação</span>
+              <small>Pedidos respondidos que acabaram aprovados.</small>
+            </article>
+
+            <article class="user-profile-trust-card">
+              <strong>{{ profile.trustMetrics.cancellationRate }}%</strong>
+              <span>cancelamentos pelo anunciante</span>
+              <small>Quanto menor, mais estável tende a ser a operação.</small>
+            </article>
+          </div>
+        </section>
+
+        <section class="user-profile-section glass-panel-strong">
+          <div class="user-profile-section__header">
+            <div>
+              <span class="eyebrow">Avaliações</span>
+              <h2>Reputação do usuário</h2>
+            </div>
+
+            <span class="user-profile-section__count">{{
+              profile.reviewsCount
+            }}</span>
+          </div>
+
+          <div class="user-profile-review-summary">
+            <div>
+              <strong>{{ scoreLabel(profile) }}</strong>
+              <p>{{ reviewSummaryLabel(profile) }}</p>
+            </div>
+
+            <div
+              class="user-profile-review-stars"
+              [attr.aria-label]="
+                profile.reviewsCount
+                  ? 'Nota média ' + profile.ratingAverage.toFixed(1) + ' de 5'
+                  : 'Sem avaliações'
+              "
+            >
+              <span
+                class="material-icons"
+                *ngFor="let star of ratingOptions; trackBy: trackByValue"
+                aria-hidden="true"
+              >
+                {{
+                  star <= roundedScore(profile.ratingAverage)
+                    ? 'star'
+                    : 'star_border'
+                }}
+              </span>
+            </div>
+          </div>
+
+          <div
+            class="user-profile-review-list"
+            *ngIf="profile.reviews.length; else emptyReviews"
+          >
+            <article
+              class="user-profile-review-card"
+              *ngFor="let review of profile.reviews; trackBy: trackById"
+            >
+              <div class="user-profile-review-card__head">
+                <div class="user-profile-review-card__author">
+                  <img
+                    class="user-profile-review-card__avatar"
+                    [src]="review.author?.avatarUrl || fallbackAvatarImage"
+                    [alt]="review.author?.fullName || 'Usuário'"
+                  />
+
+                  <div>
+                    <strong class="profile-name-text">{{ review.author?.fullName || 'Usuário' }}</strong>
+                    <p>{{ review.createdAt | date: 'dd/MM/yyyy' }}</p>
+                  </div>
+                </div>
+
+                <div
+                  class="user-profile-review-stars"
+                  [attr.aria-label]="'Nota ' + review.rating + ' de 5'"
+                >
+                  <span
+                    class="material-icons"
+                    *ngFor="let star of ratingOptions; trackBy: trackByValue"
+                    aria-hidden="true"
+                  >
+                    {{ star <= review.rating ? 'star' : 'star_border' }}
+                  </span>
+                </div>
+              </div>
+
+              <p>
+                {{
+                  review.comment ||
+                    'O usuário deixou a nota sem comentário adicional.'
+                }}
+              </p>
+            </article>
+          </div>
+
+          <ng-template #emptyReviews>
+            <div class="user-profile-empty">
+              <span class="material-icons" aria-hidden="true">reviews</span>
+              <strong>Ainda sem avaliações públicas</strong>
+              <p>
+                Quando esse usuário concluir locações avaliadas, elas vão
+                aparecer aqui.
+              </p>
+            </div>
+          </ng-template>
+        </section>
+
+        <section class="user-profile-section glass-panel-strong">
+          <div class="user-profile-section__header">
+            <div>
               <span class="eyebrow">Confiança</span>
               <h2>Verificações</h2>
             </div>
 
             <span
               class="verification-pill"
-              [class.verification-pill--approved]="profile.verification.profileStatus === 'APPROVED'"
-              [class.verification-pill--pending]="profile.verification.profileStatus === 'PENDING'"
+              [class.verification-pill--approved]="
+                profile.verification.profileStatus === 'APPROVED'
+              "
+              [class.verification-pill--pending]="
+                profile.verification.profileStatus === 'PENDING'
+              "
             >
               {{ verificationSummary(profile.verification.profileStatus) }}
             </span>
@@ -85,46 +258,72 @@ import { VehicleCardComponent } from '../../shared/components/vehicle-card.compo
           <div class="verification-list">
             <article
               class="verification-item"
-              [class.verification-item--approved]="profile.verification.documentStatus === 'APPROVED'"
-              [class.verification-item--pending]="profile.verification.documentStatus === 'PENDING'"
-              [class.verification-item--rejected]="profile.verification.documentStatus === 'REJECTED'"
+              [class.verification-item--approved]="
+                profile.verification.documentStatus === 'APPROVED'
+              "
+              [class.verification-item--pending]="
+                profile.verification.documentStatus === 'PENDING'
+              "
+              [class.verification-item--rejected]="
+                profile.verification.documentStatus === 'REJECTED'
+              "
             >
               <span class="material-icons" aria-hidden="true">
                 {{ verificationIcon(profile.verification.documentStatus) }}
               </span>
               <div>
                 <strong>Documento</strong>
-                <p>{{ verificationLabel(profile.verification.documentStatus) }}</p>
+                <p>
+                  {{ verificationLabel(profile.verification.documentStatus) }}
+                </p>
               </div>
             </article>
 
             <article
               class="verification-item"
-              [class.verification-item--approved]="profile.verification.driverLicenseStatus === 'APPROVED'"
-              [class.verification-item--pending]="profile.verification.driverLicenseStatus === 'PENDING'"
-              [class.verification-item--rejected]="profile.verification.driverLicenseStatus === 'REJECTED'"
+              [class.verification-item--approved]="
+                profile.verification.driverLicenseStatus === 'APPROVED'
+              "
+              [class.verification-item--pending]="
+                profile.verification.driverLicenseStatus === 'PENDING'
+              "
+              [class.verification-item--rejected]="
+                profile.verification.driverLicenseStatus === 'REJECTED'
+              "
             >
               <span class="material-icons" aria-hidden="true">
                 {{ verificationIcon(profile.verification.driverLicenseStatus) }}
               </span>
               <div>
                 <strong>CNH</strong>
-                <p>{{ verificationLabel(profile.verification.driverLicenseStatus) }}</p>
+                <p>
+                  {{
+                    verificationLabel(profile.verification.driverLicenseStatus)
+                  }}
+                </p>
               </div>
             </article>
 
             <article
               class="verification-item"
-              [class.verification-item--approved]="profile.verification.profileStatus === 'APPROVED'"
-              [class.verification-item--pending]="profile.verification.profileStatus === 'PENDING'"
-              [class.verification-item--rejected]="profile.verification.profileStatus === 'REJECTED'"
+              [class.verification-item--approved]="
+                profile.verification.profileStatus === 'APPROVED'
+              "
+              [class.verification-item--pending]="
+                profile.verification.profileStatus === 'PENDING'
+              "
+              [class.verification-item--rejected]="
+                profile.verification.profileStatus === 'REJECTED'
+              "
             >
               <span class="material-icons" aria-hidden="true">
                 {{ verificationIcon(profile.verification.profileStatus) }}
               </span>
               <div>
                 <strong>Perfil</strong>
-                <p>{{ verificationSummary(profile.verification.profileStatus) }}</p>
+                <p>
+                  {{ verificationSummary(profile.verification.profileStatus) }}
+                </p>
               </div>
             </article>
           </div>
@@ -136,10 +335,15 @@ import { VehicleCardComponent } from '../../shared/components/vehicle-card.compo
               <span class="eyebrow">Anúncios</span>
               <h2>Carros publicados</h2>
             </div>
-            <span class="user-profile-section__count">{{ profile.vehicles.length }}</span>
+            <span class="user-profile-section__count">{{
+              profile.vehicles.length
+            }}</span>
           </div>
 
-          <div class="user-profile-listings" *ngIf="profile.vehicles.length; else emptyListings">
+          <div
+            class="user-profile-listings"
+            *ngIf="profile.vehicles.length; else emptyListings"
+          >
             <app-vehicle-card
               *ngFor="let vehicle of profile.vehicles"
               [vehicle]="vehicle"
@@ -148,7 +352,9 @@ import { VehicleCardComponent } from '../../shared/components/vehicle-card.compo
 
           <ng-template #emptyListings>
             <div class="user-profile-empty">
-              <span class="material-icons" aria-hidden="true">directions_car</span>
+              <span class="material-icons" aria-hidden="true"
+                >directions_car</span
+              >
               <strong>Nenhum anúncio público no momento</strong>
               <p>Esse usuário ainda não tem veículos ativos publicados.</p>
             </div>
@@ -251,10 +457,40 @@ import { VehicleCardComponent } from '../../shared/components/vehicle-card.compo
         gap: 12px;
       }
 
+      .user-profile-facts {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: 1fr;
+      }
+
+      .user-profile-trust-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: 1fr;
+      }
+
       .user-profile-stats article {
         display: grid;
         gap: 4px;
         min-width: 0;
+        padding: 14px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid var(--glass-border-soft);
+      }
+
+      .user-profile-trust-card {
+        display: grid;
+        gap: 6px;
+        padding: 16px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid var(--glass-border-soft);
+      }
+
+      .user-profile-facts article {
+        display: grid;
+        gap: 6px;
         padding: 14px;
         border-radius: 20px;
         background: rgba(255, 255, 255, 0.72);
@@ -267,11 +503,33 @@ import { VehicleCardComponent } from '../../shared/components/vehicle-card.compo
         color: var(--text-primary);
       }
 
+      .user-profile-facts strong {
+        font-size: 20px;
+        line-height: 1.2;
+        color: var(--text-primary);
+      }
+
+      .user-profile-trust-card strong {
+        font-size: 28px;
+        line-height: 1;
+        color: var(--text-primary);
+      }
+
       .user-profile-stats span,
+      .user-profile-facts span,
       .user-profile-section__count {
         color: var(--text-secondary);
         font-size: 13px;
         font-weight: 600;
+      }
+
+      .user-profile-trust-card span,
+      .user-profile-trust-card small {
+        color: var(--text-secondary);
+      }
+
+      .user-profile-trust-card small {
+        line-height: 1.5;
       }
 
       .verification-pill {
@@ -343,6 +601,80 @@ import { VehicleCardComponent } from '../../shared/components/vehicle-card.compo
         margin-bottom: 4px;
       }
 
+      .user-profile-review-summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        padding: 14px 16px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid var(--glass-border-soft);
+      }
+
+      .user-profile-review-summary strong {
+        display: block;
+        font-size: 28px;
+        line-height: 1;
+        margin-bottom: 6px;
+      }
+
+      .user-profile-review-summary p {
+        color: var(--text-secondary);
+      }
+
+      .user-profile-review-stars {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        color: #f59e0b;
+      }
+
+      .user-profile-review-stars .material-icons {
+        font-size: 18px;
+      }
+
+      .user-profile-review-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .user-profile-review-card {
+        display: grid;
+        gap: 12px;
+        padding: 16px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid var(--glass-border-soft);
+      }
+
+      .user-profile-review-card p,
+      .user-profile-review-card strong {
+        margin: 0;
+      }
+
+      .user-profile-review-card__head,
+      .user-profile-review-card__author {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .user-profile-review-card__author {
+        justify-content: flex-start;
+      }
+
+      .user-profile-review-card__avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 16px;
+        object-fit: cover;
+        background: var(--surface-muted);
+      }
+
       .user-profile-listings {
         display: grid;
         gap: 10px;
@@ -385,6 +717,14 @@ import { VehicleCardComponent } from '../../shared/components/vehicle-card.compo
         .user-profile-stats {
           grid-template-columns: repeat(3, minmax(0, 1fr));
         }
+
+        .user-profile-facts {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .user-profile-trust-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
       }
 
       @media (min-width: 1080px) {
@@ -413,12 +753,19 @@ import { VehicleCardComponent } from '../../shared/components/vehicle-card.compo
           grid-template-columns: repeat(3, minmax(0, 1fr));
         }
 
+        .user-profile-trust-grid {
+          grid-template-columns: repeat(5, minmax(0, 1fr));
+        }
+
         .user-profile-listings {
           grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 14px;
         }
-      }
 
+        .user-profile-review-list {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
     `,
   ],
 })
@@ -429,6 +776,7 @@ export class UserProfilePageComponent {
 
   protected readonly fallbackAvatarImage =
     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Crect width='160' height='160' rx='40' fill='%23f3eeee'/%3E%3Ccircle cx='80' cy='60' r='24' fill='%23b7aaac'/%3E%3Cpath d='M40 128c7-22 24-34 40-34s33 12 40 34' fill='%23b7aaac'/%3E%3C/svg%3E";
+  protected readonly ratingOptions = [1, 2, 3, 4, 5];
 
   protected profile: PublicUserProfile | null = null;
   protected isLoading = true;
@@ -442,7 +790,9 @@ export class UserProfilePageComponent {
           this.isLoading = true;
           this.errorMessage = '';
           this.profile = null;
-          return this.profileApiService.getPublicProfile(params.get('id') ?? '');
+          return this.profileApiService.getPublicProfile(
+            params.get('id') ?? '',
+          );
         }),
       )
       .subscribe({
@@ -473,11 +823,20 @@ export class UserProfilePageComponent {
     return profile.ratingAverage.toFixed(1);
   }
 
+  protected reviewSummaryLabel(profile: PublicUserProfile) {
+    if (!profile.reviewsCount) {
+      return 'Esse perfil ainda não recebeu avaliações gerais.';
+    }
+
+    return `Baseado em ${profile.reviewsCount} avaliação${
+      profile.reviewsCount > 1 ? 'ões' : ''
+    } de locação concluída.`;
+  }
+
   protected roleLabel(role: PublicUserProfile['role']) {
     const labels: Record<PublicUserProfile['role'], string> = {
       ADMIN: 'Administrador',
-      OWNER: 'Anfitrião',
-      RENTER: 'Locatário',
+      USER: 'Usuário',
     };
 
     return labels[role] || 'Usuário';
@@ -485,6 +844,18 @@ export class UserProfilePageComponent {
 
   protected locationLabel(profile: PublicUserProfile) {
     return [profile.city, profile.state].filter(Boolean).join(', ');
+  }
+
+  protected averageResponseLabel(profile: PublicUserProfile) {
+    if (profile.trustMetrics.averageResponseHours === null) {
+      return 'Sem base';
+    }
+
+    return `${profile.trustMetrics.averageResponseHours.toFixed(1)}h`;
+  }
+
+  protected roundedScore(value: number) {
+    return Math.max(0, Math.min(5, Math.round(value)));
   }
 
   protected verificationLabel(status: VerificationStatus) {
@@ -518,5 +889,13 @@ export class UserProfilePageComponent {
     };
 
     return icons[status];
+  }
+
+  protected trackById(_: number, item: { id: string }) {
+    return item.id;
+  }
+
+  protected trackByValue(_: number, value: number) {
+    return value;
   }
 }

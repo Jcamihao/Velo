@@ -23,7 +23,7 @@ export class PrivacyService {
       ),
       contactEmail: this.configService.get<string>(
         'PRIVACY_CONTACT_EMAIL',
-        'privacidade@velo.local',
+        'privacidade@triluga.local',
       ),
       sections: [
         {

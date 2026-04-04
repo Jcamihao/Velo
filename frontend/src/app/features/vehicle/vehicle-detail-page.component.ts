@@ -1,11 +1,12 @@
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import { Component, DestroyRef, inject } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AppLoggerService } from '../../core/services/app-logger.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ChatApiService } from '../../core/services/chat-api.service';
 import { ChatInboxService } from '../../core/services/chat-inbox.service';
+import { CompareService } from '../../core/services/compare.service';
 import { FavoritesService } from '../../core/services/favorites.service';
 import { VehiclesApiService } from '../../core/services/vehicles-api.service';
 import { VehicleDetail } from '../../core/models/domain.models';
@@ -40,21 +41,46 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
 @Component({
   selector: 'app-vehicle-detail-page',
   standalone: true,
-  imports: [CommonModule, CurrencyPipe, ImageGalleryComponent, FixedActionButtonComponent],
+  imports: [
+    CommonModule,
+    CurrencyPipe,
+    RouterLink,
+    ImageGalleryComponent,
+    FixedActionButtonComponent,
+  ],
   template: `
     <main class="page vehicle-detail-page" *ngIf="vehicle">
       <section class="detail-stage">
         <div class="detail-stage__toolbar">
-          <button class="icon-chip" type="button" (click)="router.navigate(['/search'])" aria-label="Voltar para busca">
+          <button
+            class="icon-chip"
+            type="button"
+            (click)="router.navigate(['/search'])"
+            aria-label="Voltar para busca"
+          >
             <span class="material-icons" aria-hidden="true">arrow_back</span>
           </button>
           <span>{{ vehicle.title }}</span>
           <button
             class="icon-chip icon-chip--ghost"
             type="button"
+            [class.icon-chip--active]="isCompared"
+            [disabled]="compareDisabled"
+            [attr.aria-label]="
+              isCompared ? 'Remover da comparação' : 'Adicionar à comparação'
+            "
+            (click)="toggleCompare()"
+          >
+            <span class="material-icons" aria-hidden="true">compare_arrows</span>
+          </button>
+          <button
+            class="icon-chip icon-chip--ghost"
+            type="button"
             [class.icon-chip--active]="isFavorite"
             [disabled]="isFavoritePending"
-            [attr.aria-label]="isFavorite ? 'Remover dos favoritos' : 'Salvar nos favoritos'"
+            [attr.aria-label]="
+              isFavorite ? 'Remover dos favoritos' : 'Salvar nos favoritos'
+            "
             (click)="toggleFavorite()"
           >
             <span class="material-icons" aria-hidden="true">{{
@@ -69,7 +95,11 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
             <strong>{{ pickupTitle }}</strong>
             <p>{{ pickupSubtitle }}</p>
           </div>
-          <span class="material-icons detail-stage__pickup-close" aria-hidden="true">close</span>
+          <span
+            class="material-icons detail-stage__pickup-close"
+            aria-hidden="true"
+            >close</span
+          >
         </section>
 
         <section class="detail-stage__meta">
@@ -79,7 +109,9 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
               {{ transmissionLabel(vehicle.transmission) }}
             </span>
             <span>
-              <span class="material-icons" aria-hidden="true">local_gas_station</span>
+              <span class="material-icons" aria-hidden="true"
+                >local_gas_station</span
+              >
               {{ fuelTypeLabel(vehicle.fuelType) }}
             </span>
             <span>
@@ -87,15 +119,22 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
             </span>
           </div>
 
-          <strong class="detail-stage__price">
-            {{ vehicle.dailyRate | currency: 'BRL' : 'symbol' : '1.0-0' }} / semana
+          <strong class="detail-stage__price price-text">
+            {{ vehicle.dailyRate | currency: 'BRL' : 'symbol' : '1.0-0' }} /
+            semana
           </strong>
         </section>
 
-        <div class="detail-stage__promotions" *ngIf="promotionHighlights.length">
+        <div
+          class="detail-stage__promotions"
+          *ngIf="promotionHighlights.length"
+        >
           <span
             class="detail-stage__promo"
-            *ngFor="let promotion of promotionHighlights; trackBy: trackByString"
+            *ngFor="
+              let promotion of promotionHighlights;
+              trackBy: trackByString
+            "
           >
             {{ promotion }}
           </span>
@@ -110,8 +149,16 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
         </header>
 
         <div class="detail-facts">
-          <article class="detail-fact" *ngFor="let detail of visibleDetailItems; trackBy: trackByDetailLabel">
-            <span class="material-icons" aria-hidden="true">{{ detail.icon }}</span>
+          <article
+            class="detail-fact"
+            *ngFor="
+              let detail of visibleDetailItems;
+              trackBy: trackByDetailLabel
+            "
+          >
+            <span class="material-icons" aria-hidden="true">{{
+              detail.icon
+            }}</span>
             <small>{{ detail.label }}</small>
             <strong>{{ detail.value }}</strong>
           </article>
@@ -124,7 +171,11 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
           (click)="toggleDetails()"
         >
           <span class="material-icons" aria-hidden="true">list</span>
-          {{ showAllDetails ? 'Exibir menos' : 'Exibir todos (' + detailItems.length + ')' }}
+          {{
+            showAllDetails
+              ? 'Exibir menos'
+              : 'Exibir todos (' + detailItems.length + ')'
+          }}
         </button>
 
         <section class="detail-info-card">
@@ -135,7 +186,10 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
         <section class="detail-info-card" *ngIf="promotionDetails.length">
           <span class="detail-info-card__eyebrow">Promoções ativas</span>
           <div class="detail-promo-list">
-            <article class="detail-promo" *ngFor="let promotion of promotionDetails; trackBy: trackByTitle">
+            <article
+              class="detail-promo"
+              *ngFor="let promotion of promotionDetails; trackBy: trackByTitle"
+            >
               <strong>{{ promotion.title }}</strong>
               <p>{{ promotion.description }}</p>
               <span *ngIf="promotion.code">{{ promotion.code }}</span>
@@ -146,7 +200,10 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
         <section class="detail-info-card" *ngIf="pricingRuleHighlights.length">
           <span class="detail-info-card__eyebrow">Preço dinâmico</span>
           <div class="detail-promo-list">
-            <article class="detail-promo" *ngFor="let rule of pricingRuleHighlights; trackBy: trackByTitle">
+            <article
+              class="detail-promo"
+              *ngFor="let rule of pricingRuleHighlights; trackBy: trackByTitle"
+            >
               <strong>{{ rule.title }}</strong>
               <p>{{ rule.description }}</p>
             </article>
@@ -156,43 +213,86 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
         <section class="detail-info-card" *ngIf="vehicle.addons.length">
           <span class="detail-info-card__eyebrow">Itens extras</span>
           <div class="detail-addon-list">
-            <article class="detail-addon" *ngFor="let addon of vehicle.addons; trackBy: trackByAddon">
+            <article
+              class="detail-addon"
+              *ngFor="let addon of vehicle.addons; trackBy: trackByAddon"
+            >
               <strong>{{ addon.name }}</strong>
-              <p>{{ addon.description || 'Adicional opcional para a reserva.' }}</p>
-              <span>{{ addon.price | currency: 'BRL' : 'symbol' : '1.2-2' }}</span>
+              <p>
+                {{ addon.description || 'Adicional opcional para a reserva.' }}
+              </p>
+              <span class="price-text">{{
+                addon.price | currency: 'BRL' : 'symbol' : '1.2-2'
+              }}</span>
             </article>
           </div>
         </section>
 
-        <section class="detail-info-card" *ngIf="vehicle.latitude && vehicle.longitude">
+        <section
+          class="detail-info-card"
+          *ngIf="vehicle.latitude && vehicle.longitude"
+        >
           <span class="detail-info-card__eyebrow">Mapa</span>
           <p>Veja o ponto aproximado de retirada no mapa antes de reservar.</p>
-          <a class="detail-map-link" [href]="mapLink" target="_blank" rel="noreferrer">
+          <a
+            class="detail-map-link"
+            [href]="mapLink"
+            target="_blank"
+            rel="noreferrer"
+          >
             Abrir no mapa
           </a>
         </section>
 
         <section class="detail-info-card">
           <span class="detail-info-card__eyebrow">Proprietário</span>
-          <h3>{{ vehicle.owner?.fullName || 'Anfitrião Velo' }}</h3>
-          <p>{{ vehicle.owner?.city }}, {{ vehicle.owner?.state }}</p>
+          <div class="detail-owner-profile">
+            <img
+              class="detail-owner-profile__avatar"
+              [src]="vehicle.owner?.avatarUrl || fallbackAvatarImage"
+              [alt]="vehicle.owner?.fullName || 'Anfitrião Triluga'"
+            />
+
+            <div class="detail-owner-profile__copy">
+              <h3 class="profile-name-text">{{ vehicle.owner?.fullName || 'Anfitrião Triluga' }}</h3>
+              <p>{{ ownerRatingLabel }}</p>
+            </div>
+          </div>
+          <a
+            *ngIf="vehicle.owner?.id"
+            class="detail-owner-link"
+            [routerLink]="['/users', vehicle.owner?.id]"
+          >
+            Ver perfil público
+          </a>
           <span class="detail-info-card__meta" *ngIf="showChatAction">
-            Responde direto no chat da Velo
+            Responde direto no chat da Triluga
           </span>
         </section>
 
-        <section class="detail-info-card detail-info-card--reviews" *ngIf="totalReviewCount; else emptyReviews">
+        <section
+          class="detail-info-card detail-info-card--reviews"
+          *ngIf="totalReviewCount; else emptyReviews"
+        >
           <div class="review-summary">
             <h3>Opiniões do carro</h3>
 
             <div class="review-summary__grid">
               <div class="review-summary__score-block">
-                <strong class="review-summary__score">{{ displayRating | number: '1.1-1' }}</strong>
+                <strong class="review-summary__score">{{
+                  displayRating | number: '1.1-1'
+                }}</strong>
 
-                <div class="review-summary__stars" aria-label="Nota média do carro">
+                <div
+                  class="review-summary__stars"
+                  aria-label="Nota média do carro"
+                >
                   <span
                     class="material-icons"
-                    *ngFor="let star of averageRatingStars; trackBy: trackByIndex"
+                    *ngFor="
+                      let star of averageRatingStars;
+                      trackBy: trackByIndex
+                    "
                     aria-hidden="true"
                   >
                     {{ star }}
@@ -207,7 +307,9 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
                   *ngIf="totalReviewCount"
                 >
                   Recomendado por {{ recommendationPercentage }}%
-                  <span class="material-icons" aria-hidden="true">expand_more</span>
+                  <span class="material-icons" aria-hidden="true"
+                    >expand_more</span
+                  >
                 </button>
               </div>
 
@@ -222,7 +324,9 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
                       [style.width.%]="item.percentage"
                     ></span>
                   </div>
-                  <span class="review-summary__bar-label">{{ item.stars }}</span>
+                  <span class="review-summary__bar-label">{{
+                    item.stars
+                  }}</span>
                   <span class="material-icons" aria-hidden="true">star</span>
                 </div>
               </div>
@@ -237,31 +341,45 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
               </div>
             </div>
 
-            <p class="review-highlight__summary">{{ reviewHighlightSummary }}</p>
+            <p class="review-highlight__summary">
+              {{ reviewHighlightSummary }}
+            </p>
 
             <div class="review-highlight__meta">
-              <span class="material-icons" aria-hidden="true">auto_awesome</span>
+              <span class="material-icons" aria-hidden="true"
+                >auto_awesome</span
+              >
               <span>Resumo baseado nas avaliações enviadas</span>
             </div>
           </section>
 
           <div class="review-list" *ngIf="highlightedReviews.length">
-            <article class="review review--snippet" *ngFor="let review of highlightedReviews; trackBy: trackById">
+            <article
+              class="review review--snippet"
+              *ngFor="let review of highlightedReviews; trackBy: trackById"
+            >
               <div class="review__rating-row">
                 <div class="review__stars">
                   <span
                     class="material-icons"
-                    *ngFor="let star of reviewStars(review.rating); trackBy: trackByIndex"
+                    *ngFor="
+                      let star of reviewStars(review.rating);
+                      trackBy: trackByIndex
+                    "
                     aria-hidden="true"
                   >
                     {{ star }}
                   </span>
                 </div>
-                <span class="review__date">{{ review.createdAt | date: 'dd MMM, y' }}</span>
+                <span class="review__date">{{
+                  review.createdAt | date: 'dd MMM, y'
+                }}</span>
               </div>
 
               <p>{{ excerptReview(review.comment) }}</p>
-              <strong class="review__author">{{ review.author.fullName || 'Usuário' }}</strong>
+              <strong class="review__author">{{
+                review.author.fullName || 'Usuário'
+              }}</strong>
             </article>
           </div>
         </section>
@@ -275,10 +393,16 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
                 <div class="review-summary__score-block">
                   <strong class="review-summary__score">0.0</strong>
 
-                  <div class="review-summary__stars" aria-label="Sem avaliações">
+                  <div
+                    class="review-summary__stars"
+                    aria-label="Sem avaliações"
+                  >
                     <span
                       class="material-icons"
-                    *ngFor="let star of emptyRatingStars; trackBy: trackByIndex"
+                      *ngFor="
+                        let star of emptyRatingStars;
+                        trackBy: trackByIndex
+                      "
                       aria-hidden="true"
                     >
                       {{ star }}
@@ -291,10 +415,15 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
                 <div class="review-summary__distribution">
                   <div
                     class="review-summary__bar-row"
-                    *ngFor="let item of emptyRatingDistribution; trackBy: trackByStars"
+                    *ngFor="
+                      let item of emptyRatingDistribution;
+                      trackBy: trackByStars
+                    "
                   >
                     <div class="review-summary__bar-track"></div>
-                    <span class="review-summary__bar-label">{{ item.stars }}</span>
+                    <span class="review-summary__bar-label">{{
+                      item.stars
+                    }}</span>
                     <span class="material-icons" aria-hidden="true">star</span>
                   </div>
                 </div>
@@ -315,7 +444,10 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
 
       <app-fixed-action-button
         [helper]="footerHelper"
-        [label]="(vehicle.dailyRate | currency: 'BRL' : 'symbol' : '1.0-0') + ' / semana'"
+        [label]="
+          (vehicle.dailyRate | currency: 'BRL' : 'symbol' : '1.0-0') +
+          ' / semana'
+        "
         [actionLabel]="ctaLabel"
         [actionIcon]="ctaIcon"
         [secondaryActionLabel]="footerChatLabel"
@@ -336,14 +468,35 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
         padding: 18px 12px 220px;
       }
 
+      .vehicle-detail-page {
+        --detail-card-surface: rgba(255, 255, 255, 0.92);
+        --detail-card-surface-soft: rgba(246, 251, 249, 0.96);
+        --detail-card-surface-elevated: rgba(235, 244, 240, 0.98);
+        --detail-card-border: var(--glass-border);
+        --detail-card-border-soft: var(--glass-border-soft);
+        --detail-card-ink: var(--text-primary);
+        --detail-card-ink-soft: var(--text-secondary);
+        --detail-stage-card-surface: rgba(246, 251, 249, 0.96);
+        --detail-stage-card-border: rgba(103, 203, 176, 0.14);
+        --detail-stage-card-ink: var(--text-primary);
+        --detail-stage-card-ink-soft: rgba(80, 99, 93, 0.8);
+      }
+
       .detail-stage {
         position: relative;
         display: grid;
         gap: 14px;
         padding: 18px 16px 20px;
         border-radius: 28px;
-        background: linear-gradient(180deg, #4f4445 0%, #383031 100%);
-        box-shadow: 0 30px 54px rgba(20, 11, 11, 0.24);
+        background:
+          linear-gradient(135deg, rgba(88, 181, 158, 0.1), transparent 48%),
+          radial-gradient(
+            circle at top right,
+            rgba(88, 181, 158, 0.14),
+            transparent 30%
+          ),
+          linear-gradient(180deg, #fbfdfc 0%, #eef5f2 100%);
+        box-shadow: 0 30px 54px rgba(29, 41, 37, 0.12);
         overflow: hidden;
       }
 
@@ -351,25 +504,35 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
       .detail-stage::after {
         content: '';
         position: absolute;
-        background: linear-gradient(180deg, #ff5b45 0%, #ff2f22 100%);
       }
 
       .detail-stage::before {
-        top: -18px;
-        right: -12px;
-        width: 126px;
-        height: 92px;
-        border-radius: 0 0 0 70px;
-        transform: rotate(-8deg);
+        top: -42px;
+        right: -26px;
+        width: 184px;
+        height: 184px;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          rgba(103, 203, 176, 0.18) 0%,
+          rgba(103, 203, 176, 0.08) 42%,
+          transparent 74%
+        );
+        opacity: 0.9;
       }
 
       .detail-stage::after {
-        left: -28px;
-        top: 114px;
-        width: 82px;
-        height: 30px;
-        border-radius: 0 18px 18px 0;
-        transform: rotate(-7deg);
+        left: -52px;
+        top: 96px;
+        width: 148px;
+        height: 148px;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          rgba(103, 203, 176, 0.14) 0%,
+          transparent 72%
+        );
+        opacity: 0.55;
       }
 
       .detail-stage__toolbar {
@@ -379,7 +542,7 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
         gap: 12px;
         position: relative;
         z-index: 1;
-        color: #fff;
+        color: var(--text-primary);
         font-size: 14px;
         font-weight: 700;
       }
@@ -398,16 +561,14 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
         padding: 0 14px;
         border-radius: 999px;
         border: 0;
-        background: rgba(255, 255, 255, 0.12);
-        color: #fff;
+        background: rgba(237, 244, 241, 0.96);
+        color: var(--text-primary);
         font: inherit;
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
       }
 
       .icon-chip--ghost {
         background: rgba(255, 255, 255, 0.95);
-        color: var(--text-primary);
+        color: var(--detail-card-ink-soft);
       }
 
       .icon-chip--active {
@@ -423,9 +584,16 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
         z-index: 1;
         padding: 16px 14px;
         border-radius: 18px;
-        background: rgba(255, 255, 255, 0.98);
-        border: 1px solid var(--glass-border-soft);
+        background:
+          linear-gradient(135deg, rgba(88, 181, 158, 0.08), transparent 46%),
+          linear-gradient(
+            180deg,
+            rgba(250, 253, 252, 0.98),
+            rgba(237, 245, 242, 0.96)
+          );
+        border: 1px solid var(--detail-stage-card-border);
         box-shadow: var(--shadow-soft);
+        color: var(--detail-stage-card-ink);
       }
 
       .detail-stage__pickup-card .material-icons {
@@ -439,16 +607,17 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
 
       .detail-stage__pickup-card strong {
         display: block;
+        color: var(--detail-stage-card-ink);
       }
 
       .detail-stage__pickup-card p {
         margin-top: 4px;
-        color: var(--text-secondary);
+        color: var(--detail-stage-card-ink-soft);
         font-size: 12px;
       }
 
       .detail-stage__pickup-close {
-        color: var(--text-disabled) !important;
+        color: var(--detail-stage-card-ink-soft) !important;
       }
 
       .detail-stage__meta {
@@ -473,7 +642,12 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
         flex-wrap: wrap;
         padding: 12px 14px;
         border-radius: 14px;
-        background: rgba(255, 255, 255, 0.96);
+        background: linear-gradient(
+          180deg,
+          rgba(250, 253, 252, 0.98),
+          rgba(237, 245, 242, 0.96)
+        );
+        border: 1px solid var(--detail-stage-card-border);
         box-shadow: var(--shadow-soft);
       }
 
@@ -481,14 +655,14 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        color: var(--text-primary);
+        color: var(--detail-stage-card-ink);
         font-size: 13px;
         font-weight: 600;
       }
 
       .detail-stage__meta-strip .material-icons {
         font-size: 16px;
-        color: var(--text-secondary);
+        color: var(--detail-stage-card-ink-soft);
       }
 
       .detail-stage__price {
@@ -515,8 +689,8 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
         min-height: 32px;
         padding: 0 12px;
         border-radius: 999px;
-        background: rgba(255, 236, 179, 0.98);
-        color: #8a5200;
+        background: rgba(88, 181, 158, 0.12);
+        color: #3f7568;
         font-size: 12px;
         font-weight: 700;
       }
@@ -524,17 +698,20 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
       .detail-panels {
         display: grid;
         gap: 14px;
-        background: rgba(255, 255, 255, 0.98);
-        border: 1px solid var(--glass-border);
-        box-shadow: var(--shadow-soft);
+        background:
+          linear-gradient(180deg, rgba(103, 203, 176, 0.06), transparent 148px),
+          var(--detail-card-surface-soft);
+        border: 1px solid var(--detail-card-border);
+        box-shadow: var(--glass-shadow-strong);
         padding: 18px 16px;
         border-radius: 24px;
+        color: var(--detail-card-ink);
       }
 
       .detail-panels__header h2 {
         margin: 0;
         font-size: 16px;
-        color: var(--text-primary);
+        color: var(--detail-card-ink);
       }
 
       .detail-facts {
@@ -547,16 +724,17 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
         display: grid;
         gap: 8px;
         align-content: start;
-        min-height: 108px;
+        min-height: 96px;
         padding: 14px 12px;
         border-radius: 16px;
-        background: #fff;
-        border: 1px solid var(--glass-border-soft);
+        background: var(--detail-card-surface);
+        border: 1px solid var(--detail-card-border-soft);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
       }
 
       .detail-fact .material-icons {
         justify-self: start;
-        color: var(--text-primary);
+        color: var(--detail-card-ink-soft);
         font-size: 22px;
       }
 
@@ -566,12 +744,12 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
       }
 
       .detail-fact small {
-        color: var(--text-secondary);
+        color: var(--detail-card-ink-soft);
         font-size: 12px;
       }
 
       .detail-fact strong {
-        color: var(--text-primary);
+        color: var(--detail-card-ink);
         font-size: 14px;
         line-height: 1.25;
       }
@@ -583,12 +761,13 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
         width: fit-content;
         min-height: 42px;
         padding: 0 16px;
-        border: 1px solid rgba(58, 47, 48, 0.35);
+        border: 1px solid var(--detail-card-border-soft);
         border-radius: 999px;
-        background: #fff;
-        color: var(--accent);
+        background: var(--detail-card-surface);
+        color: var(--detail-card-ink);
         font-size: 14px;
         font-weight: 600;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
       }
 
       .detail-facts__toggle .material-icons {
@@ -600,8 +779,12 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
         gap: 12px;
         padding: 18px 16px;
         border-radius: 22px;
-        background: rgba(249, 244, 244, 0.7);
-        border: 1px solid var(--glass-border-soft);
+        background:
+          linear-gradient(180deg, rgba(103, 203, 176, 0.04), transparent 120px),
+          var(--detail-card-surface);
+        border: 1px solid var(--detail-card-border-soft);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+        color: var(--detail-card-ink);
       }
 
       .detail-addon-list {
@@ -619,8 +802,8 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
         gap: 4px;
         padding: 12px;
         border-radius: 14px;
-        background: #fff;
-        border: 1px solid var(--glass-border-soft);
+        background: var(--detail-card-surface-elevated);
+        border: 1px solid var(--detail-card-border-soft);
       }
 
       .detail-promo span {
@@ -633,8 +816,8 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
         gap: 4px;
         padding: 12px;
         border-radius: 14px;
-        background: #fff;
-        border: 1px solid var(--glass-border-soft);
+        background: var(--detail-card-surface-elevated);
+        border: 1px solid var(--detail-card-border-soft);
       }
 
       .detail-addon span {
@@ -643,7 +826,18 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
       }
 
       .detail-map-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: fit-content;
+        min-height: 40px;
+        padding: 0 14px;
+        border-radius: 999px;
+        background: var(--detail-card-surface-elevated);
+        border: 1px solid var(--detail-card-border-soft);
         color: var(--primary);
+        font-weight: 700;
+        text-decoration: none;
       }
 
       .detail-info-card__head {
@@ -666,12 +860,70 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
         margin: 0;
         font-size: 20px;
         line-height: 1.1;
-        color: var(--text-primary);
+        color: var(--detail-card-ink);
       }
 
       .detail-info-card__meta {
-        color: var(--text-secondary);
+        color: var(--detail-card-ink-soft);
         font-size: 13px;
+      }
+
+      .detail-info-card p,
+      .detail-promo p,
+      .detail-addon p,
+      .review p {
+        color: var(--detail-card-ink-soft);
+      }
+
+      .detail-promo strong,
+      .detail-addon strong,
+      .review strong {
+        color: var(--detail-card-ink);
+      }
+
+      .detail-owner-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: fit-content;
+        min-height: 40px;
+        padding: 0 14px;
+        border-radius: 999px;
+        background: var(--detail-card-surface-elevated);
+        border: 1px solid var(--detail-card-border-soft);
+        color: var(--primary);
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .detail-owner-profile {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        border-radius: 18px;
+        background: var(--detail-card-surface-elevated);
+        border: 1px solid var(--detail-card-border-soft);
+      }
+
+      .detail-owner-profile__avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 18px;
+        object-fit: cover;
+        background: var(--surface-muted);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .detail-owner-profile__copy {
+        display: grid;
+        gap: 4px;
+        min-width: 0;
+      }
+
+      .detail-owner-profile__copy p {
+        color: var(--detail-card-ink-soft);
       }
 
       .detail-info-card--reviews {
@@ -687,7 +939,7 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
         margin: 0;
         font-size: 20px;
         font-weight: 500;
-        color: var(--text-primary);
+        color: var(--detail-card-ink);
       }
 
       .review-summary__grid {
@@ -703,7 +955,7 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
       }
 
       .review-summary__score {
-        color: #3b82f6;
+        color: var(--primary);
         font-size: 58px;
         font-weight: 700;
         line-height: 0.95;
@@ -713,7 +965,7 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
         display: flex;
         align-items: center;
         gap: 2px;
-        color: #3b82f6;
+        color: var(--primary);
       }
 
       .review-summary__stars .material-icons {
@@ -721,7 +973,7 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
       }
 
       .review-summary__score-block p {
-        color: var(--text-secondary);
+        color: var(--detail-card-ink-soft);
         font-size: 14px;
       }
 
@@ -733,7 +985,7 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
         padding: 0;
         border: 0;
         background: transparent;
-        color: #3b82f6;
+        color: var(--primary);
         font-size: 14px;
         font-weight: 600;
       }
@@ -754,14 +1006,14 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
         grid-template-columns: minmax(0, 1fr) auto auto;
         align-items: center;
         gap: 8px;
-        color: var(--text-disabled);
+        color: var(--detail-card-ink-soft);
       }
 
       .review-summary__bar-track {
         position: relative;
         height: 5px;
         border-radius: 999px;
-        background: #e5e7eb;
+        background: rgba(238, 246, 237, 0.1);
         overflow: hidden;
       }
 
@@ -769,7 +1021,7 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
         position: absolute;
         inset: 0 auto 0 0;
         border-radius: inherit;
-        background: #737373;
+        background: linear-gradient(90deg, #8be1cc 0%, #67cbb0 100%);
       }
 
       .review-summary__bar-label,
@@ -796,16 +1048,16 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
 
       .review-highlight__head h4 {
         font-size: 18px;
-        color: var(--text-primary);
+        color: var(--detail-card-ink);
       }
 
       .review-highlight__head small {
-        color: var(--text-secondary);
+        color: var(--detail-card-ink-soft);
         font-size: 13px;
       }
 
       .review-highlight__summary {
-        color: var(--text-primary);
+        color: var(--detail-card-ink);
         font-size: 16px;
         line-height: 1.45;
       }
@@ -814,12 +1066,12 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        color: var(--text-secondary);
+        color: var(--detail-card-ink-soft);
         font-size: 14px;
       }
 
       .review-highlight__meta .material-icons {
-        color: #3b82f6;
+        color: var(--primary);
         font-size: 18px;
       }
 
@@ -838,8 +1090,8 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
       .review {
         padding: 14px;
         border-radius: 16px;
-        background: #fff;
-        border: 1px solid var(--glass-border-soft);
+        background: var(--detail-card-surface-elevated);
+        border: 1px solid var(--detail-card-border-soft);
       }
 
       .review--snippet {
@@ -858,7 +1110,7 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
         display: inline-flex;
         align-items: center;
         gap: 1px;
-        color: #3b82f6;
+        color: var(--primary);
       }
 
       .review__stars .material-icons {
@@ -866,12 +1118,12 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
       }
 
       .review__date {
-        color: var(--text-secondary);
+        color: var(--detail-card-ink-soft);
         font-size: 13px;
       }
 
       .review__author {
-        color: #3b82f6;
+        color: var(--primary);
         font-size: 14px;
         font-weight: 700;
       }
@@ -888,13 +1140,16 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
         gap: 12px;
       }
 
+      @media (min-width: 390px) {
+        .detail-facts {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 12px;
+        }
+      }
+
       @media (min-width: 481px) {
         .vehicle-detail-page {
           padding: 20px 16px 220px;
-        }
-
-        .detail-facts {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
         .detail-facts {
@@ -979,11 +1234,14 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
 })
 export class VehicleDetailPageComponent {
   protected readonly router = inject(Router);
+  protected readonly fallbackAvatarImage =
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Crect width='160' height='160' rx='40' fill='%23f3eeee'/%3E%3Ccircle cx='80' cy='60' r='24' fill='%23b7aaac'/%3E%3Cpath d='M40 128c7-22 24-34 40-34s33 12 40 34' fill='%23b7aaac'/%3E%3C/svg%3E";
   private readonly route = inject(ActivatedRoute);
   private readonly vehiclesApiService = inject(VehiclesApiService);
   private readonly authService = inject(AuthService);
   private readonly chatApiService = inject(ChatApiService);
   private readonly chatInboxService = inject(ChatInboxService);
+  private readonly compareService = inject(CompareService);
   private readonly favoritesService = inject(FavoritesService);
   private readonly logger = inject(AppLoggerService);
   private readonly destroyRef = inject(DestroyRef);
@@ -993,13 +1251,13 @@ export class VehicleDetailPageComponent {
     }
   ).requestIdleCallback;
   private readonly emptyStarIcons = this.buildStarIcons(0);
-  private readonly emptyRatingDistributionValue: RatingDistributionItem[] = [5, 4, 3, 2, 1].map(
-    (stars) => ({
-      stars,
-      count: 0,
-      percentage: 0,
-    }),
-  );
+  private readonly emptyRatingDistributionValue: RatingDistributionItem[] = [
+    5, 4, 3, 2, 1,
+  ].map((stars) => ({
+    stars,
+    count: 0,
+    percentage: 0,
+  }));
   private readonly reviewStarsCache = new Map<number, StarIcon[]>();
   private detailItemsCacheVehicle?: VehicleDetail;
   private detailItemsCache: DetailFactItem[] = [];
@@ -1035,12 +1293,10 @@ export class VehicleDetailPageComponent {
         return;
       }
 
-      this.vehiclesApiService
-        .getById(vehicleId)
-        .subscribe((vehicle) => {
-          this.vehicle = vehicle;
-          this.scheduleInboxWarmup();
-        });
+      this.vehiclesApiService.getById(vehicleId).subscribe((vehicle) => {
+        this.vehicle = vehicle;
+        this.scheduleInboxWarmup();
+      });
     });
   }
 
@@ -1051,12 +1307,8 @@ export class VehicleDetailPageComponent {
       return 'Entrar para reservar';
     }
 
-    if (user.role === 'OWNER') {
-      return this.isOwnVehicle ? 'Gerenciar meu anúncio' : 'Reservar agora';
-    }
-
-    if (user.role === 'ADMIN') {
-      return 'Abrir admin';
+    if (this.isOwnVehicle) {
+      return 'Gerenciar meu anúncio';
     }
 
     return this.vehicle?.bookingApprovalMode === 'INSTANT'
@@ -1071,12 +1323,8 @@ export class VehicleDetailPageComponent {
       return 'login';
     }
 
-    if (user.role === 'OWNER' && this.isOwnVehicle) {
+    if (this.isOwnVehicle) {
       return 'edit_square';
-    }
-
-    if (user.role === 'ADMIN') {
-      return 'admin_panel_settings';
     }
 
     return 'event_available';
@@ -1091,7 +1339,7 @@ export class VehicleDetailPageComponent {
       return 'Gerencie seu anúncio em tempo real';
     }
 
-    return 'Reserva protegida pela Velo';
+    return 'Reserva protegida pela Triluga';
   }
 
   protected get pickupTitle() {
@@ -1099,7 +1347,10 @@ export class VehicleDetailPageComponent {
       return '';
     }
 
-    return this.vehicle.addressLine?.trim() || `${this.vehicle.city}, ${this.vehicle.state}`;
+    return (
+      this.vehicle.addressLine?.trim() ||
+      `${this.vehicle.city}, ${this.vehicle.state}`
+    );
   }
 
   protected get pickupSubtitle() {
@@ -1364,6 +1615,17 @@ export class VehicleDetailPageComponent {
     return this.reviewAnalytics.reviewHighlightSummary;
   }
 
+  protected get ownerRatingLabel() {
+    const reviewsCount = this.vehicle?.owner?.reviewsCount ?? 0;
+    const ratingAverage = this.vehicle?.owner?.ratingAverage ?? 0;
+
+    if (!reviewsCount) {
+      return 'Ainda sem avaliações de usuário';
+    }
+
+    return `${ratingAverage.toFixed(1)} de média nas avaliações do usuário`;
+  }
+
   protected toggleDetails() {
     this.showAllDetails = !this.showAllDetails;
   }
@@ -1391,7 +1653,9 @@ export class VehicleDetailPageComponent {
     return labels[fuelType] || fuelType;
   }
 
-  protected cancellationPolicyLabel(policy: VehicleDetail['cancellationPolicy']) {
+  protected cancellationPolicyLabel(
+    policy: VehicleDetail['cancellationPolicy'],
+  ) {
     const labels = {
       FLEXIBLE: 'Flexível',
       MODERATE: 'Moderada',
@@ -1440,7 +1704,10 @@ export class VehicleDetailPageComponent {
     const normalizedRating = Math.max(0, Math.min(5, rating));
 
     if (!this.reviewStarsCache.has(normalizedRating)) {
-      this.reviewStarsCache.set(normalizedRating, this.buildStarIcons(normalizedRating));
+      this.reviewStarsCache.set(
+        normalizedRating,
+        this.buildStarIcons(normalizedRating),
+      );
     }
 
     return this.reviewStarsCache.get(normalizedRating) ?? this.emptyStarIcons;
@@ -1486,13 +1753,8 @@ export class VehicleDetailPageComponent {
       return;
     }
 
-    if (user.role === 'OWNER' && this.isOwnVehicle) {
+    if (this.isOwnVehicle) {
       this.router.navigate(['/anunciar-carro']);
-      return;
-    }
-
-    if (user.role === 'ADMIN') {
-      this.router.navigate(['/admin']);
       return;
     }
 
@@ -1510,16 +1772,12 @@ export class VehicleDetailPageComponent {
       return true;
     }
 
-    if (user.role === 'ADMIN') {
-      return false;
-    }
-
     return !this.isOwnVehicle;
   }
 
   protected get chatLabel() {
     return this.authService.currentUser()
-      ? 'Conversar com o proprietário'
+      ? 'Conversar com o anunciante'
       : 'Entrar para conversar';
   }
 
@@ -1590,6 +1848,22 @@ export class VehicleDetailPageComponent {
 
   protected get isFavoritePending() {
     return !!this.vehicle && this.favoritesService.isPending(this.vehicle.id);
+  }
+
+  protected get isCompared() {
+    return !!this.vehicle && this.compareService.isSelected(this.vehicle.id);
+  }
+
+  protected get compareDisabled() {
+    return !this.isCompared && this.compareService.isFull();
+  }
+
+  protected toggleCompare() {
+    if (!this.vehicle) {
+      return;
+    }
+
+    this.compareService.toggle(this.vehicle);
   }
 
   protected toggleFavorite() {
@@ -1699,7 +1973,8 @@ export class VehicleDetailPageComponent {
       return this.reviewAnalyticsCache;
     }
 
-    const totalReviewCount = this.vehicle.reviewsCount || this.vehicle.reviews.length;
+    const totalReviewCount =
+      this.vehicle.reviewsCount || this.vehicle.reviews.length;
     const displayRating = this.vehicle.ratingAverage
       ? this.vehicle.ratingAverage
       : this.vehicle.reviews.length
@@ -1715,11 +1990,15 @@ export class VehicleDetailPageComponent {
       : Math.round((displayRating / 5) * 100);
     const ratingDistribution = this.vehicle.reviews.length
       ? [5, 4, 3, 2, 1].map((stars) => {
-          const count = this.vehicle!.reviews.filter((review) => review.rating === stars).length;
+          const count = this.vehicle!.reviews.filter(
+            (review) => review.rating === stars,
+          ).length;
           return {
             stars,
             count,
-            percentage: Math.round((count / this.vehicle!.reviews.length) * 100),
+            percentage: Math.round(
+              (count / this.vehicle!.reviews.length) * 100,
+            ),
           };
         })
       : this.emptyRatingDistributionValue;
@@ -1730,7 +2009,10 @@ export class VehicleDetailPageComponent {
           return right.rating - left.rating;
         }
 
-        return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
+        return (
+          new Date(right.createdAt).getTime() -
+          new Date(left.createdAt).getTime()
+        );
       })
       .slice(0, 2);
     const tone =

@@ -21,7 +21,7 @@ import { AuthService } from '../../core/services/auth.service';
           <a routerLink="/auth/login" class="btn btn-secondary">Já tenho conta</a>
         </div>
 
-        <div class="actions" *ngIf="user?.role === 'OWNER'">
+        <div class="actions" *ngIf="user">
           <button
             type="button"
             class="btn btn-primary"
@@ -32,13 +32,6 @@ import { AuthService } from '../../core/services/auth.service';
           <button type="button" class="btn btn-secondary" (click)="router.navigate(['/anunciar-carro'])">
             Abrir meus anúncios
           </button>
-        </div>
-
-        <div class="actions" *ngIf="user && user.role !== 'OWNER'">
-          <button type="button" class="btn btn-primary" (click)="router.navigate(['/profile'])">
-            Ir para meu perfil
-          </button>
-          <a routerLink="/search" class="btn btn-secondary">Explorar carros</a>
         </div>
       </section>
 
@@ -66,14 +59,14 @@ import { AuthService } from '../../core/services/auth.service';
       .host-page {
         display: grid;
         gap: 18px;
-        padding: 20px 16px 32px;
+        padding: 20px 12px 32px;
       }
 
       .hero-card,
       .info-grid article {
         padding: 22px;
         border-radius: 28px;
-        background: rgba(255, 255, 255, 0.98);
+        background: var(--glass-surface-strong);
         border: 1px solid var(--glass-border);
         box-shadow: var(--shadow-soft);
       }

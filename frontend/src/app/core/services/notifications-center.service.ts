@@ -22,15 +22,18 @@ export class NotificationsCenterService {
   );
 
   constructor() {
-    effect(() => {
-      if (this.authService.hasSession()) {
-        return;
-      }
+    effect(
+      () => {
+        if (this.authService.hasSession()) {
+          return;
+        }
 
-      this.notificationsSignal.set([]);
-      this.loadingSignal.set(false);
-      this.initializedSignal.set(false);
-    });
+        this.notificationsSignal.set([]);
+        this.loadingSignal.set(false);
+        this.initializedSignal.set(false);
+      },
+      { allowSignalWrites: true },
+    );
   }
 
   ensureLoaded(force = false): Observable<NotificationItem[]> {

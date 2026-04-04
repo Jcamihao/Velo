@@ -1,4 +1,4 @@
-# Operação LGPD da Velo
+# Operação LGPD da Triluga
 
 Versão: `2026-03-27`
 

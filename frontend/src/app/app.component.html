@@ -3,8 +3,35 @@
   [class.with-bottom-nav]="showBottomNav()"
   [class.with-floating-banner]="shouldOffsetShellForBanners"
   [class.with-stacked-banner]="shouldUseStackedBannerOffset"
+  [class.app-shell--pulling]="pullDistance() > 0"
+  [class.app-shell--refreshing]="isPullRefreshing()"
+  [style.--pull-distance.px]="pullDistance()"
+  (touchstart)="handlePullStart($event)"
+  (touchmove)="handlePullMove($event)"
+  (touchend)="handlePullEnd()"
+  (touchcancel)="handlePullCancel()"
 >
-  <router-outlet></router-outlet>
+  <div class="app-shell__pull-refresh" aria-hidden="true">
+    <span class="material-icons app-shell__pull-icon">
+      {{ isPullRefreshing() ? 'autorenew' : 'south' }}
+    </span>
+    <span class="app-shell__pull-label">
+      {{
+        isPullRefreshing()
+          ? 'Atualizando...'
+          : pullDistance() >= pullRefreshThreshold
+            ? 'Solte para atualizar'
+            : 'Puxe para atualizar'
+      }}
+    </span>
+  </div>
+  <div
+    class="app-shell__page-stage"
+    [class.app-shell__page-stage--a]="routeStage() === 'a'"
+    [class.app-shell__page-stage--b]="routeStage() === 'b'"
+  >
+    <router-outlet></router-outlet>
+  </div>
 </div>
 
 <div class="menu-overlay" *ngIf="showBottomNav() && menuOpen">
@@ -29,7 +56,12 @@
 
         <div>
           <span class="menu-drawer__eyebrow">Menu</span>
-          <h2>{{ authService.currentUser()?.profile?.fullName || 'Velo' }}</h2>
+          <h2
+            [class.profile-name-text]="!showMenuBrand"
+            [class.menu-drawer__brand]="showMenuBrand"
+          >
+            {{ menuTitle }}
+          </h2>
           <p>
             {{
               authService.currentUser()?.email ||
@@ -45,11 +77,11 @@
     </header>
 
     <nav class="menu-drawer__nav">
-      <button type="button" class="menu-link" *ngIf="isOwnerSession" (click)="openOwnerDashboard()">
+      <button type="button" class="menu-link" *ngIf="hasDashboardAccess" (click)="openOwnerDashboard()">
         <span class="material-icons" aria-hidden="true">dashboard</span>
         <div>
-          <strong>Dashboard</strong>
-          <small>Faturamento, agenda e pedidos</small>
+          <strong>Dashboard de anúncios</strong>
+          <small>Seus anúncios, agenda e pedidos</small>
         </div>
       </button>
 
@@ -97,7 +129,7 @@
         <span class="material-icons" aria-hidden="true">policy</span>
         <div>
           <strong>Privacidade</strong>
-          <small>Como a Velo trata e protege seus dados</small>
+          <small>Como a Triluga trata e protege seus dados</small>
         </div>
       </button>
 
@@ -113,13 +145,19 @@
   </aside>
 </div>
 
-<app-bottom-nav *ngIf="showBottomNav()" [menuOpen]="menuOpen" (menuToggle)="toggleMenu()"></app-bottom-nav>
+<app-bottom-nav
+  [hidden]="!showBottomNav()"
+  [menuOpen]="menuOpen"
+  (menuToggle)="toggleMenu()"
+></app-bottom-nav>
+
+<app-compare-tray></app-compare-tray>
 
 <section class="privacy-banner" *ngIf="showPrivacyBanner" [class.privacy-banner--docked]="showBottomNav()">
   <div>
     <strong>Preferências de privacidade</strong>
     <p>
-      A Velo só ativa analytics não essencial com a sua permissão. Você pode mudar isso depois na central de privacidade.
+      A Triluga só ativa analytics não essencial com a sua permissão. Você pode mudar isso depois na central de privacidade.
     </p>
   </div>
 
@@ -140,14 +178,14 @@
   [class.install-banner--stacked]="showBottomNav() && showPrivacyBanner"
 >
   <div>
-    <strong>Instale a Velo no celular</strong>
+    <strong>Instale a Triluga no celular</strong>
     <p *ngIf="pwaInstallService.canPromptInstall(); else manualInstallHint">
-      Abra a Velo como aplicativo, com acesso direto pela tela inicial e experiência mais fluida no mobile.
+      Abra a Triluga como aplicativo, com acesso direto pela tela inicial e experiência mais fluida no mobile.
     </p>
 
     <ng-template #manualInstallHint>
       <p *ngIf="pwaInstallService.showIosInstallHint(); else androidInstallHint">
-        No iPhone, toque em Compartilhar e depois em "Adicionar à Tela de Início" para usar a Velo como app.
+        No iPhone, toque em Compartilhar e depois em "Adicionar à Tela de Início" para usar a Triluga como app.
       </p>
     </ng-template>
 
@@ -159,7 +197,7 @@
 
     <ng-template #genericInstallHint>
       <p>
-        Use o menu do navegador para adicionar a Velo à tela inicial enquanto o prompt automático de instalação não estiver disponível.
+        Use o menu do navegador para adicionar a Triluga à tela inicial enquanto o prompt automático de instalação não estiver disponível.
       </p>
     </ng-template>
   </div>

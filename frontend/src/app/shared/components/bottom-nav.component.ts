@@ -1,35 +1,45 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
+import { Component, EventEmitter, Input, Output, effect, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { catchError, of } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { ChatInboxService } from '../../core/services/chat-inbox.service';
+import { AppLoggerService } from '../../core/services/app-logger.service';
 
 @Component({
   selector: 'app-bottom-nav',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <nav class="bottom-nav">
-      <button
-        type="button"
-        *ngFor="let item of items"
-        [class.is-active]="isItemActive(item)"
-        [attr.aria-label]="item.label"
-        [attr.title]="item.label"
-        (click)="handleItemClick(item)"
-      >
-        <span class="nav-icon-wrap">
-          <span class="nav-icon material-icons" aria-hidden="true">{{ item.icon }}</span>
-          <span
-            class="nav-badge"
-            *ngIf="item.key === 'chat' && unreadChatCount"
-          >
-            {{ unreadChatBadge }}
-          </span>
-        </span>
+    <nav
+      class="bottom-nav"
+      [style.--nav-count]="items.length"
+      [style.--active-index]="activeIndex()"
+    >
+      <div class="bottom-nav__track">
+        <span class="bottom-nav__indicator" aria-hidden="true"></span>
 
-        <span class="nav-label">{{ item.label }}</span>
-      </button>
+        <button
+          type="button"
+          *ngFor="let item of items"
+          [class.is-active]="isItemActive(item)"
+          [attr.aria-label]="item.label"
+          [attr.title]="item.label"
+          (click)="handleItemClick(item)"
+        >
+          <span class="nav-icon-wrap">
+            <span class="nav-icon material-icons" aria-hidden="true">{{ item.icon }}</span>
+            <span
+              class="nav-badge"
+              *ngIf="item.key === 'chat' && unreadChatCount"
+            >
+              {{ unreadChatBadge }}
+            </span>
+          </span>
+
+          <span class="nav-label">{{ item.label }}</span>
+        </button>
+      </div>
     </nav>
   `,
   styleUrls: ['./bottom-nav.component.scss'],
@@ -38,11 +48,13 @@ export class BottomNavComponent {
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
   private readonly chatInboxService = inject(ChatInboxService);
+  private readonly logger = inject(AppLoggerService);
   private readonly idleScheduler = (
     globalThis as typeof globalThis & {
       requestIdleCallback?: (callback: () => void) => number;
     }
   ).requestIdleCallback;
+  private inboxWarmupScheduled = false;
 
   @Input() menuOpen = false;
   @Output() menuToggle = new EventEmitter<void>();
@@ -56,20 +68,52 @@ export class BottomNavComponent {
   ] as const;
 
   constructor() {
-    if (!this.authService.hasSession()) {
-      return;
-    }
+    effect(() => {
+      if (!this.authService.hasSession()) {
+        this.inboxWarmupScheduled = false;
+        return;
+      }
 
+      if (this.inboxWarmupScheduled) {
+        return;
+      }
+
+      this.inboxWarmupScheduled = true;
+      this.scheduleInboxWarmup();
+    });
+  }
+
+  private scheduleInboxWarmup() {
     if (this.idleScheduler) {
       this.idleScheduler(() => {
-        this.chatInboxService.ensureReady().subscribe();
+        this.warmupInbox();
       });
       return;
     }
 
     globalThis.setTimeout(() => {
-      this.chatInboxService.ensureReady().subscribe();
+      this.warmupInbox();
     }, 1200);
+  }
+
+  private warmupInbox() {
+    try {
+      this.chatInboxService
+        .ensureReady()
+        .pipe(
+          catchError((error) => {
+            this.logger.warn('bottom-nav', 'chat_inbox_warmup_failed', {
+              message: error?.message ?? 'Erro desconhecido',
+            });
+            return of(false);
+          }),
+        )
+        .subscribe();
+    } catch (error) {
+      this.logger.warn('bottom-nav', 'chat_inbox_warmup_failed_sync', {
+        message: error instanceof Error ? error.message : 'Erro desconhecido',
+      });
+    }
   }
 
   protected handleItemClick(item: (typeof this.items)[number]) {
@@ -79,8 +123,9 @@ export class BottomNavComponent {
     }
 
     if (item.key === 'host') {
-      const role = this.authService.currentUser()?.role ?? this.authService.getSessionRole();
-      this.router.navigateByUrl(role === 'OWNER' ? '/owner-dashboard' : item.link);
+      this.router.navigateByUrl(
+        this.authService.hasSession() ? '/owner-dashboard' : item.link,
+      );
       return;
     }
 
@@ -103,6 +148,11 @@ export class BottomNavComponent {
     }
 
     return currentUrl.startsWith(item.link);
+  }
+
+  protected activeIndex() {
+    const activeIndex = this.items.findIndex((item) => this.isItemActive(item));
+    return activeIndex === -1 ? 0 : activeIndex;
   }
 
   protected get unreadChatCount() {

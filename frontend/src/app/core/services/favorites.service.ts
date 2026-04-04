@@ -29,22 +29,25 @@ export class FavoritesService {
   );
 
   constructor() {
-    effect(() => {
-      const userId = this.authService.currentUser()?.id ?? null;
-      const authenticated = this.authService.isAuthenticated();
+    effect(
+      () => {
+        const userId = this.authService.currentUser()?.id ?? null;
+        const authenticated = this.authService.isAuthenticated();
 
-      if (!authenticated || !userId) {
-        this.reset();
-        return;
-      }
+        if (!authenticated || !userId) {
+          this.reset();
+          return;
+        }
 
-      if (
-        this.loadedForUserIdSignal() !== userId &&
-        this.loadingForUserId !== userId
-      ) {
-        this.refresh();
-      }
-    });
+        if (
+          this.loadedForUserIdSignal() !== userId &&
+          this.loadingForUserId !== userId
+        ) {
+          this.refresh();
+        }
+      },
+      { allowSignalWrites: true },
+    );
   }
 
   refresh() {

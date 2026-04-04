@@ -3,7 +3,7 @@ import { computed, Injectable, signal } from '@angular/core';
 @Injectable({ providedIn: 'root' })
 export class PrivacyPreferencesService {
   private readonly storage = globalThis.localStorage;
-  private readonly analyticsConsentKey = 'velo.privacy.analyticsConsent';
+  private readonly analyticsConsentKey = 'triluga.privacy.analyticsConsent';
   private readonly analyticsConsentSignal = signal<boolean | null>(
     this.readStoredAnalyticsConsent(),
   );

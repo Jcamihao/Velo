@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   ForbiddenException,
   Injectable,
   Logger,
@@ -25,21 +24,19 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
-    this.logger.log(`register_attempt email=${dto.email.toLowerCase()} role=${dto.role}`);
-
-    if (dto.role === Role.ADMIN) {
-      this.logger.warn(`register_blocked_admin email=${dto.email.toLowerCase()}`);
-      throw new BadRequestException('Não é possível criar conta ADMIN.');
-    }
+    this.logger.log(`register_attempt email=${dto.email.toLowerCase()} role=${Role.USER}`);
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
     const user = await this.usersService.createUser({
       email: dto.email,
       passwordHash,
-      role: dto.role,
+      role: Role.USER,
       profile: {
         fullName: dto.fullName,
         phone: dto.phone,
+        zipCode: dto.zipCode,
+        addressLine: dto.addressLine,
+        addressComplement: dto.addressComplement,
         city: dto.city,
         state: dto.state,
       },
@@ -79,7 +76,7 @@ export class AuthService {
   async refresh(refreshToken: string | undefined) {
     const refreshSecret =
       this.configService.get<string>('auth.refreshSecret') ??
-      'velo_refresh_secret';
+      'triluga_refresh_secret';
 
     if (!refreshToken) {
       this.logger.warn('refresh_missing_token');
@@ -126,7 +123,7 @@ export class AuthService {
 
     const refreshSecret =
       this.configService.get<string>('auth.refreshSecret') ??
-      'velo_refresh_secret';
+      'triluga_refresh_secret';
 
     try {
       const payload = await this.jwtService.verifyAsync<JwtPayload>(refreshToken, {
@@ -161,10 +158,10 @@ export class AuthService {
 
     const accessSecret =
       this.configService.get<string>('auth.accessSecret') ??
-      'velo_access_secret';
+      'triluga_access_secret';
     const refreshSecret =
       this.configService.get<string>('auth.refreshSecret') ??
-      'velo_refresh_secret';
+      'triluga_refresh_secret';
 
     const accessExpiresIn =
       this.configService.get<string>('auth.accessExpiresIn') ?? '15m';

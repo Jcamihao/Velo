@@ -18,7 +18,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       useFactory: (configService: ConfigService) => ({
         secret:
           configService.get<string>('auth.accessSecret') ??
-          'velo_access_secret',
+          'triluga_access_secret',
       }),
     }),
   ],

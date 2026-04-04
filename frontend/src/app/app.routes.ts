@@ -46,9 +46,15 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'compare',
+    loadComponent: () =>
+      import('./features/compare/compare-page.component').then(
+        (m) => m.ComparePageComponent,
+      ),
+  },
+  {
     path: 'bookings/new/:vehicleId',
-    canActivate: [authGuard, roleGuard],
-    data: { roles: ['RENTER', 'OWNER'] },
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/booking/booking-page.component').then(
         (m) => m.BookingPageComponent,
@@ -56,8 +62,7 @@ export const routes: Routes = [
   },
   {
     path: 'my-bookings',
-    canActivate: [authGuard, roleGuard],
-    data: { roles: ['RENTER', 'OWNER'] },
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/my-bookings/my-bookings-page.component').then(
         (m) => m.MyBookingsPageComponent,
@@ -103,8 +108,8 @@ export const routes: Routes = [
   },
   {
     path: 'anunciar-carro',
-    canActivate: [authGuard, roleGuard],
-    data: { roles: ['OWNER'], view: 'ads' },
+    canActivate: [authGuard],
+    data: { view: 'ads' },
     loadComponent: () =>
       import('./features/owner-dashboard/owner-dashboard-page.component').then(
         (m) => m.OwnerDashboardPageComponent,
@@ -112,8 +117,8 @@ export const routes: Routes = [
   },
   {
     path: 'owner-dashboard',
-    canActivate: [authGuard, roleGuard],
-    data: { roles: ['OWNER'], view: 'dashboard' },
+    canActivate: [authGuard],
+    data: { view: 'dashboard' },
     loadComponent: () =>
       import('./features/owner-dashboard/owner-dashboard-page.component').then(
         (m) => m.OwnerDashboardPageComponent,

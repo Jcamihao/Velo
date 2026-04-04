@@ -14,9 +14,11 @@ type LoginPayload = {
 };
 
 type RegisterPayload = LoginPayload & {
-  role: Extract<UserRole, 'OWNER' | 'RENTER'>;
   fullName: string;
   phone: string;
+  zipCode: string;
+  addressLine: string;
+  addressComplement?: string;
   city: string;
   state: string;
 };
@@ -37,9 +39,9 @@ export class AuthService {
   private readonly storage = globalThis.sessionStorage;
   private readonly persistentStorage = globalThis.localStorage;
 
-  private readonly accessTokenKey = 'velo.accessToken';
-  private readonly userKey = 'velo.user';
-  private readonly sessionHintKey = 'velo.sessionHint';
+  private readonly accessTokenKey = 'triluga.accessToken';
+  private readonly userKey = 'triluga.user';
+  private readonly sessionHintKey = 'triluga.sessionHint';
 
   private readonly accessTokenSignal = signal<string | null>(
     this.readStoredValue(this.accessTokenKey),
@@ -91,7 +93,7 @@ export class AuthService {
   register(payload: RegisterPayload) {
     this.logger.info('auth', 'register_started', {
       email: payload.email.toLowerCase(),
-      role: payload.role,
+      role: 'USER',
     });
 
     return this.http
@@ -258,10 +260,17 @@ export class AuthService {
       profile: {
         ...currentUser.profile,
         fullName: profile.fullName ?? currentUser.profile?.fullName ?? '',
-        phone: currentUser.profile?.phone ?? '',
+        phone: profile.phone ?? currentUser.profile?.phone ?? '',
+        zipCode: profile.zipCode ?? currentUser.profile?.zipCode ?? null,
+        addressLine:
+          profile.addressLine ?? currentUser.profile?.addressLine ?? null,
+        addressComplement:
+          profile.addressComplement
+          ?? currentUser.profile?.addressComplement
+          ?? null,
         city: profile.city ?? currentUser.profile?.city ?? '',
         state: profile.state ?? currentUser.profile?.state ?? '',
-        bio: currentUser.profile?.bio ?? null,
+        bio: profile.bio ?? currentUser.profile?.bio ?? null,
         avatarUrl: profile.avatarUrl ?? currentUser.profile?.avatarUrl ?? null,
         documentNumber: null,
         driverLicenseNumber: null,
@@ -393,7 +402,10 @@ export class AuthService {
       profile: user.profile
         ? {
             fullName: user.profile.fullName,
-            phone: '',
+            phone: user.profile.phone,
+            zipCode: user.profile.zipCode ?? null,
+            addressLine: user.profile.addressLine ?? null,
+            addressComplement: user.profile.addressComplement ?? null,
             city: user.profile.city,
             state: user.profile.state,
             bio: null,
@@ -402,8 +414,8 @@ export class AuthService {
             driverLicenseNumber: null,
             documentImageUrl: null,
             driverLicenseImageUrl: null,
-            hasDocumentImage: false,
-            hasDriverLicenseImage: false,
+            hasDocumentImage: user.profile.hasDocumentImage ?? false,
+            hasDriverLicenseImage: user.profile.hasDriverLicenseImage ?? false,
             documentVerificationStatus:
               user.profile.documentVerificationStatus ?? 'NOT_SUBMITTED',
             driverLicenseVerification:

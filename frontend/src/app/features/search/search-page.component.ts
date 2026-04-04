@@ -10,6 +10,7 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../core/services/auth.service';
+import { CompareService } from '../../core/services/compare.service';
 import { SearchAlertsApiService } from '../../core/services/search-alerts-api.service';
 import { FilterModalComponent } from '../../shared/components/filter-modal.component';
 import { SearchHeaderComponent } from '../../shared/components/search-header.component';
@@ -17,6 +18,7 @@ import { VehicleMapComponent } from '../../shared/components/vehicle-map.compone
 import { SearchAlert, VehicleCardItem, VehicleType } from '../../core/models/domain.models';
 import { FavoritesService } from '../../core/services/favorites.service';
 import { VehiclesApiService } from '../../core/services/vehicles-api.service';
+import { VehicleCardComponent } from '../../shared/components/vehicle-card.component';
 
 type SearchQuery = {
   q: string;
@@ -43,6 +45,7 @@ type SearchQuery = {
     SearchHeaderComponent,
     FilterModalComponent,
     VehicleMapComponent,
+    VehicleCardComponent,
   ],
   template: `
     <main class="page search-page">
@@ -56,36 +59,53 @@ type SearchQuery = {
         (filters)="filtersOpen = true"
       />
 
-      <section class="search-page__tools">
-        <button type="button" class="btn btn-secondary" (click)="useCurrentLocation()">
-          Minha localização
-        </button>
-        <button
-          type="button"
-          class="btn btn-secondary"
-          *ngIf="hasLocationFilter"
-          (click)="clearLocationFilter()"
-        >
-          Limpar raio
-        </button>
-        <button type="button" class="btn btn-secondary" (click)="mapOpen = !mapOpen">
-          {{ mapOpen ? 'Ocultar mapa' : 'Ver mapa' }}
-        </button>
-        <button
-          *ngIf="authService.hasSession()"
-          type="button"
-          class="btn btn-secondary"
-          [disabled]="alertSaving || !canSaveCurrentSearch || currentAlertSaved"
-          (click)="saveCurrentSearchAlert()"
-        >
-          {{
-            currentAlertSaved
-              ? 'Alerta salvo'
-              : alertSaving
-                ? 'Salvando alerta...'
-                : 'Salvar alerta'
-          }}
-        </button>
+      <section class="search-page__summary">
+        <div class="search-page__summary-copy">
+          <span class="search-page__eyebrow">Buscar</span>
+          <h2>{{ searchOverviewTitle }}</h2>
+          <p>{{ searchOverviewSubtitle }}</p>
+        </div>
+
+        <div class="search-page__summary-meta">
+          <strong>{{ totalItems || vehicles.length || '--' }}</strong>
+          <span>{{ totalItems === 1 ? 'resultado encontrado' : 'resultados encontrados' }}</span>
+        </div>
+
+        <div class="search-page__summary-actions">
+          <button type="button" class="btn btn-secondary" (click)="useCurrentLocation()">
+            Usar minha posição
+          </button>
+          <button
+            type="button"
+            class="btn btn-secondary"
+            *ngIf="hasLocationFilter"
+            (click)="clearLocationFilter()"
+          >
+            Limpar raio
+          </button>
+          <button type="button" class="btn btn-secondary" (click)="mapOpen = !mapOpen">
+            {{ mapOpen ? 'Fechar mapa' : 'Abrir mapa' }}
+          </button>
+          <button
+            *ngIf="authService.hasSession()"
+            type="button"
+            class="btn btn-secondary"
+            [disabled]="alertSaving || !canSaveCurrentSearch || currentAlertSaved"
+            (click)="saveCurrentSearchAlert()"
+          >
+            {{
+              currentAlertSaved
+                ? 'Radar salvo'
+                : alertSaving
+                  ? 'Salvando radar...'
+                  : 'Salvar radar'
+            }}
+          </button>
+        </div>
+
+        <div class="search-page__summary-pills" *ngIf="activeSearchPills.length">
+          <span *ngFor="let pill of activeSearchPills">{{ pill }}</span>
+        </div>
       </section>
 
       <section class="search-page__alerts-card" *ngIf="authService.hasSession()">
@@ -144,71 +164,10 @@ type SearchQuery = {
         </div>
 
         <section class="search-page__budget-grid" *ngIf="vehicles.length">
-          <article
+          <app-vehicle-card
             *ngFor="let vehicle of vehicles"
-            class="search-page__budget-card"
-            tabindex="0"
-            role="button"
-            (click)="goToVehicle(vehicle.id)"
-            (keydown.enter)="goToVehicle(vehicle.id)"
-          >
-            <div class="search-page__budget-media">
-              <button
-                type="button"
-                class="search-page__favorite"
-                [class.search-page__favorite--active]="isFavorite(vehicle.id)"
-                [disabled]="isFavoritePending(vehicle.id)"
-                [attr.aria-label]="
-                  isFavorite(vehicle.id) ? 'Remover dos favoritos' : 'Salvar nos favoritos'
-                "
-                (click)="toggleFavorite(vehicle, $event)"
-              >
-                <span class="material-icons" aria-hidden="true">{{
-                  isFavorite(vehicle.id) ? 'favorite' : 'favorite_border'
-                }}</span>
-              </button>
-              <img [src]="vehicle.coverImage || fallbackImage" [alt]="vehicle.title" />
-            </div>
-
-            <div class="search-page__budget-copy">
-              <div class="search-page__budget-top">
-                <h3>{{ vehicle.title }}</h3>
-                <strong>{{ vehicle.dailyRate | currency: 'BRL' : 'symbol' : '1.0-0' }} / semana</strong>
-              </div>
-
-              <div
-                class="search-page__promo-row"
-                *ngIf="
-                  vehicle.firstBookingDiscountPercent ||
-                  vehicle.weeklyDiscountPercent ||
-                  (vehicle.couponCode && vehicle.couponDiscountPercent)
-                "
-              >
-                <span class="search-page__promo-pill" *ngIf="vehicle.firstBookingDiscountPercent">
-                  1a reserva {{ vehicle.firstBookingDiscountPercent }}% off
-                </span>
-                <span class="search-page__promo-pill" *ngIf="vehicle.weeklyDiscountPercent">
-                  Semanal {{ vehicle.weeklyDiscountPercent }}% off
-                </span>
-                <span class="search-page__promo-pill" *ngIf="vehicle.couponCode && vehicle.couponDiscountPercent">
-                  Cupom ativo
-                </span>
-              </div>
-
-              <div class="search-page__budget-specs">
-                <span>
-                  <span class="material-icons" aria-hidden="true">tune</span>
-                  {{ transmissionLabel(vehicle.transmission) }}
-                </span>
-                <span>
-                  <span class="material-icons" aria-hidden="true">event_seat</span>
-                  {{ vehicle.seats }} lugares
-                </span>
-              </div>
-
-              <p>{{ vehicle.city }}, {{ vehicle.state }}</p>
-            </div>
-          </article>
+            [vehicle]="vehicle"
+          />
         </section>
 
         <p class="loading" *ngIf="loading">Carregando resultados...</p>
@@ -233,10 +192,99 @@ type SearchQuery = {
     `
       .search-page {
         display: grid;
-        gap: 16px;
+        gap: 18px;
         width: 100%;
         margin: 0 auto;
         padding: 18px 12px 132px;
+      }
+
+      .search-page__summary {
+        display: grid;
+        gap: 14px;
+        padding: 20px 18px;
+        border-radius: 24px;
+        border: 1px solid rgba(70, 89, 83, 0.08);
+        background: rgba(250, 253, 252, 0.96);
+        box-shadow: var(--shadow-soft);
+        color: var(--text-primary);
+      }
+
+      .search-page__summary-copy {
+        display: grid;
+        gap: 8px;
+      }
+
+      .search-page__eyebrow {
+        display: inline-flex;
+        width: fit-content;
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: rgba(88, 181, 158, 0.1);
+        color: #427a6d;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .search-page__summary-copy h2,
+      .search-page__summary-copy p {
+        margin: 0;
+      }
+
+      .search-page__summary-copy h2 {
+        max-width: 16ch;
+        font-size: 28px;
+        line-height: 1;
+        color: var(--text-primary);
+      }
+
+      .search-page__summary-copy p {
+        max-width: 56ch;
+        color: rgba(64, 84, 79, 0.76);
+        line-height: 1.5;
+      }
+
+      .search-page__summary-meta {
+        display: grid;
+        gap: 2px;
+      }
+
+      .search-page__summary-meta strong {
+        font-family: var(--font-display);
+        font-size: 26px;
+        letter-spacing: -0.04em;
+        color: var(--primary);
+      }
+
+      .search-page__summary-meta span {
+        color: rgba(80, 99, 93, 0.8);
+        font-size: 13px;
+      }
+
+      .search-page__summary-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .search-page__summary-pills {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .search-page__summary-pills span {
+        display: inline-flex;
+        align-items: center;
+        min-height: 32px;
+        padding: 0 11px;
+        border-radius: 999px;
+        background: #f1f7f4;
+        border: 1px solid rgba(70, 89, 83, 0.08);
+        color: #4b6d65;
+        font-size: 11px;
+        font-weight: 600;
       }
 
       .search-page__section-head h2,
@@ -247,36 +295,30 @@ type SearchQuery = {
       .search-page__section {
         display: grid;
         gap: 14px;
-        padding: 18px 16px;
-        border-radius: 22px;
-        background: rgba(255, 255, 255, 0.98);
-        border: 1px solid var(--glass-border);
+        padding: 18px;
+        border-radius: 24px;
+        background: rgba(250, 253, 252, 0.96);
+        border: 1px solid rgba(70, 89, 83, 0.08);
         box-shadow: var(--shadow-soft);
-      }
-
-      .search-page__tools {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
       }
 
       .search-page__map-card {
         display: grid;
-        gap: 14px;
-        padding: 18px 16px;
-        border-radius: 22px;
-        background: rgba(255, 255, 255, 0.98);
-        border: 1px solid var(--glass-border);
+        gap: 12px;
+        padding: 18px;
+        border-radius: 24px;
+        background: rgba(250, 253, 252, 0.96);
+        border: 1px solid rgba(70, 89, 83, 0.08);
         box-shadow: var(--shadow-soft);
       }
 
       .search-page__alerts-card {
         display: grid;
-        gap: 14px;
-        padding: 18px 16px;
-        border-radius: 22px;
-        background: rgba(255, 255, 255, 0.98);
-        border: 1px solid var(--glass-border);
+        gap: 12px;
+        padding: 18px;
+        border-radius: 24px;
+        background: rgba(250, 253, 252, 0.96);
+        border: 1px solid rgba(70, 89, 83, 0.08);
         box-shadow: var(--shadow-soft);
       }
 
@@ -290,153 +332,19 @@ type SearchQuery = {
 
       .search-page__section-head h2 {
         color: var(--text-primary);
-        font-size: 18px;
+        font-size: 24px;
         font-weight: 700;
       }
 
       .search-page__section-head span {
         color: var(--text-secondary);
-        font-size: 13px;
-      }
-
-      .search-page__budget-card {
-        min-width: 0;
-        border: 0;
-        text-align: left;
-        color: inherit;
-        cursor: pointer;
-      }
-
-      .search-page__favorite {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        z-index: 1;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 34px;
-        height: 34px;
-        border: 0;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.94);
-        color: var(--text-secondary);
-        box-shadow: 0 8px 18px rgba(28, 17, 18, 0.08);
-      }
-
-      .search-page__favorite--active {
-        color: var(--primary);
+        font-size: 12px;
       }
 
       .search-page__budget-grid {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
-        gap: 14px;
-      }
-
-      .search-page__budget-card {
-        display: grid;
-        gap: 10px;
-        padding: 12px;
-        border-radius: 18px;
-        background: rgba(255, 255, 255, 0.98);
-        border: 1px solid var(--glass-border-soft);
-        box-shadow: 0 12px 24px rgba(28, 17, 18, 0.08);
-      }
-
-      .search-page__budget-media {
-        position: relative;
-        min-height: 118px;
-        border-radius: 14px;
-        overflow: hidden;
-        background: linear-gradient(180deg, #fffdfd 0%, #f5efef 100%);
-      }
-
-      .search-page__budget-media img {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
-
-      .search-page__budget-copy {
-        display: grid;
-        gap: 8px;
-      }
-
-      .search-page__budget-top {
-        display: grid;
-        gap: 10px;
-      }
-
-      .search-page__budget-top h3,
-      .search-page__budget-copy p {
-        margin: 0;
-      }
-
-      .search-page__budget-top h3 {
-        font-size: 15px;
-        line-height: 1.2;
-        color: var(--text-primary);
-        display: -webkit-box;
-        overflow: hidden;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-      }
-
-      .search-page__budget-top strong {
-        color: var(--primary);
-        font-size: 18px;
-        font-weight: 800;
-        letter-spacing: -0.03em;
-      }
-
-      .search-page__promo-row {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-      }
-
-      .search-page__promo-pill {
-        display: inline-flex;
-        align-items: center;
-        min-height: 28px;
-        padding: 0 10px;
-        border-radius: 999px;
-        background: rgba(245, 158, 11, 0.14);
-        color: #9a5c00;
-        font-size: 11px;
-        font-weight: 700;
-      }
-
-      .search-page__budget-specs {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-        color: var(--text-secondary);
-        font-size: 12px;
-        font-weight: 600;
-      }
-
-      .search-page__budget-specs span {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-      }
-
-      .search-page__budget-specs .material-icons {
-        font-size: 15px;
-      }
-
-      .search-page__budget-copy p {
-        color: var(--text-secondary);
-        font-size: 12px;
-        display: -webkit-box;
-        overflow: hidden;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
+        gap: 16px;
       }
 
       .search-page__alert-list {
@@ -451,9 +359,9 @@ type SearchQuery = {
         gap: 12px;
         flex-wrap: wrap;
         padding: 14px;
-        border-radius: 18px;
-        background: var(--surface-muted);
-        border: 1px solid var(--glass-border-soft);
+        border-radius: 20px;
+        background: #f3f8f6;
+        border: 1px solid rgba(70, 89, 83, 0.08);
       }
 
       .search-page__alert-item strong,
@@ -464,9 +372,9 @@ type SearchQuery = {
       .empty-state,
       .loading {
         padding: 18px;
-        border-radius: 22px;
-        background: var(--surface-muted);
-        border: 1px solid var(--glass-border-soft);
+        border-radius: 24px;
+        background: #f3f8f6;
+        border: 1px solid rgba(70, 89, 83, 0.08);
         text-align: center;
         color: var(--text-secondary);
       }
@@ -485,11 +393,6 @@ type SearchQuery = {
           padding: 20px 16px 132px;
         }
 
-        .search-page__budget-top {
-          grid-template-columns: minmax(0, 1fr) auto;
-          align-items: start;
-        }
-
         .search-page__budget-grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
@@ -501,9 +404,17 @@ type SearchQuery = {
           padding: 28px 20px 56px;
         }
 
+        .search-page__summary {
+          padding: 24px;
+        }
+
+        .search-page__summary-copy h2 {
+          font-size: 34px;
+        }
+
         .search-page__section {
-          padding: 22px;
-          border-radius: 26px;
+          padding: 24px;
+          border-radius: 30px;
         }
 
         .search-page__budget-grid {
@@ -511,16 +422,6 @@ type SearchQuery = {
           gap: 16px;
         }
 
-        .search-page__budget-card {
-          gap: 12px;
-          padding: 14px;
-          border-radius: 20px;
-        }
-
-        .search-page__budget-media {
-          min-height: 172px;
-          border-radius: 16px;
-        }
       }
 
     `,
@@ -530,6 +431,7 @@ export class SearchPageComponent implements AfterViewInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   protected readonly authService = inject(AuthService);
+  private readonly compareService = inject(CompareService);
   private readonly favoritesService = inject(FavoritesService);
   private readonly searchAlertsApiService = inject(SearchAlertsApiService);
   private readonly vehiclesApiService = inject(VehiclesApiService);
@@ -705,6 +607,20 @@ export class SearchPageComponent implements AfterViewInit, OnDestroy {
     this.favoritesService.toggleFavorite(vehicle);
   }
 
+  protected isCompared(vehicleId: string) {
+    return this.compareService.isSelected(vehicleId);
+  }
+
+  protected compareDisabled(vehicleId: string) {
+    return !this.compareService.isSelected(vehicleId) && this.compareService.isFull();
+  }
+
+  protected toggleCompare(vehicle: VehicleCardItem, event: Event) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.compareService.toggle(vehicle);
+  }
+
   protected saveCurrentSearchAlert() {
     const filters = this.buildAlertFilters();
 
@@ -819,6 +735,60 @@ export class SearchPageComponent implements AfterViewInit, OnDestroy {
       : 'Use sua localização para filtrar no mapa';
   }
 
+  protected get activeSearchPills() {
+    const pills: string[] = [];
+
+    if (this.query.q) {
+      pills.push(`Termo: ${this.query.q}`);
+    }
+
+    if (this.query.city) {
+      pills.push(`Cidade: ${this.query.city}`);
+    }
+
+    if (this.query.startDate && this.query.endDate) {
+      pills.push(`Período: ${this.query.startDate} até ${this.query.endDate}`);
+    }
+
+    if (this.query.vehicleType === 'CAR') {
+      pills.push('Categoria: carros');
+    }
+
+    if (this.query.vehicleType === 'MOTORCYCLE') {
+      pills.push('Categoria: motos');
+    }
+
+    if (this.query.maxPrice) {
+      pills.push(`Até R$ ${this.query.maxPrice}`);
+    }
+
+    if (this.hasLocationFilter) {
+      pills.push(`Raio de ${this.query.radiusKm || '20'} km`);
+    }
+
+    return pills;
+  }
+
+  protected get searchOverviewTitle() {
+    if (this.query.vehicleType === 'MOTORCYCLE') {
+      return this.query.city ? `Motos em radar por ${this.query.city}` : 'Motos em radar';
+    }
+
+    if (this.query.vehicleType === 'CAR') {
+      return this.query.city ? `Carros em radar por ${this.query.city}` : 'Carros em radar';
+    }
+
+    return this.query.city ? `Veículos com saída em ${this.query.city}` : 'Veículos com saída imediata';
+  }
+
+  protected get searchOverviewSubtitle() {
+    if (this.hasLocationFilter) {
+      return 'O mapa já está calibrado com seu raio atual. Ajuste a rota, salve um radar e acompanhe quando aparecer algo melhor com mais presença visual.';
+    }
+
+    return 'Combine termo, período, tipo de veículo e preço para transformar a busca em um recorte mais rápido, técnico e menos genérico.';
+  }
+
   protected get searchTitle() {
     if (this.query.vehicleType === 'CAR') {
       return 'Buscar carros';
@@ -829,12 +799,12 @@ export class SearchPageComponent implements AfterViewInit, OnDestroy {
 
   protected get searchSubtitle() {
     if (this.query.vehicleType === 'CAR') {
-      return 'Escolha o modelo, ajuste o período e encontre carros disponíveis na sua faixa de preço.';
+      return 'Escolha o modelo, ajuste o período e encontre carros com mais energia visual na sua faixa de preço.';
     }
 
     return this.query.vehicleType === 'MOTORCYCLE'
-      ? 'Escolha o modelo, ajuste o período e encontre motos disponíveis na sua faixa de preço.'
-      : 'Escolha o modelo, ajuste o período e filtre entre carros e motos.';
+      ? 'Escolha o modelo, ajuste o período e encontre motos com presença urbana e recorte mais agressivo.'
+      : 'Escolha o modelo, ajuste o período e filtre entre carros e motos com um radar mais afiado.';
   }
 
   protected get resultsLabel() {

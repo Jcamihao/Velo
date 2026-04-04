@@ -1,7 +1,7 @@
 # Wireframes Mobile First
 
 ## Home
-- Topo com logo `Velo`, campo de cidade e datas, CTA de busca e acesso ao modal de filtros.
+- Topo com logo `Triluga`, campo de cidade e datas, CTA de busca e acesso ao modal de filtros.
 - Cards em destaque com imagem grande, preço por diária, cidade, categoria e avaliação.
 - Faixa de categorias em scroll horizontal.
 - Bottom navigation fixa.

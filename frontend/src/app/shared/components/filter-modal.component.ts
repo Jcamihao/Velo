@@ -127,8 +127,7 @@ type FilterDraft = {
       .filter-modal__backdrop {
         position: absolute;
         inset: 0;
-        background: rgba(18, 34, 55, 0.22);
-        backdrop-filter: blur(6px);
+        background: rgba(36, 49, 45, 0.18);
       }
 
       .filter-modal__sheet {
@@ -142,7 +141,7 @@ type FilterDraft = {
         overflow-y: auto;
         padding: 20px 16px calc(20px + env(safe-area-inset-bottom, 0px));
         border-radius: 32px 32px 0 0;
-        background: rgba(255, 255, 255, 0.99);
+        background: rgba(251, 253, 252, 0.98);
         border: 1px solid var(--glass-border);
         box-shadow: var(--shadow-strong);
       }
@@ -185,7 +184,7 @@ type FilterDraft = {
         border: 1px solid var(--glass-border-soft);
         padding: 0 14px;
         font: inherit;
-        background: var(--surface-muted);
+        background: rgba(255, 255, 255, 0.94);
       }
 
       .filter-modal__grid {
@@ -208,7 +207,7 @@ type FilterDraft = {
         bottom: calc(-20px - env(safe-area-inset-bottom, 0px));
         padding-top: 4px;
         padding-bottom: calc(4px + env(safe-area-inset-bottom, 0px));
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.98) 32%);
+        background: linear-gradient(180deg, rgba(251, 253, 252, 0), rgba(251, 253, 252, 0.98) 32%);
       }
 
       @media (min-width: 481px) {

@@ -1,4 +1,4 @@
-export type UserRole = 'ADMIN' | 'OWNER' | 'RENTER';
+export type UserRole = 'ADMIN' | 'USER';
 export type BookingStatus =
   | 'PENDING'
   | 'APPROVED'
@@ -18,6 +18,7 @@ export type VehicleCategory =
 export type VehicleType = 'CAR' | 'MOTORCYCLE';
 export type BookingApprovalMode = 'MANUAL' | 'INSTANT';
 export type CancellationPolicy = 'FLEXIBLE' | 'MODERATE' | 'STRICT';
+export type BookingChecklistType = 'PICKUP' | 'RETURN';
 export type MotorcycleStyle =
   | 'SCOOTER'
   | 'STREET'
@@ -65,6 +66,9 @@ export interface Profile {
   id?: string;
   fullName: string;
   phone: string;
+  zipCode?: string | null;
+  addressLine?: string | null;
+  addressComplement?: string | null;
   city: string;
   state: string;
   bio?: string | null;
@@ -150,12 +154,35 @@ export interface PublicUserProfile {
   ratingAverage: number;
   reviewsCount: number;
   activeListingsCount: number;
+  trustMetrics: {
+    completedBookingsCount: number;
+    responseRate: number;
+    averageResponseHours: number | null;
+    approvalRate: number;
+    cancellationRate: number;
+  };
+  reviews: UserReviewItem[];
   verification: {
     documentStatus: VerificationStatus;
     driverLicenseStatus: VerificationStatus;
     profileStatus: VerificationStatus;
   };
   vehicles: VehicleCardItem[];
+}
+
+export interface UserReviewItem {
+  id: string;
+  rating: number;
+  comment?: string | null;
+  createdAt: string;
+  targetUserId?: string;
+  author?: {
+    id: string;
+    fullName: string | null;
+    avatarUrl?: string | null;
+    city?: string | null;
+    state?: string | null;
+  };
 }
 
 export interface AuthResponse {
@@ -233,8 +260,11 @@ export interface VehicleCardItem {
   owner?: {
     id: string;
     fullName: string | null;
+    avatarUrl?: string | null;
     city: string | null;
     state: string | null;
+    ratingAverage?: number;
+    reviewsCount?: number;
   };
 }
 
@@ -405,6 +435,22 @@ export interface Booking {
     changedAt: string;
   }>;
   review?: unknown;
+  userReview?: UserReviewItem | null;
+  checklists: BookingChecklist[];
+}
+
+export interface BookingChecklist {
+  id: string;
+  type: BookingChecklistType;
+  items: string[];
+  notes?: string | null;
+  completedAt?: string | null;
+  updatedAt: string;
+  updatedById?: string | null;
+  photos: Array<{
+    url: string;
+    key?: string | null;
+  }>;
 }
 
 export interface VehicleAvailabilityResponse {

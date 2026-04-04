@@ -1,9 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
 import {
   IsEmail,
-  IsEnum,
   IsNotEmpty,
+  IsOptional,
   IsString,
   Matches,
   MaxLength,
@@ -11,11 +10,11 @@ import {
 } from 'class-validator';
 
 export class RegisterDto {
-  @ApiProperty({ example: 'owner@velo.local' })
+  @ApiProperty({ example: 'user@triluga.local' })
   @IsEmail()
   email: string;
 
-  @ApiProperty({ example: 'Owner123!' })
+  @ApiProperty({ example: 'User123!' })
   @IsString()
   @MinLength(8)
   @MaxLength(64)
@@ -24,10 +23,6 @@ export class RegisterDto {
       'A senha deve conter pelo menos uma letra, um número e um caractere especial.',
   })
   password: string;
-
-  @ApiProperty({ enum: [Role.OWNER, Role.RENTER], example: Role.RENTER })
-  @IsEnum(Role)
-  role: Role;
 
   @ApiProperty({ example: 'Lucas Almeida' })
   @IsString()
@@ -40,6 +35,24 @@ export class RegisterDto {
   @IsNotEmpty()
   @MaxLength(20)
   phone: string;
+
+  @ApiProperty({ example: '13010-111' })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(9)
+  zipCode: string;
+
+  @ApiProperty({ example: 'Rua Conceição' })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(160)
+  addressLine: string;
+
+  @ApiProperty({ example: 'Apto 42' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  addressComplement?: string;
 
   @ApiProperty({ example: 'Campinas' })
   @IsString()

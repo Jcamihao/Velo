@@ -15,7 +15,7 @@ type NavigatorWithStandalone = Navigator & {
 @Injectable({ providedIn: 'root' })
 export class PwaInstallService {
   private readonly storage = globalThis.localStorage;
-  private readonly dismissKey = 'velo.installPromptDismissed';
+  private readonly dismissKey = 'triluga.installPromptDismissed';
   private readonly deferredPromptSignal =
     signal<BeforeInstallPromptEvent | null>(null);
   private readonly dismissedSignal = signal(

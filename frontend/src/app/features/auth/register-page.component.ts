@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, inject } from '@angular/core';
+import { Component, DestroyRef, OnDestroy, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { catchError, of, switchMap, tap } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
-import { UserRole } from '../../core/models/domain.models';
+import { CepLookupService } from '../../core/services/cep-lookup.service';
 import { ProfileApiService } from '../../core/services/profile-api.service';
 
 @Component({
@@ -14,18 +15,12 @@ import { ProfileApiService } from '../../core/services/profile-api.service';
   template: `
     <main class="auth-page">
       <section class="auth-card">
-        <img class="brand-logo" src="assets/logo_velo.png" alt="Velo" />
-        <span class="eyebrow">Cadastro</span>
-        <h1>Crie sua conta na Velo</h1>
-        <p>Escolha se você vai anunciar carros ou alugar um agora.</p>
+        <a class="auth-card__back" routerLink="/">Voltar ao inicio</a>
 
-        <label>
-          <span>Tipo de conta</span>
-          <select [(ngModel)]="role">
-            <option value="RENTER">Locatário</option>
-            <option value="OWNER">Proprietário</option>
-          </select>
-        </label>
+        <img class="brand-logo" src="assets/branding/triluga-logo.png" alt="Triluga" />
+        <span class="eyebrow">Cadastro</span>
+        <h1>Crie sua conta na Triluga</h1>
+        <p>Sua conta já nasce pronta para anunciar, alugar, conversar e usar todas as features da Triluga.</p>
 
         <label>
           <span>Nome completo</span>
@@ -55,21 +50,56 @@ import { ProfileApiService } from '../../core/services/profile-api.service';
           </div>
         </section>
 
-        <div class="grid">
-          <label>
-            <span>Telefone</span>
-            <input [(ngModel)]="phone" />
-          </label>
-          <label>
-            <span>Estado</span>
-            <input [(ngModel)]="state" maxlength="2" />
-          </label>
-        </div>
+        <label>
+          <span>Telefone</span>
+          <input
+            [ngModel]="phone"
+            (ngModelChange)="phone = formatPhone($event)"
+            inputmode="tel"
+            maxlength="19"
+            placeholder="+55 (11) 99999-9999"
+          />
+        </label>
 
         <label>
-          <span>Cidade</span>
-          <input [(ngModel)]="city" />
+          <span>CEP</span>
+          <input
+            [ngModel]="zipCode"
+            (ngModelChange)="onZipCodeChange($event)"
+            inputmode="numeric"
+            maxlength="9"
+            placeholder="13010-111"
+          />
         </label>
+
+        <p class="field-hint" *ngIf="zipCodeHint && !zipCodeError">{{ zipCodeHint }}</p>
+        <p class="field-hint field-hint--error" *ngIf="zipCodeError">{{ zipCodeError }}</p>
+
+        <label>
+          <span>Endereço</span>
+          <input [(ngModel)]="addressLine" placeholder="Rua, avenida ou praça" />
+        </label>
+
+        <label>
+          <span>Complemento</span>
+          <input [(ngModel)]="addressComplement" placeholder="Apto, bloco, casa, referência" />
+        </label>
+
+        <div class="grid">
+          <label>
+            <span>Cidade</span>
+            <input [(ngModel)]="city" />
+          </label>
+          <label>
+            <span>UF</span>
+            <input
+              [ngModel]="state"
+              (ngModelChange)="state = formatState($event)"
+              maxlength="2"
+              placeholder="SP"
+            />
+          </label>
+        </div>
 
         <label>
           <span>E-mail</span>
@@ -104,31 +134,58 @@ import { ProfileApiService } from '../../core/services/profile-api.service';
         min-height: 100vh;
         display: grid;
         place-items: center;
-        padding: calc(24px + env(safe-area-inset-top, 0px)) 16px calc(40px + env(safe-area-inset-bottom, 0px));
+        padding: calc(24px + env(safe-area-inset-top, 0px)) 12px calc(40px + env(safe-area-inset-bottom, 0px));
       }
 
       .auth-card {
         width: min(100%, 460px);
         display: grid;
         gap: 14px;
-        padding: 28px 22px;
-        border-radius: 30px;
-        background: rgba(255, 255, 255, 0.98);
-        border: 1px solid var(--glass-border);
+        padding: 24px 20px;
+        border-radius: 34px;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.7), transparent),
+          rgba(249, 252, 251, 0.94);
+        border: 1px solid rgba(103, 203, 176, 0.12);
         box-shadow: var(--shadow-strong);
       }
 
+      .auth-card__back {
+        justify-self: start;
+        display: inline-flex;
+        align-items: center;
+        min-height: 40px;
+        padding: 0 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(103, 203, 176, 0.16);
+        background: rgba(88, 181, 158, 0.08);
+        color: #38675d;
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .auth-card__back:hover {
+        background: rgba(88, 181, 158, 0.14);
+      }
+
       .brand-logo {
-        width: min(210px, 100%);
+        width: min(240px, 100%);
         height: auto;
         justify-self: center;
-        margin-bottom: 2px;
+        margin-bottom: 6px;
       }
 
       .eyebrow {
-        color: var(--primary);
-        font-size: 12px;
+        display: inline-flex;
+        width: fit-content;
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: rgba(88, 181, 158, 0.1);
+        color: #427a6d;
+        font-size: 11px;
         font-weight: 700;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
       }
 
@@ -137,13 +194,25 @@ import { ProfileApiService } from '../../core/services/profile-api.service';
         margin: 0;
       }
 
+      h1 {
+        font-size: 38px;
+        line-height: 0.96;
+      }
+
       p {
         color: var(--text-secondary);
+        line-height: 1.6;
       }
 
       label {
         display: grid;
         gap: 8px;
+      }
+
+      label span {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--label-ink);
       }
 
       .avatar-section {
@@ -154,9 +223,9 @@ import { ProfileApiService } from '../../core/services/profile-api.service';
         align-items: start;
         text-align: center;
         padding: 16px;
-        border-radius: 20px;
-        border: 1px solid rgba(31, 140, 255, 0.14);
-        background: rgba(31, 140, 255, 0.05);
+        border-radius: 24px;
+        border: 1px solid rgba(103, 203, 176, 0.1);
+        background: rgba(88, 181, 158, 0.04);
       }
 
       .avatar-section__content {
@@ -184,11 +253,11 @@ import { ProfileApiService } from '../../core/services/profile-api.service';
         height: 88px;
         overflow: hidden;
         border-radius: 50%;
-        background: linear-gradient(180deg, rgba(31, 140, 255, 0.18) 0%, rgba(31, 140, 255, 0.08) 100%);
+        background: linear-gradient(180deg, rgba(103, 203, 176, 0.18) 0%, rgba(103, 203, 176, 0.08) 100%);
         color: var(--primary);
         font-size: 26px;
         font-weight: 800;
-        box-shadow: inset 0 0 0 1px rgba(31, 140, 255, 0.16);
+        box-shadow: inset 0 0 0 1px rgba(103, 203, 176, 0.16);
       }
 
       .avatar-preview img {
@@ -206,9 +275,9 @@ import { ProfileApiService } from '../../core/services/profile-api.service';
         width: 100%;
         min-height: 44px;
         padding: 0 16px;
-        border-radius: 16px;
-        border: 1px solid rgba(31, 140, 255, 0.18);
-        background: rgba(31, 140, 255, 0.08);
+        border-radius: 999px;
+        border: 1px solid rgba(103, 203, 176, 0.18);
+        background: rgba(103, 203, 176, 0.08);
         color: var(--primary);
         font-weight: 700;
         cursor: pointer;
@@ -225,12 +294,12 @@ import { ProfileApiService } from '../../core/services/profile-api.service';
       select {
         width: 100%;
         min-width: 0;
-        height: 48px;
-        border-radius: 14px;
-        border: 1px solid var(--glass-border-soft);
+        height: 52px;
+        border-radius: 18px;
+        border: 1px solid rgba(208, 226, 216, 0.08);
         padding: 0 14px;
         font: inherit;
-        background: var(--surface-muted);
+        background: rgba(255, 255, 255, 0.94);
       }
 
       .grid {
@@ -275,6 +344,16 @@ import { ProfileApiService } from '../../core/services/profile-api.service';
         text-decoration: none;
       }
 
+      .field-hint {
+        margin: -4px 0 0;
+        color: var(--text-secondary);
+        font-size: 13px;
+      }
+
+      .field-hint--error {
+        color: var(--error);
+      }
+
       .feedback {
         text-align: center;
         color: var(--error);
@@ -295,8 +374,12 @@ import { ProfileApiService } from '../../core/services/profile-api.service';
         .auth-card {
           width: min(100%, 640px);
           gap: 16px;
-          padding: 36px 32px;
-          border-radius: 34px;
+          padding: 30px 28px;
+          border-radius: 38px;
+        }
+
+        h1 {
+          font-size: 46px;
         }
       }
     `,
@@ -305,19 +388,26 @@ import { ProfileApiService } from '../../core/services/profile-api.service';
 export class RegisterPageComponent implements OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly profileApiService = inject(ProfileApiService);
+  private readonly cepLookupService = inject(CepLookupService);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
 
-  protected role: Extract<UserRole, 'OWNER' | 'RENTER'> = 'RENTER';
   protected fullName = 'Novo Usuário';
-  protected phone = '+55 11 99999-0000';
+  protected phone = '+55 (11) 99999-0000';
+  protected zipCode = '';
+  protected addressLine = '';
+  protected addressComplement = '';
   protected city = 'São Paulo';
   protected state = 'SP';
   protected email = '';
   protected password = 'Senha123!';
   protected loading = false;
   protected feedback = '';
+  protected zipCodeHint = '';
+  protected zipCodeError = '';
   protected pendingAvatarFile: File | null = null;
   private avatarPreviewUrl: string | null = null;
+  private lastRequestedZipCode = '';
 
   ngOnDestroy() {
     this.revokeAvatarPreview();
@@ -337,20 +427,119 @@ export class RegisterPageComponent implements OnDestroy {
       .join('');
   }
 
+  protected onZipCodeChange(value: string) {
+    this.zipCode = this.cepLookupService.formatZipCode(value);
+    const zipCodeDigits = this.zipCode.replace(/\D/g, '');
+
+    if (zipCodeDigits.length < 8) {
+      this.lastRequestedZipCode = '';
+      this.zipCodeHint = '';
+      this.zipCodeError = '';
+      return;
+    }
+
+    if (zipCodeDigits === this.lastRequestedZipCode) {
+      return;
+    }
+
+    this.lastRequestedZipCode = zipCodeDigits;
+    this.zipCodeHint = 'Buscando endereço pelo CEP...';
+    this.zipCodeError = '';
+
+    this.cepLookupService
+      .lookup(this.zipCode)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (address) => {
+          if (this.zipCode.replace(/\D/g, '') !== zipCodeDigits) {
+            return;
+          }
+
+          this.zipCode = address.zipCode || this.zipCode;
+          this.addressLine = address.addressLine || this.addressLine;
+          this.city = address.city || this.city;
+          this.state = address.state || this.state;
+
+          if (!this.addressComplement.trim() && address.addressComplement) {
+            this.addressComplement = address.addressComplement;
+          }
+
+          this.zipCodeHint =
+            address.addressLine || address.city || address.state
+              ? 'Endereço preenchido automaticamente.'
+              : 'CEP encontrado. Complete os detalhes restantes manualmente.';
+          this.zipCodeError = '';
+        },
+        error: () => {
+          if (this.zipCode.replace(/\D/g, '') !== zipCodeDigits) {
+            return;
+          }
+
+          this.zipCodeHint = '';
+          this.zipCodeError =
+            'Não foi possível localizar esse CEP. Você pode preencher o endereço manualmente.';
+        },
+      });
+  }
+
+  protected formatPhone(value: string) {
+    const digits = value.replace(/\D/g, '');
+    const normalized =
+      digits.length > 11 && digits.startsWith('55')
+        ? digits.slice(2, 13)
+        : digits.slice(0, 11);
+
+    if (!normalized) {
+      return '';
+    }
+
+    const areaCode = normalized.slice(0, 2);
+    const subscriberNumber = normalized.slice(2);
+    const prefixLength = subscriberNumber.length > 8 ? 5 : 4;
+    const prefix = subscriberNumber.slice(0, prefixLength);
+    const suffix = subscriberNumber.slice(prefixLength, prefixLength + 4);
+
+    let formatted = '+55';
+
+    if (areaCode) {
+      formatted += ` (${areaCode}`;
+
+      if (areaCode.length === 2) {
+        formatted += ')';
+      }
+    }
+
+    if (prefix) {
+      formatted += ` ${prefix}`;
+    }
+
+    if (suffix) {
+      formatted += `-${suffix}`;
+    }
+
+    return formatted;
+  }
+
+  protected formatState(value: string) {
+    return value.replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 2);
+  }
+
   protected register() {
     this.loading = true;
     this.feedback = '';
     const pendingAvatarFile = this.pendingAvatarFile;
-    const redirectPath = this.role === 'OWNER' ? '/anunciar-carro' : '/';
+    const redirectPath = '/anunciar-carro';
 
     this.authService
       .register({
-        role: this.role,
-        fullName: this.fullName,
+        fullName: this.fullName.trim(),
         phone: this.phone,
-        city: this.city,
-        state: this.state,
-        email: this.email,
+        zipCode: this.zipCode,
+        addressLine: this.addressLine.trim(),
+        addressComplement: this.addressComplement.trim() || undefined,
+        city: this.city.trim(),
+        state: this.formatState(this.state),
+        email: this.email.trim(),
         password: this.password,
       })
       .pipe(

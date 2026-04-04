@@ -14,6 +14,9 @@ type CreateUserInput = {
   profile: {
     fullName: string;
     phone: string;
+    zipCode: string;
+    addressLine: string;
+    addressComplement?: string;
     city: string;
     state: string;
   };
@@ -47,6 +50,9 @@ export class UsersService {
           create: {
             fullName: input.profile.fullName,
             phone: input.profile.phone,
+            zipCode: input.profile.zipCode,
+            addressLine: input.profile.addressLine,
+            addressComplement: input.profile.addressComplement,
             city: input.profile.city,
             state: input.profile.state,
           },
@@ -152,6 +158,10 @@ export class UsersService {
     profile:
       | {
           fullName: string;
+          phone: string;
+          zipCode: string | null;
+          addressLine: string | null;
+          addressComplement: string | null;
           city: string;
           state: string;
           avatarUrl: string | null;
@@ -167,6 +177,10 @@ export class UsersService {
 
     return {
       fullName: profile.fullName,
+      phone: profile.phone,
+      zipCode: profile.zipCode,
+      addressLine: profile.addressLine,
+      addressComplement: profile.addressComplement,
       city: profile.city,
       state: profile.state,
       avatarUrl: profile.avatarUrl,

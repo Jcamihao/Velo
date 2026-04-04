@@ -1,7 +1,7 @@
 {
   "name": "backend",
-  "version": "0.0.1",
-  "description": "Velo backend API",
+  "version": "0.2.0",
+  "description": "Triluga backend API",
   "author": "Codex",
   "private": true,
   "license": "UNLICENSED",

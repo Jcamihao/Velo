@@ -180,11 +180,7 @@ export class VehiclesService {
       const latitudeDelta = radiusKm / 111;
       const longitudeDelta =
         radiusKm /
-        (111 *
-          Math.max(
-            Math.cos((query.latitude * Math.PI) / 180),
-            0.2,
-          ));
+        (111 * Math.max(Math.cos((query.latitude * Math.PI) / 180), 0.2));
 
       andFilters.push({
         latitude: {
@@ -219,6 +215,11 @@ export class VehiclesService {
           owner: {
             include: {
               profile: true,
+              userReviewsReceived: {
+                select: {
+                  rating: true,
+                },
+              },
             },
           },
         },
@@ -287,8 +288,7 @@ export class VehiclesService {
       weekendSurchargePercent: vehicle.weekendSurchargePercent ?? 0,
       holidaySurchargePercent: vehicle.holidaySurchargePercent ?? 0,
       highDemandSurchargePercent: vehicle.highDemandSurchargePercent ?? 0,
-      advanceBookingDiscountPercent:
-        vehicle.advanceBookingDiscountPercent ?? 0,
+      advanceBookingDiscountPercent: vehicle.advanceBookingDiscountPercent ?? 0,
       advanceBookingDaysThreshold: vehicle.advanceBookingDaysThreshold ?? 0,
       motorcycleStyle: vehicle.motorcycleStyle,
       engineCc: vehicle.engineCc,
@@ -334,6 +334,11 @@ export class VehiclesService {
         owner: {
           include: {
             profile: true,
+            userReviewsReceived: {
+              select: {
+                rating: true,
+              },
+            },
           },
         },
         reviews: {
@@ -403,8 +408,7 @@ export class VehiclesService {
         weekendSurchargePercent: dto.weekendSurchargePercent ?? 0,
         holidaySurchargePercent: dto.holidaySurchargePercent ?? 0,
         highDemandSurchargePercent: dto.highDemandSurchargePercent ?? 0,
-        advanceBookingDiscountPercent:
-          dto.advanceBookingDiscountPercent ?? 0,
+        advanceBookingDiscountPercent: dto.advanceBookingDiscountPercent ?? 0,
         advanceBookingDaysThreshold: dto.advanceBookingDaysThreshold ?? 0,
         motorcycleStyle: dto.motorcycleStyle,
         engineCc: dto.engineCc,
@@ -421,6 +425,11 @@ export class VehiclesService {
         owner: {
           include: {
             profile: true,
+            userReviewsReceived: {
+              select: {
+                rating: true,
+              },
+            },
           },
         },
       },
@@ -457,6 +466,11 @@ export class VehiclesService {
         owner: {
           include: {
             profile: true,
+            userReviewsReceived: {
+              select: {
+                rating: true,
+              },
+            },
           },
         },
       },
@@ -564,8 +578,7 @@ export class VehiclesService {
       weekendSurchargePercent: vehicle.weekendSurchargePercent ?? 0,
       holidaySurchargePercent: vehicle.holidaySurchargePercent ?? 0,
       highDemandSurchargePercent: vehicle.highDemandSurchargePercent ?? 0,
-      advanceBookingDiscountPercent:
-        vehicle.advanceBookingDiscountPercent ?? 0,
+      advanceBookingDiscountPercent: vehicle.advanceBookingDiscountPercent ?? 0,
       advanceBookingDaysThreshold: vehicle.advanceBookingDaysThreshold ?? 0,
       motorcycleStyle: vehicle.motorcycleStyle,
       engineCc: vehicle.engineCc,
@@ -577,10 +590,7 @@ export class VehiclesService {
       reviewsCount: vehicle.reviewsCount,
       coverImage: vehicle.images[0]?.url ?? null,
       owner: {
-        id: vehicle.owner.id,
-        fullName: vehicle.owner.profile?.fullName ?? null,
-        city: vehicle.owner.profile?.city ?? null,
-        state: vehicle.owner.profile?.state ?? null,
+        ...this.mapOwnerSummary(vehicle.owner),
       },
     };
   }
@@ -644,7 +654,45 @@ export class VehiclesService {
   }
 
   private normalizeCouponCode(value: unknown) {
-    const couponCode = String(value ?? '').trim().toUpperCase();
+    const couponCode = String(value ?? '')
+      .trim()
+      .toUpperCase();
     return couponCode || null;
+  }
+
+  private mapOwnerSummary(owner: {
+    id: string;
+    profile?: {
+      fullName?: string | null;
+      avatarUrl?: string | null;
+      city?: string | null;
+      state?: string | null;
+    } | null;
+    userReviewsReceived?: Array<{ rating: number }>;
+  }) {
+    const reviews = Array.isArray(owner.userReviewsReceived)
+      ? owner.userReviewsReceived
+      : [];
+    const reviewsCount = reviews.length;
+    const ratingAverage = reviewsCount
+      ? Number(
+          (
+            reviews.reduce(
+              (total, review) => total + Number(review.rating ?? 0),
+              0,
+            ) / reviewsCount
+          ).toFixed(1),
+        )
+      : 0;
+
+    return {
+      id: owner.id,
+      fullName: owner.profile?.fullName ?? null,
+      avatarUrl: owner.profile?.avatarUrl ?? null,
+      city: owner.profile?.city ?? null,
+      state: owner.profile?.state ?? null,
+      ratingAverage,
+      reviewsCount,
+    };
   }
 }

@@ -1,9 +1,7 @@
 import { Body, Controller, Get, Param, Post, Put } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public } from '../common/decorators/public.decorator';
-import { Roles } from '../common/decorators/roles.decorator';
 import { AuthenticatedUser } from '../common/interfaces/authenticated-user.interface';
 import { SetBlockedDatesDto } from './dto/set-blocked-dates.dto';
 import { SetWeeklyAvailabilityDto } from './dto/set-weekly-availability.dto';
@@ -23,7 +21,6 @@ export class AvailabilityController {
 
   @Put(':id/availability')
   @ApiBearerAuth()
-  @Roles(Role.OWNER)
   @ApiOperation({ summary: 'Define a disponibilidade semanal do veículo' })
   setWeeklyAvailability(
     @CurrentUser() user: AuthenticatedUser,
@@ -35,7 +32,6 @@ export class AvailabilityController {
 
   @Post(':id/blocked-dates')
   @ApiBearerAuth()
-  @Roles(Role.OWNER)
   @ApiOperation({ summary: 'Bloqueia um período manualmente para o veículo' })
   blockDates(
     @CurrentUser() user: AuthenticatedUser,

@@ -5,7 +5,7 @@ type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 @Injectable({ providedIn: 'root' })
 export class AppLoggerService {
-  private readonly prefix = '[VELO]';
+  private readonly prefix = '[TRILUGA]';
 
   debug(scope: string, message: string, data?: Record<string, unknown>) {
     this.write('debug', scope, message, data);

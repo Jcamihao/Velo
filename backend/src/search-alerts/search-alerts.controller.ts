@@ -1,8 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { Roles } from '../common/decorators/roles.decorator';
 import { AuthenticatedUser } from '../common/interfaces/authenticated-user.interface';
 import { CreateSearchAlertDto } from './dto/create-search-alert.dto';
 import { ListSearchAlertsQueryDto } from './dto/list-search-alerts-query.dto';
@@ -15,7 +13,6 @@ export class SearchAlertsController {
   constructor(private readonly searchAlertsService: SearchAlertsService) {}
 
   @Post()
-  @Roles(Role.RENTER, Role.OWNER)
   @ApiOperation({ summary: 'Salva um alerta de busca para o usuário autenticado' })
   create(
     @CurrentUser() user: AuthenticatedUser,
@@ -25,7 +22,6 @@ export class SearchAlertsController {
   }
 
   @Get('my')
-  @Roles(Role.RENTER, Role.OWNER)
   @ApiOperation({ summary: 'Lista alertas de busca do usuário autenticado' })
   listMine(
     @CurrentUser() user: AuthenticatedUser,
@@ -38,7 +34,6 @@ export class SearchAlertsController {
   }
 
   @Delete(':id')
-  @Roles(Role.RENTER, Role.OWNER)
   @ApiOperation({ summary: 'Remove um alerta de busca do usuário autenticado' })
   remove(
     @CurrentUser() user: AuthenticatedUser,

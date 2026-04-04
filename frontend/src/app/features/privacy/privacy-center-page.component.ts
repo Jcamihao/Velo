@@ -41,7 +41,7 @@ import { PrivacyPreferencesService } from '../../core/services/privacy-preferenc
           </div>
 
           <p>
-            Quando ativado, a Velo coleta métricas de navegação para melhorar produto, conteúdo e conversão.
+            Quando ativado, a Triluga coleta métricas de navegação para melhorar produto, conteúdo e conversão.
           </p>
 
           <div class="action-row">
@@ -158,7 +158,7 @@ import { PrivacyPreferencesService } from '../../core/services/privacy-preferenc
       .privacy-center-page {
         display: grid;
         gap: 18px;
-        padding: 20px 16px 40px;
+        padding: 20px 12px 40px;
       }
 
       .hero-card,
@@ -167,7 +167,7 @@ import { PrivacyPreferencesService } from '../../core/services/privacy-preferenc
         gap: 14px;
         padding: 20px;
         border-radius: 24px;
-        background: rgba(255, 255, 255, 0.98);
+        background: var(--glass-surface-strong);
         border: 1px solid var(--glass-border);
         box-shadow: var(--shadow-soft);
       }
@@ -269,7 +269,7 @@ import { PrivacyPreferencesService } from '../../core/services/privacy-preferenc
         gap: 6px;
         padding: 14px;
         border-radius: 18px;
-        background: var(--surface-muted);
+        background: var(--surface-dark-elevated);
         border: 1px solid var(--glass-border-soft);
       }
 
@@ -358,7 +358,7 @@ export class PrivacyCenterPageComponent {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `velo-privacy-export-${new Date().toISOString().slice(0, 10)}.json`;
+        link.download = `triluga-privacy-export-${new Date().toISOString().slice(0, 10)}.json`;
         link.click();
         URL.revokeObjectURL(url);
         this.feedback = 'Exportação gerada com sucesso.';

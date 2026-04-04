@@ -17,6 +17,24 @@ export class UpdateProfileDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @MaxLength(9)
+  zipCode?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  addressLine?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  addressComplement?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
   @MaxLength(80)
   city?: string;
 

@@ -8,6 +8,7 @@ import { BookingStatus, NotificationType } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateReviewDto } from './dto/create-review.dto';
+import { CreateUserReviewDto } from './dto/create-user-review.dto';
 
 @Injectable()
 export class ReviewsService {
@@ -39,25 +40,11 @@ export class ReviewsService {
       throw new BadRequestException('Esta reserva já possui avaliação.');
     }
 
-    let effectiveStatus = booking.status;
-    const now = new Date();
-
-    if (booking.status === BookingStatus.APPROVED && booking.endDate < now) {
-      await this.prisma.booking.update({
-        where: { id: booking.id },
-        data: {
-          status: BookingStatus.COMPLETED,
-          completedAt: now,
-        },
-      });
-      effectiveStatus = BookingStatus.COMPLETED;
-    }
-
-    if (effectiveStatus !== BookingStatus.COMPLETED && booking.endDate >= now) {
-      throw new BadRequestException(
-        'A avaliação só pode ser enviada após a conclusão da locação.',
-      );
-    }
+    await this.ensureBookingCompletedForReview({
+      bookingId: booking.id,
+      status: booking.status,
+      endDate: booking.endDate,
+    });
 
     const review = await this.prisma.review.create({
       data: {
@@ -95,6 +82,58 @@ export class ReviewsService {
     return review;
   }
 
+  async createUserReview(renterId: string, dto: CreateUserReviewDto) {
+    const booking = await this.prisma.booking.findUnique({
+      where: { id: dto.bookingId },
+      include: {
+        userReview: true,
+        vehicle: true,
+      },
+    });
+
+    if (!booking) {
+      throw new NotFoundException('Reserva não encontrada.');
+    }
+
+    if (booking.renterId !== renterId) {
+      throw new ForbiddenException(
+        'Apenas o locatário da reserva pode avaliar o anunciante.',
+      );
+    }
+
+    if (booking.userReview) {
+      throw new BadRequestException(
+        'Esta reserva já possui avaliação do usuário.',
+      );
+    }
+
+    await this.ensureBookingCompletedForReview({
+      bookingId: booking.id,
+      status: booking.status,
+      endDate: booking.endDate,
+    });
+
+    const userReview = await this.prisma.userReview.create({
+      data: {
+        bookingId: booking.id,
+        authorId: renterId,
+        targetUserId: booking.ownerId,
+        rating: dto.rating,
+        comment: dto.comment,
+      },
+    });
+
+    await this.notificationsService.create({
+      userId: booking.ownerId,
+      type: NotificationType.REVIEW_CREATED,
+      title: 'Nova avaliação no seu perfil',
+      message: `Seu perfil recebeu nota ${dto.rating}.`,
+      metadata: { bookingId: booking.id, userReviewId: userReview.id },
+    });
+
+    return userReview;
+  }
+
   async listByVehicle(vehicleId: string) {
     return this.prisma.review.findMany({
       where: { vehicleId },
@@ -109,5 +148,35 @@ export class ReviewsService {
         createdAt: 'desc',
       },
     });
+  }
+
+  private async ensureBookingCompletedForReview(params: {
+    bookingId: string;
+    status: BookingStatus;
+    endDate: Date;
+  }) {
+    let effectiveStatus = params.status;
+    const now = new Date();
+
+    if (
+      (params.status === BookingStatus.APPROVED ||
+        params.status === BookingStatus.IN_PROGRESS) &&
+      params.endDate < now
+    ) {
+      await this.prisma.booking.update({
+        where: { id: params.bookingId },
+        data: {
+          status: BookingStatus.COMPLETED,
+          completedAt: now,
+        },
+      });
+      effectiveStatus = BookingStatus.COMPLETED;
+    }
+
+    if (effectiveStatus !== BookingStatus.COMPLETED) {
+      throw new BadRequestException(
+        'A avaliação só pode ser enviada após a conclusão da locação.',
+      );
+    }
   }
 }

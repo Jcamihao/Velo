@@ -9,10 +9,8 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public } from '../common/decorators/public.decorator';
-import { Roles } from '../common/decorators/roles.decorator';
 import { AuthenticatedUser } from '../common/interfaces/authenticated-user.interface';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { ListVehiclesQueryDto } from './dto/list-vehicles-query.dto';
@@ -34,8 +32,7 @@ export class VehiclesController {
 
   @Get('me')
   @ApiBearerAuth()
-  @Roles(Role.OWNER)
-  @ApiOperation({ summary: 'Lista veículos do proprietário autenticado' })
+  @ApiOperation({ summary: 'Lista veículos do usuário autenticado' })
   findMine(@CurrentUser() user: AuthenticatedUser) {
     return this.vehiclesService.findMine(user.sub);
   }
@@ -63,7 +60,6 @@ export class VehiclesController {
 
   @Post()
   @ApiBearerAuth()
-  @Roles(Role.OWNER)
   @ApiOperation({ summary: 'Cadastra um novo veículo' })
   create(
     @CurrentUser() user: AuthenticatedUser,
@@ -74,8 +70,7 @@ export class VehiclesController {
 
   @Patch(':id')
   @ApiBearerAuth()
-  @Roles(Role.OWNER)
-  @ApiOperation({ summary: 'Atualiza os dados de um veículo do proprietário' })
+  @ApiOperation({ summary: 'Atualiza os dados de um veículo do usuário autenticado' })
   update(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id') vehicleId: string,
@@ -86,8 +81,7 @@ export class VehiclesController {
 
   @Delete(':id')
   @ApiBearerAuth()
-  @Roles(Role.OWNER)
-  @ApiOperation({ summary: 'Desativa um veículo do proprietário' })
+  @ApiOperation({ summary: 'Desativa um veículo do usuário autenticado' })
   remove(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id') vehicleId: string,

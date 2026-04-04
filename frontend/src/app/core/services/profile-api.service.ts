@@ -14,6 +14,9 @@ type ProfileUpdatePayload = Partial<
     Profile,
     | 'fullName'
     | 'phone'
+    | 'zipCode'
+    | 'addressLine'
+    | 'addressComplement'
     | 'city'
     | 'state'
     | 'bio'
@@ -43,6 +46,9 @@ export class ProfileApiService {
     const safePayload: ProfileUpdatePayload = {
       fullName: payload.fullName,
       phone: payload.phone,
+      zipCode: payload.zipCode,
+      addressLine: payload.addressLine,
+      addressComplement: payload.addressComplement,
       city: payload.city,
       state: payload.state,
       bio: payload.bio,

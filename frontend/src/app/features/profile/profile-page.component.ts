@@ -15,8 +15,15 @@ import { Profile } from '../../core/models/domain.models';
     <main class="page profile-page">
       <section class="profile-card">
         <div class="profile-card__hero">
-          <div class="avatar-preview avatar-preview--large" [class.avatar-preview--filled]="resolvedAvatarUrl">
-            <img *ngIf="resolvedAvatarUrl; else profileInitialsAvatar" [src]="resolvedAvatarUrl" alt="Foto de perfil" />
+          <div
+            class="avatar-preview avatar-preview--large"
+            [class.avatar-preview--filled]="resolvedAvatarUrl"
+          >
+            <img
+              *ngIf="resolvedAvatarUrl; else profileInitialsAvatar"
+              [src]="resolvedAvatarUrl"
+              alt="Foto de perfil"
+            />
 
             <ng-template #profileInitialsAvatar>
               <span>{{ avatarInitials }}</span>
@@ -25,8 +32,17 @@ import { Profile } from '../../core/models/domain.models';
 
           <div>
             <span class="eyebrow">Perfil</span>
-            <h1>{{ authService.currentUser()?.profile?.fullName || 'Meu perfil' }}</h1>
+            <h1 class="profile-name-text">
+              {{ authService.currentUser()?.profile?.fullName || 'Meu perfil' }}
+            </h1>
             <p>{{ authService.currentUser()?.email }}</p>
+            <a
+              class="profile-public-link"
+              *ngIf="authService.currentUser()?.id"
+              [routerLink]="['/users', authService.currentUser()?.id]"
+            >
+              Ver meu perfil público
+            </a>
           </div>
         </div>
       </section>
@@ -40,13 +56,21 @@ import { Profile } from '../../core/models/domain.models';
         <div class="avatar-section">
           <div>
             <strong>Foto de perfil</strong>
-            <p>Ela aparece no chat e ajuda a deixar sua conta mais confiável.</p>
+            <p>
+              Ela aparece no chat e ajuda a deixar sua conta mais confiável.
+            </p>
           </div>
 
           <label class="upload-trigger">
-            <input type="file" accept="image/*" (change)="onAvatarSelected($event)" />
+            <input
+              type="file"
+              accept="image/*"
+              (change)="onAvatarSelected($event)"
+            />
             <span class="material-icons" aria-hidden="true">photo_camera</span>
-            <span>{{ pendingAvatarFile ? 'Trocar foto' : 'Adicionar foto' }}</span>
+            <span>{{
+              pendingAvatarFile ? 'Trocar foto' : 'Adicionar foto'
+            }}</span>
           </label>
         </div>
 
@@ -54,14 +78,40 @@ import { Profile } from '../../core/models/domain.models';
           Nova foto selecionada: {{ pendingAvatarFile.name }}
         </p>
 
-        <label><span>Nome completo</span><input [(ngModel)]="profile.fullName" /></label>
-        <label><span>Telefone</span><input [(ngModel)]="profile.phone" /></label>
-        <label><span>Número do documento</span><input [(ngModel)]="profile.documentNumber" /></label>
-        <label><span>Número da CNH</span><input [(ngModel)]="profile.driverLicenseNumber" /></label>
-        <label><span>Bio</span><textarea [(ngModel)]="profile.bio" rows="4"></textarea></label>
+        <label
+          ><span>Nome completo</span><input [(ngModel)]="profile.fullName"
+        /></label>
+        <label
+          ><span>Telefone</span><input [(ngModel)]="profile.phone"
+        /></label>
+        <div class="profile-grid">
+          <label><span>Cidade</span><input [(ngModel)]="profile.city" /></label>
+          <label>
+            <span>UF</span>
+            <input
+              [ngModel]="profile.state"
+              (ngModelChange)="profile.state = formatState($event)"
+              maxlength="2"
+              placeholder="SP"
+            />
+          </label>
+        </div>
+        <label
+          ><span>Número do documento</span
+          ><input [(ngModel)]="profile.documentNumber"
+        /></label>
+        <label
+          ><span>Número da CNH</span
+          ><input [(ngModel)]="profile.driverLicenseNumber"
+        /></label>
+        <label
+          ><span>Bio</span
+          ><textarea [(ngModel)]="profile.bio" rows="4"></textarea>
+        </label>
 
         <a class="privacy-link" routerLink="/privacy-center">
-          Gerenciar preferências, exportação e solicitações na central de privacidade
+          Gerenciar preferências, exportação e solicitações na central de
+          privacidade
         </a>
 
         <div class="verification-grid">
@@ -69,12 +119,22 @@ import { Profile } from '../../core/models/domain.models';
             <div class="verification-card__head">
               <div>
                 <strong>Documento</strong>
-                <p>{{ verificationStatusLabel(profile.documentVerificationStatus) }}</p>
+                <p>
+                  {{
+                    verificationStatusLabel(profile.documentVerificationStatus)
+                  }}
+                </p>
               </div>
 
               <label class="upload-trigger">
-                <input type="file" accept="image/*" (change)="onDocumentSelected($event)" />
-                <span>{{ pendingDocumentFile ? 'Trocar arquivo' : 'Enviar' }}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  (change)="onDocumentSelected($event)"
+                />
+                <span>{{
+                  pendingDocumentFile ? 'Trocar arquivo' : 'Enviar'
+                }}</span>
               </label>
             </div>
 
@@ -96,12 +156,22 @@ import { Profile } from '../../core/models/domain.models';
             <div class="verification-card__head">
               <div>
                 <strong>CNH</strong>
-                <p>{{ verificationStatusLabel(profile.driverLicenseVerification) }}</p>
+                <p>
+                  {{
+                    verificationStatusLabel(profile.driverLicenseVerification)
+                  }}
+                </p>
               </div>
 
               <label class="upload-trigger">
-                <input type="file" accept="image/*" (change)="onDriverLicenseSelected($event)" />
-                <span>{{ pendingDriverLicenseFile ? 'Trocar arquivo' : 'Enviar' }}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  (change)="onDriverLicenseSelected($event)"
+                />
+                <span>{{
+                  pendingDriverLicenseFile ? 'Trocar arquivo' : 'Enviar'
+                }}</span>
               </label>
             </div>
 
@@ -120,11 +190,18 @@ import { Profile } from '../../core/models/domain.models';
           </article>
         </div>
 
-        <button type="button" class="btn btn-primary" (click)="save()" [disabled]="saving">
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="save()"
+          [disabled]="saving"
+        >
           {{ saving ? 'Salvando...' : 'Salvar perfil' }}
         </button>
         <p class="feedback" *ngIf="feedback">{{ feedback }}</p>
-        <p class="feedback feedback--error" *ngIf="errorMessage">{{ errorMessage }}</p>
+        <p class="feedback feedback--error" *ngIf="errorMessage">
+          {{ errorMessage }}
+        </p>
       </section>
     </main>
   `,
@@ -191,10 +268,14 @@ import { Profile } from '../../core/models/domain.models';
         justify-content: center;
         overflow: hidden;
         border-radius: 50%;
-        background: linear-gradient(180deg, rgba(31, 140, 255, 0.18) 0%, rgba(31, 140, 255, 0.08) 100%);
+        background: linear-gradient(
+          180deg,
+          rgba(88, 181, 158, 0.18) 0%,
+          rgba(88, 181, 158, 0.08) 100%
+        );
         color: var(--primary);
         font-weight: 800;
-        box-shadow: inset 0 0 0 1px rgba(31, 140, 255, 0.16);
+        box-shadow: inset 0 0 0 1px rgba(88, 181, 158, 0.16);
       }
 
       .avatar-preview--large {
@@ -219,8 +300,8 @@ import { Profile } from '../../core/models/domain.models';
         min-height: 46px;
         padding: 0 16px;
         border-radius: 16px;
-        border: 1px solid rgba(31, 140, 255, 0.18);
-        background: rgba(31, 140, 255, 0.08);
+        border: 1px solid rgba(88, 181, 158, 0.18);
+        background: rgba(88, 181, 158, 0.08);
         color: var(--primary);
         font-weight: 700;
         cursor: pointer;
@@ -265,6 +346,19 @@ import { Profile } from '../../core/models/domain.models';
 
       .feedback--error {
         color: var(--error);
+      }
+
+      .profile-public-link {
+        display: inline-flex;
+        margin-top: 10px;
+        color: var(--primary);
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .profile-grid {
+        display: grid;
+        gap: 12px;
       }
 
       .verification-grid {
@@ -329,6 +423,10 @@ import { Profile } from '../../core/models/domain.models';
           align-items: center;
         }
 
+        .profile-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
         .upload-trigger,
         .verification-card__head .upload-trigger {
           width: auto;
@@ -362,6 +460,9 @@ export class ProfilePageComponent implements OnDestroy {
   protected profile: Profile = {
     fullName: '',
     phone: '',
+    zipCode: '',
+    addressLine: '',
+    addressComplement: '',
     city: '',
     state: '',
     bio: '',
@@ -430,7 +531,9 @@ export class ProfilePageComponent implements OnDestroy {
               ? this.profileApiService.uploadMyDocument(pendingDocumentFile)
               : of(null),
             driverLicense: pendingDriverLicenseFile
-              ? this.profileApiService.uploadMyDriverLicense(pendingDriverLicenseFile)
+              ? this.profileApiService.uploadMyDriverLicense(
+                  pendingDriverLicenseFile,
+                )
               : of(null),
           };
 
@@ -500,7 +603,9 @@ export class ProfilePageComponent implements OnDestroy {
     );
   }
 
-  protected verificationStatusLabel(status?: Profile['documentVerificationStatus']) {
+  protected verificationStatusLabel(
+    status?: Profile['documentVerificationStatus'],
+  ) {
     const labels = {
       APPROVED: 'Aprovado',
       PENDING: 'Em análise',
@@ -509,6 +614,13 @@ export class ProfilePageComponent implements OnDestroy {
     } as const;
 
     return labels[status || 'NOT_SUBMITTED'] || 'Não enviado';
+  }
+
+  protected formatState(value: string) {
+    return String(value ?? '')
+      .toUpperCase()
+      .replace(/[^A-Z]/g, '')
+      .slice(0, 2);
   }
 
   private loadData() {
@@ -525,7 +637,10 @@ export class ProfilePageComponent implements OnDestroy {
         this.loading = false;
       },
       error: (error) => {
-        this.errorMessage = this.resolveErrorMessage(error, 'Não foi possível carregar seu perfil.');
+        this.errorMessage = this.resolveErrorMessage(
+          error,
+          'Não foi possível carregar seu perfil.',
+        );
         this.loading = false;
       },
     });
@@ -535,8 +650,11 @@ export class ProfilePageComponent implements OnDestroy {
     return {
       fullName: profile.fullName ?? '',
       phone: profile.phone ?? '',
+      zipCode: profile.zipCode ?? '',
+      addressLine: profile.addressLine ?? '',
+      addressComplement: profile.addressComplement ?? '',
       city: profile.city ?? '',
-      state: profile.state ?? '',
+      state: this.formatState(profile.state ?? ''),
       bio: profile.bio ?? '',
       avatarUrl: profile.avatarUrl ?? null,
       documentNumber: profile.documentNumber ?? null,
@@ -571,8 +689,10 @@ export class ProfilePageComponent implements OnDestroy {
         this.openingDriverLicense = false;
       },
       error: (error) => {
-        this.errorMessage =
-          this.resolveErrorMessage(error, 'Não foi possível abrir o arquivo solicitado.');
+        this.errorMessage = this.resolveErrorMessage(
+          error,
+          'Não foi possível abrir o arquivo solicitado.',
+        );
         this.openingDocument = false;
         this.openingDriverLicense = false;
       },
@@ -583,8 +703,8 @@ export class ProfilePageComponent implements OnDestroy {
     error: unknown,
     fallback = 'Não foi possível salvar seu perfil.',
   ) {
-    const message = (error as { error?: { message?: string | string[] } })?.error
-      ?.message;
+    const message = (error as { error?: { message?: string | string[] } })
+      ?.error?.message;
 
     if (Array.isArray(message)) {
       return message.join('. ');

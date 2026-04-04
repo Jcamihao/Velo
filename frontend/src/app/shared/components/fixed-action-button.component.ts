@@ -55,12 +55,10 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
         gap: 16px;
         padding: 14px;
         border-radius: 22px;
-        background: rgba(255, 255, 255, 0.98);
+        background: rgba(251, 253, 252, 0.96);
         border: 1px solid var(--glass-border);
         color: var(--text-primary);
-        box-shadow: 0 18px 36px rgba(28, 17, 18, 0.14);
-        backdrop-filter: blur(14px);
-        -webkit-backdrop-filter: blur(14px);
+        box-shadow: 0 18px 36px rgba(29, 41, 37, 0.1);
         animation: fixed-action-enter 420ms cubic-bezier(0.22, 1, 0.36, 1)
           both;
       }
@@ -103,7 +101,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
       .fixed-action__primary {
         min-width: 0;
         width: 100%;
-        box-shadow: 0 16px 26px rgba(255, 59, 48, 0.24);
+        box-shadow: 0 16px 26px rgba(103, 203, 176, 0.22);
       }
 
       .fixed-action__primary {
@@ -123,9 +121,9 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
         height: 56px;
         border: 1px solid var(--glass-border);
         border-radius: 50%;
-        background: #ffffff;
+        background: #eef6f3;
         color: var(--primary);
-        box-shadow: 0 14px 24px rgba(28, 17, 18, 0.1);
+        box-shadow: 0 14px 24px rgba(29, 41, 37, 0.08);
         flex-shrink: 0;
         animation: fixed-action-control-enter 480ms
           cubic-bezier(0.22, 1, 0.36, 1) 140ms both;

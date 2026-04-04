@@ -1,6 +1,6 @@
-# Velo no iOS com Capacitor
+# Triluga no iOS com Capacitor
 
-O frontend do Velo agora esta preparado para ser empacotado como app iOS via Capacitor.
+O frontend do Triluga agora esta preparado para ser empacotado como app iOS via Capacitor.
 
 ## O que ja ficou pronto
 
@@ -53,7 +53,7 @@ npm run cap:open:ios
 
 ## Backend no iPhone real
 
-Dentro do app iOS, `localhost` nao aponta para o seu computador. Se o Velo estiver chamando:
+Dentro do app iOS, `localhost` nao aponta para o seu computador. Se o Triluga estiver chamando:
 
 - `http://localhost:3002/api/v1`
 - `http://localhost:3002`
@@ -74,7 +74,7 @@ Troque `192.168.0.10` pelo IP real da sua maquina.
 
 - `NSAllowsArbitraryLoadsInWebContent` foi ativado no `Info.plist` para facilitar desenvolvimento com backend HTTP na rede local.
 - Para distribuicao em TestFlight/App Store, prefira backend em `HTTPS`.
-- O bundle identifier atual esta como `com.velo.app`. Ajuste para o identificador oficial da sua conta Apple antes de publicar.
+- O bundle identifier atual esta como `com.triluga.app`. Ajuste para o identificador oficial da sua conta Apple antes de publicar.
 - O projeto foi preparado em ambiente Linux, entao a abertura final no Xcode precisa ser feita em um Mac.
 
 ## Arquivos principais
