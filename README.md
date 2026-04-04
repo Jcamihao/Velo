@@ -1,6 +1,14 @@
-# Velo
+# Triluga 0.2.0
 
-Marketplace MVP de aluguel de carros entre pessoas, inspirado no fluxo mobile da OLX, com frontend Angular PWA e backend NestJS modular.
+Marketplace mobile-first de aluguel de carros entre pessoas, com frontend Angular PWA, backend NestJS modular e uma nova base de marca, operação e confiança para locatários e anunciantes.
+
+## Destaques da versão
+
+- identidade oficial `Triluga` aplicada ao produto, PWA, iOS, assets e ambiente local
+- comparação de veículos no fluxo de busca e detalhe
+- perfil público do anunciante com avaliações de usuário
+- checklist de retirada e devolução com fotos dentro da reserva
+- seed, infraestrutura local e docs alinhados ao novo domínio da plataforma
 
 ## Arquitetura
 
@@ -184,11 +192,17 @@ Depois da infraestrutura estar disponível:
 npm run db:seed
 ```
 
+Se precisar recriar o Postgres local do zero e recolocar o `triluga` como banco/usuário principal do ambiente:
+
+```bash
+npm run db:rebuild
+```
+
 Credenciais sugeridas:
 
-- Admin: `admin@velo.local` / `Admin123!`
-- Owner: `owner@velo.local` / `Owner123!`
-- Renter: `renter@velo.local` / `Renter123!`
+- Admin: `admin@triluga.local` / `Admin123!`
+- Usuária anunciante: `mariana@triluga.local` / `User123!`
+- Usuário locatário: `lucas@triluga.local` / `User123!`
 
 ## Wireframes
 
@@ -207,4 +221,4 @@ Guia de produção para frontend no Vercel e backend no Railway em [docs/deploy-
 
 ## iOS com Capacitor
 
-Guia para abrir o Velo no Xcode e testar em iPhone em [docs/ios-capacitor.md](./docs/ios-capacitor.md).
+Guia para abrir o Triluga no Xcode e testar em iPhone em [docs/ios-capacitor.md](./docs/ios-capacitor.md).
