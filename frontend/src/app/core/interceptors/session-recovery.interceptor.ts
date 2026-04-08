@@ -6,6 +6,7 @@ import { inject } from '@angular/core';
 import { catchError, switchMap, throwError } from 'rxjs';
 import { AppLoggerService } from '../services/app-logger.service';
 import { AuthService } from '../services/auth.service';
+import { isPublicCatalogRequest } from './public-catalog-request.util';
 
 const RETRY_HEADER = 'x-auth-retry';
 
@@ -22,10 +23,15 @@ export const sessionRecoveryInterceptor: HttpInterceptorFn = (req, next) => {
       const isAuthRoute = req.url.includes('/auth/login')
         || req.url.includes('/auth/register')
         || req.url.includes('/auth/refresh');
+      const isPublicCatalogApiRequest = isPublicCatalogRequest(
+        req.url,
+        req.method,
+      );
       const alreadyRetried = req.headers.has(RETRY_HEADER);
       const shouldAttemptRecovery =
         httpError.status === 401
         && !isAuthRoute
+        && !isPublicCatalogApiRequest
         && !alreadyRetried
         && authService.hasSessionHint();
 
