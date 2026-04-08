@@ -1,24 +1,16 @@
-import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+import { CommonModule, CurrencyPipe } from '@angular/common';
 import { Component, OnDestroy, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
-import { AvailabilityApiService } from '../../core/services/availability-api.service';
 import { AuthService } from '../../core/services/auth.service';
-import { BookingsApiService } from '../../core/services/bookings-api.service';
 import { VehiclesApiService } from '../../core/services/vehicles-api.service';
-import { BookingChecklistCardComponent } from '../../shared/components/booking-checklist-card.component';
 import {
-  BookingApprovalMode,
-  Booking,
-  CancellationPolicy,
   CreateVehiclePayload,
   FuelType,
   MotorcycleStyle,
   OwnerVehicleItem,
   TransmissionType,
   VehicleAddon,
-  VehicleAvailabilityResponse,
   VehicleImage,
   VehicleCategory,
   VehicleType,
@@ -35,37 +27,7 @@ type PublicationChecklistItem = {
   done: boolean;
 };
 
-type CalendarDayItem = {
-  date: string;
-  dayNumber: number;
-  inCurrentMonth: boolean;
-  state: 'free' | 'booked' | 'blocked' | 'outside';
-  note: string;
-  isToday: boolean;
-};
-
-type IdlePeriodItem = {
-  startDate: string;
-  endDate: string;
-  totalDays: number;
-  label: string;
-};
-
-type ScheduleSummary = {
-  booked: number;
-  blocked: number;
-  free: number;
-};
-
-type FinancialSnapshot = {
-  revenue: number;
-  bookingCount: number;
-  occupancyRate: number;
-  averageTicket: number;
-  longestIdleGapDays: number;
-};
-
-type OwnerViewMode = 'dashboard' | 'ads';
+type OwnerViewMode = 'ads';
 
 @Component({
   selector: 'app-owner-dashboard-page',
@@ -74,138 +36,34 @@ type OwnerViewMode = 'dashboard' | 'ads';
     CommonModule,
     FormsModule,
     CurrencyPipe,
-    DatePipe,
-    BookingChecklistCardComponent,
   ],
   template: `
     <main class="page owner-page">
       <section class="owner-hero">
-        <span class="eyebrow">
-          {{
-            isDashboardView
-              ? 'Dashboard de anúncios'
-              : createMode
-                ? 'Anunciar carro'
-                : 'Meus anúncios'
-          }}
-        </span>
+        <span class="eyebrow">{{ createMode ? 'Novo anúncio' : 'Meus anúncios' }}</span>
         <h1>
-          {{
-            isDashboardView
-              ? 'Acompanhe faturamento, agenda e pedidos em um só lugar'
-              : createMode
-                ? 'Publique um novo veículo'
-                : 'Gerencie seus veículos anunciados'
-          }}
+          {{ createMode ? 'Publique um novo anúncio' : 'Gerencie seus anúncios publicados' }}
         </h1>
         <p>
-          {{
-            isDashboardView
-              ? manageableVehicles.length + ' veículos ativos • ' + bookings.length + ' reservas monitoradas'
-              : vehicles.length + ' veículos cadastrados • ' + bookings.length + ' reservas recebidas'
-          }}
+          {{ vehicles.length ? vehicles.length + ' anúncio(s) cadastrado(s)' : 'Cadastre seu primeiro veículo para começar a receber interesse.' }}
         </p>
 
         <div class="owner-hero__actions">
-          <div class="owner-hero__switches">
-            <button
-              type="button"
-              class="btn owner-hero__switch"
-              [class.btn-primary]="isDashboardView"
-              [class.btn-secondary]="!isDashboardView"
-              (click)="goToDashboardView()"
-            >
-              Dashboard
-            </button>
-
-            <button
-              type="button"
-              class="btn owner-hero__switch"
-              [class.btn-primary]="isAdsView"
-              [class.btn-secondary]="!isAdsView"
-              (click)="goToAdsView()"
-            >
-              Meus anúncios
-            </button>
-          </div>
-
           <button type="button" class="btn btn-primary" (click)="goToCreateView()">
             Novo anúncio
           </button>
         </div>
       </section>
 
-      <section class="dashboard-card" *ngIf="isDashboardView && !manageableVehicles.length">
-        <div class="card-head">
-          <div>
-            <h2>Seu dashboard vai aparecer aqui</h2>
-            <p>Publique o primeiro anúncio para começar a acompanhar agenda, faturamento e pedidos.</p>
-          </div>
-          <button type="button" class="btn btn-primary" (click)="goToCreateView()">
-            Criar primeiro anúncio
-          </button>
-        </div>
-      </section>
-
-      <section class="stats-grid" *ngIf="isDashboardView">
-        <article><strong>{{ pendingCount }}</strong><span>pendentes</span></article>
-        <article><strong>{{ approvedCount }}</strong><span>aprovadas</span></article>
-        <article><strong>{{ completedCount }}</strong><span>concluídas</span></article>
-      </section>
-
-      <section class="dashboard-card finance-card" *ngIf="isDashboardView && manageableVehicles.length">
-        <div class="card-head">
-          <div>
-            <h2>Dashboard financeiro</h2>
-            <p>Visão consolidada do mês selecionado para os seus anúncios ativos.</p>
-          </div>
-
-          <label class="month-filter">
-            <span>Mês</span>
-            <input
-              type="month"
-              [ngModel]="calendarMonth"
-              (ngModelChange)="updateCalendarMonth($event)"
-            />
-          </label>
-        </div>
-
-        <div class="finance-grid">
-          <article>
-            <span>Faturamento</span>
-            <strong class="price-text">{{ financialSnapshot.revenue | currency: 'BRL' : 'symbol' : '1.2-2' }}</strong>
-            <small>{{ financialSnapshot.bookingCount }} reserva(s) com impacto no período</small>
-          </article>
-
-          <article>
-            <span>Taxa de ocupação</span>
-            <strong>{{ financialSnapshot.occupancyRate | number: '1.0-1' }}%</strong>
-            <small>Baseado nos dias reservados do mês</small>
-          </article>
-
-          <article>
-            <span>Ticket médio</span>
-            <strong class="price-text">{{ financialSnapshot.averageTicket | currency: 'BRL' : 'symbol' : '1.2-2' }}</strong>
-            <small>Valor médio por reserva no mês</small>
-          </article>
-
-          <article>
-            <span>Períodos ociosos</span>
-            <strong>{{ financialSnapshot.longestIdleGapDays }} dia(s)</strong>
-            <small>Maior lacuna livre do veículo selecionado</small>
-          </article>
-        </div>
-      </section>
-
       <section class="dashboard-card dashboard-card--form" *ngIf="isAdsView && showVehicleEditor">
         <div class="card-head">
           <div>
-            <h2>{{ isEditingVehicle ? 'Editar anúncio' : 'Finalizar anúncio' }}</h2>
+            <h2>{{ isEditingVehicle ? 'Editar anúncio' : 'Publicar anúncio' }}</h2>
             <p>
               {{
                 isEditingVehicle
-                  ? 'Atualize preço, fotos e disponibilidade do seu anúncio.'
-                  : 'Revise os dados, adicione fotos e publique seu veículo.'
+                  ? 'Atualize os dados principais e deixe o anúncio mais claro para quem vai alugar.'
+                  : 'Preencha os campos essenciais, adicione fotos e publique seu classificado.'
               }}
             </p>
           </div>
@@ -217,488 +75,398 @@ type OwnerViewMode = 'dashboard' | 'ads';
         <div class="announcement-steps">
           <article>
             <strong>1</strong>
-            <span>Dados do carro</span>
+            <span>Dados principais</span>
           </article>
           <article>
             <strong>2</strong>
-            <span>Fotos do anúncio</span>
+            <span>Fotos reais</span>
           </article>
           <article>
             <strong>3</strong>
-            <span>Publicação</span>
+            <span>Publicar</span>
           </article>
         </div>
 
-        <section class="publication-guide">
-          <div class="publication-guide__head">
-            <div>
-              <span class="eyebrow eyebrow--soft">Publicação guiada</span>
-              <h3>{{ publicationChecklistCompleted }}/{{ publicationChecklist.length }} itens completos</h3>
-            </div>
+        <div class="editor-layout">
+          <div class="editor-main">
+            <section class="editor-panel editor-panel--highlights">
+              <div class="editor-highlights">
+                <article>
+                  <span>Status do anúncio</span>
+                  <strong>{{ editorStatusLabel }}</strong>
+                  <small>{{ editorStatusHint }}</small>
+                </article>
 
-            <strong>{{ publicationReadinessPercentage }}%</strong>
-          </div>
+                <article>
+                  <span>Fotos carregadas</span>
+                  <strong>{{ totalVehiclePhotos }}</strong>
+                  <small>{{ totalVehiclePhotos >= 3 ? 'Capa e galeria prontas' : 'Adicione pelo menos 3 fotos' }}</small>
+                </article>
 
-          <div class="publication-checklist">
-            <article
-              class="publication-item"
-              *ngFor="let item of publicationChecklist; trackBy: trackByChecklistTitle"
-            >
-              <span class="publication-item__icon" [class.publication-item__icon--done]="item.done">
-                {{ item.done ? 'OK' : '!' }}
-              </span>
-
-              <div>
-                <strong>{{ item.title }}</strong>
-                <p>{{ item.description }}</p>
+                <article>
+                  <span>Retirada</span>
+                  <strong>{{ vehicleDraft.addressLine?.trim() ? 'Definida' : 'Pendente' }}</strong>
+                  <small>{{ vehicleDraft.addressLine?.trim() || 'Informe o bairro, avenida ou ponto de encontro' }}</small>
+                </article>
               </div>
-            </article>
-          </div>
+            </section>
 
-          <div class="publication-suggestions" *ngIf="publicationSuggestions.length">
-            <strong>Prioridades agora</strong>
-            <p *ngFor="let suggestion of publicationSuggestions; trackBy: trackByString">{{ suggestion }}</p>
-          </div>
-        </section>
+            <section class="editor-panel">
+              <div class="editor-panel__head">
+                <div>
+                  <span class="eyebrow eyebrow--soft">Etapa 1</span>
+                  <h3>Dados do anúncio</h3>
+                  <p>Preencha a ficha principal do carro para ele aparecer bem na busca.</p>
+                </div>
+              </div>
 
-        <div class="form-grid">
-          <label>
-            <span>Título do anúncio</span>
-            <input [(ngModel)]="vehicleDraft.title" placeholder="Ex.: Jeep Renegade 2022 completo" />
-          </label>
-
-          <label>
-            <span>Placa</span>
-            <input [(ngModel)]="vehicleDraft.plate" placeholder="ABC1D23" maxlength="8" />
-          </label>
-        </div>
-
-        <div class="form-grid form-grid--triple">
-          <label>
-            <span>Marca</span>
-            <input [(ngModel)]="vehicleDraft.brand" placeholder="Jeep" />
-          </label>
-
-          <label>
-            <span>Modelo</span>
-            <input [(ngModel)]="vehicleDraft.model" placeholder="Renegade" />
-          </label>
-
-          <label>
-            <span>Ano</span>
-            <input [(ngModel)]="vehicleDraft.year" type="number" min="1990" max="2100" />
-          </label>
-        </div>
-
-        <div class="form-grid">
-          <label>
-            <span>Tipo de veículo</span>
-            <select [(ngModel)]="vehicleDraft.vehicleType">
-              <option *ngFor="let option of vehicleTypeOptions" [value]="option.value">
-                {{ option.label }}
-              </option>
-            </select>
-          </label>
-
-          <label>
-            <span>Categoria</span>
-            <select [(ngModel)]="vehicleDraft.category">
-              <option *ngFor="let option of categoryOptions" [value]="option.value">
-                {{ option.label }}
-              </option>
-            </select>
-          </label>
-
-          <label>
-            <span>Câmbio</span>
-            <select [(ngModel)]="vehicleDraft.transmission">
-              <option *ngFor="let option of transmissionOptions" [value]="option.value">
-                {{ option.label }}
-              </option>
-            </select>
-          </label>
-        </div>
-
-        <div class="form-grid">
-          <label>
-            <span>Combustível</span>
-            <select [(ngModel)]="vehicleDraft.fuelType">
-              <option *ngFor="let option of fuelOptions" [value]="option.value">
-                {{ option.label }}
-              </option>
-            </select>
-          </label>
-        </div>
-
-        <div class="form-grid form-grid--triple">
-          <label>
-            <span>Assentos</span>
-            <input [(ngModel)]="vehicleDraft.seats" type="number" min="2" max="12" />
-          </label>
-        </div>
-
-        <div class="form-grid">
-          <label>
-            <span>Valor semanal</span>
-            <input [(ngModel)]="vehicleDraft.dailyRate" type="number" min="1" step="0.01" />
-          </label>
-
-          <label class="toggle-field">
-            <span>Publicação</span>
-            <button
-              type="button"
-              class="toggle-button"
-              [class.toggle-button--active]="vehicleDraft.isPublished"
-              (click)="vehicleDraft.isPublished = !vehicleDraft.isPublished"
-            >
-              {{ vehicleDraft.isPublished ? 'Publicado' : 'Rascunho' }}
-            </button>
-          </label>
-        </div>
-
-        <div class="form-grid">
-          <label>
-            <span>Cidade</span>
-            <input [(ngModel)]="vehicleDraft.city" placeholder="São Paulo" />
-          </label>
-
-          <label>
-            <span>Estado</span>
-            <input [(ngModel)]="vehicleDraft.state" maxlength="2" placeholder="SP" />
-          </label>
-        </div>
-
-        <label>
-          <span>Endereço de retirada</span>
-          <input [(ngModel)]="vehicleDraft.addressLine" placeholder="Bairro, avenida ou ponto de encontro" />
-        </label>
-
-        <label>
-          <span>Descrição</span>
-          <textarea
-            [(ngModel)]="vehicleDraft.description"
-            rows="4"
-            placeholder="Conte os diferenciais do carro, regras básicas e itens inclusos."
-          ></textarea>
-        </label>
-
-        <div class="form-grid">
-          <label>
-            <span>Reserva</span>
-            <select [(ngModel)]="vehicleDraft.bookingApprovalMode">
-              <option *ngFor="let option of bookingApprovalOptions" [value]="option.value">
-                {{ option.label }}
-              </option>
-            </select>
-          </label>
-
-          <label>
-            <span>Cancelamento</span>
-            <select [(ngModel)]="vehicleDraft.cancellationPolicy">
-              <option *ngFor="let option of cancellationPolicyOptions" [value]="option.value">
-                {{ option.label }}
-              </option>
-            </select>
-          </label>
-        </div>
-
-        <section class="media-manager">
-          <div class="media-manager__head">
-            <div>
-              <h3>Promoções</h3>
-              <p>Ofertas aplicadas automaticamente no cálculo da reserva.</p>
-            </div>
-          </div>
-
-          <div class="form-grid">
-            <label>
-              <span>Primeira reserva (%)</span>
-              <input
-                [(ngModel)]="vehicleDraft.firstBookingDiscountPercent"
-                type="number"
-                min="0"
-                max="90"
-                step="1"
-              />
-            </label>
-
-            <label>
-              <span>Pacote semanal (%)</span>
-              <input
-                [(ngModel)]="vehicleDraft.weeklyDiscountPercent"
-                type="number"
-                min="0"
-                max="90"
-                step="1"
-              />
-            </label>
-          </div>
-
-          <div class="form-grid">
-            <label>
-              <span>Cupom</span>
-              <input [(ngModel)]="vehicleDraft.couponCode" placeholder="PRIMEIRAVIAGEM" maxlength="32" />
-            </label>
-
-            <label>
-              <span>Desconto do cupom (%)</span>
-              <input
-                [(ngModel)]="vehicleDraft.couponDiscountPercent"
-                type="number"
-                min="0"
-                max="90"
-                step="1"
-              />
-            </label>
-          </div>
-        </section>
-
-        <section class="media-manager">
-          <div class="media-manager__head">
-            <div>
-              <h3>Preço dinâmico</h3>
-              <p>Ajuste a diária por fim de semana, feriado, demanda e antecedência.</p>
-            </div>
-          </div>
-
-          <div class="form-grid form-grid--triple">
-            <label>
-              <span>Fim de semana (%)</span>
-              <input
-                [(ngModel)]="vehicleDraft.weekendSurchargePercent"
-                type="number"
-                min="0"
-                max="90"
-                step="1"
-              />
-            </label>
-
-            <label>
-              <span>Feriado (%)</span>
-              <input
-                [(ngModel)]="vehicleDraft.holidaySurchargePercent"
-                type="number"
-                min="0"
-                max="90"
-                step="1"
-              />
-            </label>
-
-            <label>
-              <span>Alta demanda (%)</span>
-              <input
-                [(ngModel)]="vehicleDraft.highDemandSurchargePercent"
-                type="number"
-                min="0"
-                max="90"
-                step="1"
-              />
-            </label>
-          </div>
-
-          <div class="form-grid">
-            <label>
-              <span>Desconto por antecedência (%)</span>
-              <input
-                [(ngModel)]="vehicleDraft.advanceBookingDiscountPercent"
-                type="number"
-                min="0"
-                max="90"
-                step="1"
-              />
-            </label>
-
-            <label>
-              <span>Antecedência mínima (dias)</span>
-              <input
-                [(ngModel)]="vehicleDraft.advanceBookingDaysThreshold"
-                type="number"
-                min="0"
-                max="365"
-                step="1"
-              />
-            </label>
-          </div>
-        </section>
-
-        <div class="form-grid">
-          <label>
-            <span>Latitude</span>
-            <input [(ngModel)]="vehicleDraft.latitude" type="number" step="0.000001" placeholder="-23.550520" />
-          </label>
-
-          <label>
-            <span>Longitude</span>
-            <input [(ngModel)]="vehicleDraft.longitude" type="number" step="0.000001" placeholder="-46.633308" />
-          </label>
-        </div>
-
-        <div class="form-grid" *ngIf="vehicleDraft.vehicleType === 'MOTORCYCLE'">
-          <label>
-            <span>Estilo da moto</span>
-            <select [(ngModel)]="vehicleDraft.motorcycleStyle">
-              <option value="">Selecione</option>
-              <option *ngFor="let option of motorcycleStyleOptions" [value]="option.value">
-                {{ option.label }}
-              </option>
-            </select>
-          </label>
-
-          <label>
-            <span>Cilindrada</span>
-            <input [(ngModel)]="vehicleDraft.engineCc" type="number" min="50" max="2500" step="1" />
-          </label>
-        </div>
-
-        <div class="form-grid" *ngIf="vehicleDraft.vehicleType === 'MOTORCYCLE'">
-          <label class="toggle-field">
-            <span>Freio ABS</span>
-            <button
-              type="button"
-              class="toggle-button"
-              [class.toggle-button--active]="vehicleDraft.hasAbs"
-              (click)="vehicleDraft.hasAbs = !vehicleDraft.hasAbs"
-            >
-              {{ vehicleDraft.hasAbs ? 'Incluído' : 'Não' }}
-            </button>
-          </label>
-
-          <label class="toggle-field">
-            <span>Baú</span>
-            <button
-              type="button"
-              class="toggle-button"
-              [class.toggle-button--active]="vehicleDraft.hasTopCase"
-              (click)="vehicleDraft.hasTopCase = !vehicleDraft.hasTopCase"
-            >
-              {{ vehicleDraft.hasTopCase ? 'Incluído' : 'Não' }}
-            </button>
-          </label>
-        </div>
-
-        <section class="media-manager">
-          <div class="media-manager__head">
-            <div>
-              <h3>Itens extras</h3>
-              <p>Configure adicionais opcionais para aumentar o ticket da reserva.</p>
-            </div>
-
-            <button type="button" class="btn btn-secondary" (click)="addAddon()">
-              Adicionar extra
-            </button>
-          </div>
-
-          <p class="state-message" *ngIf="!vehicleDraft.addons.length">
-            Nenhum item extra configurado ainda.
-          </p>
-
-          <div class="addon-list" *ngIf="vehicleDraft.addons.length">
-            <article
-              class="addon-row"
-              *ngFor="let addon of vehicleDraft.addons; let index = index; trackBy: trackByAddon"
-            >
               <div class="form-grid">
                 <label>
-                  <span>Nome</span>
-                  <input [(ngModel)]="addon.name" placeholder="Ex.: Capacete extra" />
+                  <span>Título do anúncio <em>*</em></span>
+                  <input [(ngModel)]="vehicleDraft.title" placeholder="Ex.: Jeep Renegade 2022 completo" />
                 </label>
 
                 <label>
-                  <span>Preço</span>
-                  <input [(ngModel)]="addon.price" type="number" min="0" step="0.01" />
+                  <span>Placa <em>*</em></span>
+                  <input [(ngModel)]="vehicleDraft.plate" placeholder="ABC1D23" maxlength="8" />
+                </label>
+              </div>
+
+              <div class="form-grid form-grid--triple">
+                <label>
+                  <span>Marca <em>*</em></span>
+                  <input [(ngModel)]="vehicleDraft.brand" placeholder="Jeep" />
+                </label>
+
+                <label>
+                  <span>Modelo <em>*</em></span>
+                  <input [(ngModel)]="vehicleDraft.model" placeholder="Renegade" />
+                </label>
+
+                <label>
+                  <span>Ano <em>*</em></span>
+                  <input [(ngModel)]="vehicleDraft.year" type="number" min="1990" max="2100" />
+                </label>
+              </div>
+
+              <div class="form-grid">
+                <label>
+                  <span>Tipo de veículo <em>*</em></span>
+                  <select [(ngModel)]="vehicleDraft.vehicleType">
+                    <option *ngFor="let option of vehicleTypeOptions" [value]="option.value">
+                      {{ option.label }}
+                    </option>
+                  </select>
+                </label>
+
+                <label>
+                  <span>Categoria <em>*</em></span>
+                  <select [(ngModel)]="vehicleDraft.category">
+                    <option *ngFor="let option of categoryOptions" [value]="option.value">
+                      {{ option.label }}
+                    </option>
+                  </select>
+                </label>
+
+                <label>
+                  <span>Câmbio <em>*</em></span>
+                  <select [(ngModel)]="vehicleDraft.transmission">
+                    <option *ngFor="let option of transmissionOptions" [value]="option.value">
+                      {{ option.label }}
+                    </option>
+                  </select>
+                </label>
+              </div>
+
+              <div class="form-grid">
+                <label>
+                  <span>Combustível <em>*</em></span>
+                  <select [(ngModel)]="vehicleDraft.fuelType">
+                    <option *ngFor="let option of fuelOptions" [value]="option.value">
+                      {{ option.label }}
+                    </option>
+                  </select>
+                </label>
+
+                <label>
+                  <span>Assentos <em>*</em></span>
+                  <input [(ngModel)]="vehicleDraft.seats" type="number" min="2" max="12" />
+                </label>
+              </div>
+            </section>
+
+            <section class="editor-panel">
+              <div class="editor-panel__head">
+                <div>
+                  <span class="eyebrow eyebrow--soft">Etapa 2</span>
+                  <h3>Preço e retirada</h3>
+                  <p>Defina o valor e deixe claro de onde o veículo sai.</p>
+                </div>
+              </div>
+
+              <div class="form-grid">
+                <label>
+                  <span>Valor semanal <em>*</em></span>
+                  <input [(ngModel)]="vehicleDraft.dailyRate" type="number" min="1" step="0.01" />
+                </label>
+
+                <label class="toggle-field">
+                  <span>Publicação</span>
+                  <button
+                    type="button"
+                    class="toggle-button"
+                    [class.toggle-button--active]="vehicleDraft.isPublished"
+                    (click)="vehicleDraft.isPublished = !vehicleDraft.isPublished"
+                  >
+                    {{ vehicleDraft.isPublished ? 'Publicado' : 'Rascunho' }}
+                  </button>
+                </label>
+              </div>
+
+              <div class="form-grid">
+                <label>
+                  <span>Cidade <em>*</em></span>
+                  <input [(ngModel)]="vehicleDraft.city" placeholder="São Paulo" />
+                </label>
+
+                <label>
+                  <span>Estado <em>*</em></span>
+                  <input [(ngModel)]="vehicleDraft.state" maxlength="2" placeholder="SP" />
                 </label>
               </div>
 
               <label>
-                <span>Descrição</span>
-                <input [(ngModel)]="addon.description" placeholder="Explique rapidamente o que está incluso" />
+                <span>Endereço de retirada <em>*</em></span>
+                <input [(ngModel)]="vehicleDraft.addressLine" placeholder="Bairro, avenida ou ponto de encontro" />
               </label>
 
-              <div class="addon-row__actions">
-                <button type="button" class="btn btn-secondary" (click)="toggleAddon(index)">
-                  {{ addon.enabled === false ? 'Ativar' : 'Desativar' }}
-                </button>
-                <button type="button" class="btn btn-ghost btn-ghost--danger" (click)="removeAddon(index)">
-                  Remover
-                </button>
+              <label>
+                <span>Descrição <em>*</em></span>
+                <textarea
+                  [(ngModel)]="vehicleDraft.description"
+                  rows="4"
+                  placeholder="Conte os diferenciais do carro, regras básicas e itens inclusos."
+                ></textarea>
+              </label>
+
+              <div class="form-grid">
+                <label>
+                  <span>Latitude</span>
+                  <input [(ngModel)]="vehicleDraft.latitude" type="number" step="0.000001" placeholder="-23.550520" />
+                </label>
+
+                <label>
+                  <span>Longitude</span>
+                  <input [(ngModel)]="vehicleDraft.longitude" type="number" step="0.000001" placeholder="-46.633308" />
+                </label>
               </div>
-            </article>
-          </div>
-        </section>
+            </section>
 
-        <section class="media-manager">
-          <div class="media-manager__head">
-            <div>
-              <h3>Fotos do veículo</h3>
-              <p>A primeira imagem vira a capa do anúncio e aparece na busca.</p>
-            </div>
+            <section class="editor-panel" *ngIf="vehicleDraft.vehicleType === 'MOTORCYCLE'">
+              <div class="editor-panel__head">
+                <div>
+                  <span class="eyebrow eyebrow--soft">Etapa extra</span>
+                  <h3>Detalhes da moto</h3>
+                  <p>Essas informações ajudam a moto aparecer nos filtros certos.</p>
+                </div>
+              </div>
 
-            <label class="upload-trigger">
-              <input type="file" accept="image/*" multiple (change)="onVehicleFilesSelected($event)" />
-              <span>Adicionar fotos</span>
-            </label>
-          </div>
+              <div class="form-grid">
+                <label>
+                  <span>Estilo da moto</span>
+                  <select [(ngModel)]="vehicleDraft.motorcycleStyle">
+                    <option value="">Selecione</option>
+                    <option *ngFor="let option of motorcycleStyleOptions" [value]="option.value">
+                      {{ option.label }}
+                    </option>
+                  </select>
+                </label>
 
-          <p class="state-message" *ngIf="!isEditingVehicle">
-            Você pode selecionar as fotos agora. Elas serão enviadas automaticamente depois que o anúncio for salvo.
-          </p>
+                <label>
+                  <span>Cilindrada</span>
+                  <input [(ngModel)]="vehicleDraft.engineCc" type="number" min="50" max="2500" step="1" />
+                </label>
+              </div>
 
-          <div class="media-grid" *ngIf="editingVehicle?.images?.length || pendingVehiclePreviews.length">
-            <article
-              class="media-card"
-              *ngFor="let image of editingVehicle?.images; let index = index; trackBy: trackById"
-            >
-              <img [src]="image.url" [alt]="image.alt || vehicleDraft.title || 'Foto do veículo'" />
-              <span class="media-badge" *ngIf="index === 0">Capa</span>
+              <div class="form-grid">
+                <label class="toggle-field">
+                  <span>Freio ABS</span>
+                  <button
+                    type="button"
+                    class="toggle-button"
+                    [class.toggle-button--active]="vehicleDraft.hasAbs"
+                    (click)="vehicleDraft.hasAbs = !vehicleDraft.hasAbs"
+                  >
+                    {{ vehicleDraft.hasAbs ? 'Incluído' : 'Não' }}
+                  </button>
+                </label>
+
+                <label class="toggle-field">
+                  <span>Baú</span>
+                  <button
+                    type="button"
+                    class="toggle-button"
+                    [class.toggle-button--active]="vehicleDraft.hasTopCase"
+                    (click)="vehicleDraft.hasTopCase = !vehicleDraft.hasTopCase"
+                  >
+                    {{ vehicleDraft.hasTopCase ? 'Incluído' : 'Não' }}
+                  </button>
+                </label>
+              </div>
+            </section>
+
+            <section class="editor-panel media-manager">
+              <div class="media-manager__head">
+                <div>
+                  <span class="eyebrow eyebrow--soft">Etapa 3</span>
+                  <h3>Fotos do veículo</h3>
+                  <p>A primeira imagem vira a capa do anúncio e aparece na busca.</p>
+                </div>
+
+                <label class="upload-trigger">
+                  <input type="file" accept="image/*" multiple (change)="onVehicleFilesSelected($event)" />
+                  <span>Adicionar fotos</span>
+                </label>
+              </div>
+
+              <p class="state-message" *ngIf="!isEditingVehicle">
+                Você pode selecionar as fotos agora. Elas serão enviadas automaticamente depois que o anúncio for salvo.
+              </p>
+
+              <div class="media-grid" *ngIf="editingVehicle?.images?.length || pendingVehiclePreviews.length">
+                <article
+                  class="media-card"
+                  *ngFor="let image of editingVehicle?.images; let index = index; trackBy: trackById"
+                >
+                  <img [src]="image.url" [alt]="image.alt || vehicleDraft.title || 'Foto do veículo'" />
+                  <span class="media-badge" *ngIf="index === 0">Capa</span>
+                  <button
+                    type="button"
+                    class="media-card__action"
+                    [disabled]="imageActionId === image.id"
+                    (click)="removeVehicleImage(image)"
+                  >
+                    {{ imageActionId === image.id ? 'Removendo...' : 'Excluir' }}
+                  </button>
+                </article>
+
+                <article
+                  class="media-card media-card--pending"
+                  *ngFor="let preview of pendingVehiclePreviews; let index = index; trackBy: trackByPreview"
+                >
+                  <img [src]="preview.url" [alt]="preview.name" />
+                  <span class="media-badge media-badge--pending">Nova</span>
+                  <button type="button" class="media-card__action" (click)="removePendingVehicleFile(index)">
+                    Remover
+                  </button>
+                </article>
+              </div>
+
+              <p class="state-message" *ngIf="!editingVehicle?.images?.length && !pendingVehiclePreviews.length">
+                Adicione pelo menos 3 fotos para aumentar a taxa de conversão do anúncio.
+              </p>
+
+              <p class="feedback" *ngIf="mediaFeedback">{{ mediaFeedback }}</p>
+              <p class="feedback feedback--error" *ngIf="mediaError">{{ mediaError }}</p>
+            </section>
+
+            <div class="form-actions">
               <button
                 type="button"
-                class="media-card__action"
-                [disabled]="imageActionId === image.id"
-                (click)="removeVehicleImage(image)"
+                class="btn btn-primary"
+                (click)="saveVehicle()"
+                [disabled]="submittingVehicle || uploadingVehicleImages"
               >
-                {{ imageActionId === image.id ? 'Removendo...' : 'Excluir' }}
+                {{ vehicleSubmitLabel }}
               </button>
-            </article>
 
-            <article
-              class="media-card media-card--pending"
-              *ngFor="let preview of pendingVehiclePreviews; let index = index; trackBy: trackByPreview"
-            >
-              <img [src]="preview.url" [alt]="preview.name" />
-              <span class="media-badge media-badge--pending">Nova</span>
-              <button type="button" class="media-card__action" (click)="removePendingVehicleFile(index)">
-                Remover
+              <button
+                *ngIf="isEditingVehicle"
+                type="button"
+                class="btn btn-secondary"
+                (click)="cancelEditingVehicle()"
+                [disabled]="submittingVehicle || uploadingVehicleImages"
+              >
+                Cancelar edição
               </button>
-            </article>
+            </div>
           </div>
 
-          <p class="state-message" *ngIf="!editingVehicle?.images?.length && !pendingVehiclePreviews.length">
-            Adicione pelo menos 3 fotos para aumentar a taxa de conversão do anúncio.
-          </p>
+          <aside class="editor-sidebar">
+            <section class="publication-guide">
+              <div class="publication-guide__head">
+                <div>
+                  <span class="eyebrow eyebrow--soft">Publicação guiada</span>
+                  <h3>{{ publicationChecklistCompleted }}/{{ publicationChecklist.length }} itens completos</h3>
+                  <p>Veja rapidamente o que já está pronto e o que ainda falta.</p>
+                </div>
 
-          <p class="feedback" *ngIf="mediaFeedback">{{ mediaFeedback }}</p>
-          <p class="feedback feedback--error" *ngIf="mediaError">{{ mediaError }}</p>
-        </section>
+                <strong>{{ publicationReadinessPercentage }}%</strong>
+              </div>
 
-        <div class="form-actions">
-          <button
-            type="button"
-            class="btn btn-primary"
-            (click)="saveVehicle()"
-            [disabled]="submittingVehicle || uploadingVehicleImages"
-          >
-            {{ vehicleSubmitLabel }}
-          </button>
+              <div class="publication-guide__progress" aria-hidden="true">
+                <span [style.width.%]="publicationReadinessPercentage"></span>
+              </div>
 
-          <button
-            *ngIf="isEditingVehicle"
-            type="button"
-            class="btn btn-secondary"
-            (click)="cancelEditingVehicle()"
-            [disabled]="submittingVehicle || uploadingVehicleImages"
-          >
-            Cancelar edição
-          </button>
+              <div class="publication-checklist">
+                <article
+                  class="publication-item"
+                  *ngFor="let item of publicationChecklist; trackBy: trackByChecklistTitle"
+                >
+                  <span class="publication-item__icon" [class.publication-item__icon--done]="item.done">
+                    {{ item.done ? 'OK' : '!' }}
+                  </span>
+
+                  <div>
+                    <strong>{{ item.title }}</strong>
+                    <p>{{ item.description }}</p>
+                  </div>
+                </article>
+              </div>
+
+              <div class="publication-suggestions" *ngIf="publicationSuggestions.length">
+                <strong>O que falta para publicar</strong>
+                <p *ngFor="let suggestion of publicationSuggestions; trackBy: trackByString">{{ suggestion }}</p>
+              </div>
+            </section>
+
+            <section class="required-fields-card" *ngIf="missingVehicleFields.length">
+              <div class="required-fields-card__head">
+                <div>
+                  <span class="eyebrow eyebrow--soft">Campos obrigatórios</span>
+                  <h3>Faltam {{ missingVehicleFields.length }} campo(s)</h3>
+                </div>
+                <strong>Revise antes de publicar</strong>
+              </div>
+
+              <div class="required-fields-card__list">
+                <span *ngFor="let field of missingVehicleFields; trackBy: trackByString">{{ field }}</span>
+              </div>
+            </section>
+
+            <div class="publish-card">
+              <div>
+                <span class="eyebrow eyebrow--soft">Finalizar anúncio</span>
+                <h3>{{ isEditingVehicle ? 'Salvar e manter anúncio atualizado' : 'Publicar classificado' }}</h3>
+                <p>
+                  {{
+                    missingVehicleFields.length
+                      ? 'Complete os campos obrigatórios e confira as fotos antes de publicar.'
+                      : 'Seu anúncio já está pronto para receber interessados.'
+                  }}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                class="btn btn-primary"
+                (click)="saveVehicle()"
+                [disabled]="submittingVehicle || uploadingVehicleImages"
+              >
+                {{ vehicleSubmitLabel }}
+              </button>
+            </div>
+          </aside>
         </div>
 
         <p class="feedback" *ngIf="vehicleFeedback">{{ vehicleFeedback }}</p>
@@ -707,7 +475,10 @@ type OwnerViewMode = 'dashboard' | 'ads';
 
       <section class="dashboard-card" *ngIf="isAdsView">
         <div class="card-head">
-          <h2>Meus veículos</h2>
+          <div>
+            <h2>Meus anúncios</h2>
+            <p>Abra um anúncio para editar dados, trocar fotos ou publicar novamente.</p>
+          </div>
         </div>
 
         <p class="state-message" *ngIf="loading">Carregando seus anúncios...</p>
@@ -782,203 +553,6 @@ type OwnerViewMode = 'dashboard' | 'ads';
         </article>
       </section>
 
-      <section class="dashboard-card" *ngIf="isAdsView">
-        <div class="card-head">
-          <div>
-            <h2>Bloquear período</h2>
-            <p>Evite pedidos em dias de manutenção, viagem ou uso próprio.</p>
-          </div>
-        </div>
-
-        <p class="state-message" *ngIf="!manageableVehicles.length">
-          Cadastre um veículo antes de bloquear datas no calendário.
-        </p>
-
-        <div class="form-grid" *ngIf="manageableVehicles.length">
-          <label>
-            <span>Veículo</span>
-            <select [(ngModel)]="selectedVehicleId" (ngModelChange)="loadSelectedVehicleAvailability()">
-              <option *ngFor="let vehicle of manageableVehicles; trackBy: trackById" [value]="vehicle.id">
-                {{ vehicle.title }}
-              </option>
-            </select>
-          </label>
-
-          <label>
-            <span>Motivo</span>
-            <input [(ngModel)]="blockedDateDraft.reason" placeholder="Manutenção, uso próprio..." />
-          </label>
-        </div>
-
-        <div class="form-grid" *ngIf="manageableVehicles.length">
-          <label>
-            <span>Início</span>
-            <input [(ngModel)]="blockedDateDraft.startDate" type="date" [min]="today" />
-          </label>
-
-          <label>
-            <span>Fim</span>
-            <input [(ngModel)]="blockedDateDraft.endDate" type="date" [min]="blockedDateDraft.startDate || today" />
-          </label>
-        </div>
-
-        <button
-          *ngIf="manageableVehicles.length"
-          type="button"
-          class="btn btn-secondary"
-          [disabled]="submittingBlockedDate"
-          (click)="blockDates()"
-        >
-          {{ submittingBlockedDate ? 'Bloqueando...' : 'Bloquear período' }}
-        </button>
-
-        <p class="feedback" *ngIf="blockedDateFeedback">{{ blockedDateFeedback }}</p>
-        <p class="feedback feedback--error" *ngIf="blockedDateError">{{ blockedDateError }}</p>
-
-        <p class="state-message" *ngIf="availabilityLoading">Carregando calendário...</p>
-        <div class="blocked-date-list" *ngIf="!availabilityLoading && blockedDates.length">
-          <article class="blocked-date-item" *ngFor="let period of blockedDates; trackBy: trackByBlockedDate">
-            <strong>{{ period.startDate | date: 'dd/MM/yyyy' }} até {{ period.endDate | date: 'dd/MM/yyyy' }}</strong>
-            <span>{{ period.reason || 'Bloqueio manual do anúncio' }}</span>
-          </article>
-        </div>
-        <p class="state-message" *ngIf="manageableVehicles.length && !availabilityLoading && !blockedDates.length">
-          Nenhum bloqueio manual cadastrado para este veículo.
-        </p>
-      </section>
-
-      <section class="dashboard-card" *ngIf="isDashboardView && manageableVehicles.length">
-        <div class="card-head">
-          <div>
-            <h2>Agenda visual</h2>
-            <p>Reservas, bloqueios e lacunas livres de {{ selectedVehicle?.title || 'seu veículo' }}.</p>
-          </div>
-
-          <div class="calendar-controls">
-            <button type="button" class="btn btn-secondary" (click)="changeCalendarMonth(-1)">
-              Mês anterior
-            </button>
-            <strong>{{ calendarMonthLabel }}</strong>
-            <button type="button" class="btn btn-secondary" (click)="changeCalendarMonth(1)">
-              Próximo mês
-            </button>
-          </div>
-        </div>
-
-        <div class="calendar-legend">
-          <span class="calendar-legend__item"><i class="calendar-dot calendar-dot--booked"></i>Reserva</span>
-          <span class="calendar-legend__item"><i class="calendar-dot calendar-dot--blocked"></i>Bloqueio</span>
-          <span class="calendar-legend__item"><i class="calendar-dot calendar-dot--free"></i>Livre</span>
-        </div>
-
-        <div class="calendar-grid" *ngIf="selectedAvailability; else emptyCalendar">
-          <span class="calendar-weekday" *ngFor="let weekday of calendarWeekdays; trackBy: trackByString">{{ weekday }}</span>
-
-          <article
-            class="calendar-day"
-            *ngFor="let day of calendarDays; trackBy: trackByCalendarDay"
-            [class.calendar-day--outside]="!day.inCurrentMonth"
-            [class.calendar-day--booked]="day.state === 'booked'"
-            [class.calendar-day--blocked]="day.state === 'blocked'"
-            [class.calendar-day--free]="day.state === 'free'"
-            [class.calendar-day--today]="day.isToday"
-          >
-            <strong>{{ day.dayNumber }}</strong>
-            <small>{{ day.note }}</small>
-          </article>
-        </div>
-
-        <ng-template #emptyCalendar>
-          <p class="state-message">Selecione um veículo para visualizar o calendário.</p>
-        </ng-template>
-
-        <div class="calendar-summary" *ngIf="selectedAvailability">
-          <article>
-            <strong>{{ monthlyScheduleSummary.booked }}</strong>
-            <span>dias reservados</span>
-          </article>
-          <article>
-            <strong>{{ monthlyScheduleSummary.blocked }}</strong>
-            <span>dias bloqueados</span>
-          </article>
-          <article>
-            <strong>{{ monthlyScheduleSummary.free }}</strong>
-            <span>dias livres</span>
-          </article>
-        </div>
-
-        <div class="idle-periods" *ngIf="selectedAvailability">
-          <div class="idle-periods__head">
-            <h3>Lacunas livres</h3>
-            <p>Use esses períodos para promoções, destaque no anúncio ou bloqueios planejados.</p>
-          </div>
-
-          <div class="idle-period-list" *ngIf="idlePeriods.length; else noIdlePeriods">
-            <article class="idle-period-item" *ngFor="let period of idlePeriods; trackBy: trackByIdlePeriod">
-              <strong>{{ period.label }}</strong>
-              <span>{{ period.startDate | date: 'dd/MM' }} até {{ period.endDate | date: 'dd/MM' }}</span>
-            </article>
-          </div>
-
-          <ng-template #noIdlePeriods>
-            <p class="state-message">Nenhuma lacuna livre encontrada neste mês.</p>
-          </ng-template>
-        </div>
-      </section>
-
-      <section class="dashboard-card" *ngIf="isDashboardView">
-        <div class="card-head">
-          <h2>Solicitações recebidas</h2>
-        </div>
-
-        <p class="state-message" *ngIf="loading">Carregando reservas recebidas...</p>
-        <p class="state-message" *ngIf="!loading && !bookings.length">
-          Assim que alguém solicitar um período, ele vai aparecer aqui.
-        </p>
-        <p class="feedback feedback--error" *ngIf="loadError">{{ loadError }}</p>
-
-        <article class="booking-row" *ngFor="let booking of bookings; trackBy: trackById">
-          <div class="booking-row__summary">
-            <strong>{{ booking.vehicle.title }}</strong>
-            <p>{{ booking.renter.fullName || booking.renter.email }}</p>
-            <p>
-              {{ booking.startDate | date: 'dd/MM' }} até
-              {{ booking.endDate | date: 'dd/MM' }}
-            </p>
-          </div>
-
-          <div class="booking-row__actions">
-            <span class="status" [class]="'status status--' + booking.status.toLowerCase()">
-              {{ booking.status }}
-            </span>
-            <button
-              *ngIf="booking.status === 'PENDING'"
-              type="button"
-              class="btn btn-primary"
-              [disabled]="bookingActionId === booking.id"
-              (click)="approve(booking.id)"
-            >
-              {{ bookingActionId === booking.id ? 'Salvando...' : 'Aprovar' }}
-            </button>
-            <button
-              *ngIf="booking.status === 'PENDING'"
-              type="button"
-              class="btn btn-secondary"
-              [disabled]="bookingActionId === booking.id"
-              (click)="reject(booking.id)"
-            >
-              Recusar
-            </button>
-          </div>
-
-          <app-booking-checklist-card
-            class="booking-row__checklists"
-            [booking]="booking"
-            viewerRole="OWNER"
-            (bookingChange)="applyBookingUpdate($event)"
-          />
-        </article>
-      </section>
     </main>
   `,
   styles: [
@@ -990,8 +564,7 @@ type OwnerViewMode = 'dashboard' | 'ads';
       }
 
       .owner-hero,
-      .dashboard-card,
-      .stats-grid article {
+      .dashboard-card {
         display: grid;
         gap: 16px;
         padding: 20px;
@@ -1021,63 +594,83 @@ type OwnerViewMode = 'dashboard' | 'ads';
         color: var(--text-secondary);
       }
 
-      .stats-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 12px;
-      }
-
-      .stats-grid strong {
-        display: block;
-        color: var(--primary);
-        font-size: 22px;
-      }
-
-      .finance-card {
-        gap: 18px;
-      }
-
       .owner-hero__actions {
         display: grid;
         gap: 10px;
       }
 
-      .owner-hero__switches {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
+      .dashboard-card--form {
+        gap: 16px;
       }
 
-      .owner-hero__switch {
-        min-width: 0;
-      }
-
-      .finance-grid {
+      .editor-layout,
+      .editor-main,
+      .editor-sidebar {
         display: grid;
-        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+
+      .editor-panel {
+        display: grid;
+        gap: 14px;
+        padding: 18px;
+        border-radius: 22px;
+        background:
+          linear-gradient(180deg, rgba(251, 253, 252, 0.98), rgba(240, 246, 243, 0.98));
+        border: 1px solid rgba(103, 203, 176, 0.12);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      }
+
+      .editor-panel--highlights {
+        padding: 0;
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+      }
+
+      .editor-panel__head {
+        display: grid;
+        gap: 8px;
+      }
+
+      .editor-panel__head h3 {
+        margin: 0;
+        color: var(--text-primary);
+        font-size: 20px;
+      }
+
+      .editor-highlights {
+        display: grid;
         gap: 12px;
       }
 
-      .finance-grid article {
+      .editor-highlights article {
         display: grid;
-        gap: 6px;
+        gap: 8px;
         padding: 16px;
-        border-radius: 18px;
-        background: var(--surface-muted);
-        border: 1px solid var(--glass-border-soft);
+        border-radius: 20px;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(241, 247, 244, 0.96));
+        border: 1px solid rgba(103, 203, 176, 0.12);
+        box-shadow: var(--shadow-soft);
       }
 
-      .finance-grid strong {
-        color: var(--text-primary);
-        font-size: 22px;
-      }
-
-      .finance-grid small {
+      .editor-highlights span,
+      .editor-highlights small {
         color: var(--text-secondary);
       }
 
-      .dashboard-card--form {
-        gap: 16px;
+      .editor-highlights span {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .editor-highlights strong {
+        color: var(--text-primary);
+        font-size: 20px;
+        line-height: 1.05;
       }
 
       .card-head {
@@ -1126,6 +719,7 @@ type OwnerViewMode = 'dashboard' | 'ads';
         display: flex;
         align-items: flex-start;
         justify-content: space-between;
+        flex-direction: column;
         gap: 16px;
       }
 
@@ -1134,15 +728,31 @@ type OwnerViewMode = 'dashboard' | 'ads';
         color: var(--primary);
       }
 
+      .publication-guide__head p {
+        margin-top: 6px;
+      }
+
+      .publication-guide__progress {
+        height: 10px;
+        border-radius: 999px;
+        background: rgba(88, 181, 158, 0.12);
+        overflow: hidden;
+      }
+
+      .publication-guide__progress span {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #58b59e 0%, #8ad8c7 100%);
+      }
+
       .publication-checklist,
-      .publication-suggestions,
-      .idle-period-list {
+      .publication-suggestions {
         display: grid;
         gap: 10px;
       }
 
-      .publication-item,
-      .idle-period-item {
+      .publication-item {
         display: grid;
         grid-template-columns: auto minmax(0, 1fr);
         gap: 12px;
@@ -1180,6 +790,50 @@ type OwnerViewMode = 'dashboard' | 'ads';
         color: var(--text-primary);
       }
 
+      .required-fields-card,
+      .publish-card {
+        display: grid;
+        gap: 12px;
+        padding: 16px;
+        border-radius: 22px;
+        border: 1px solid var(--glass-border-soft);
+        background: var(--surface-muted);
+      }
+
+      .required-fields-card__head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        flex-direction: column;
+      }
+
+      .required-fields-card__list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .required-fields-card__list span {
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(245, 158, 11, 0.12);
+        color: #8a5a00;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .publish-card {
+        background: linear-gradient(180deg, rgba(251, 253, 252, 0.98), rgba(237, 245, 242, 0.98));
+        border-color: rgba(103, 203, 176, 0.14);
+      }
+
+      .publish-card .btn,
+      .form-actions .btn,
+      .card-head .btn-ghost {
+        width: 100%;
+      }
+
       .form-grid {
         display: grid;
         grid-template-columns: 1fr;
@@ -1200,6 +854,11 @@ type OwnerViewMode = 'dashboard' | 'ads';
         font-size: 12px;
         font-weight: 700;
         text-transform: uppercase;
+      }
+
+      label span em {
+        color: var(--error);
+        font-style: normal;
       }
 
       input,
@@ -1333,26 +992,6 @@ type OwnerViewMode = 'dashboard' | 'ads';
         font-weight: 700;
       }
 
-      .addon-list {
-        display: grid;
-        gap: 12px;
-      }
-
-      .addon-row {
-        display: grid;
-        gap: 12px;
-        padding: 14px;
-        border-radius: 18px;
-        background: var(--surface-dark-elevated);
-        border: 1px solid var(--glass-border-soft);
-      }
-
-      .addon-row__actions {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-      }
-
       .form-actions {
         display: flex;
         gap: 10px;
@@ -1386,29 +1025,8 @@ type OwnerViewMode = 'dashboard' | 'ads';
         box-shadow: var(--shadow-soft);
       }
 
-      .booking-row {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 14px;
-        padding: 12px 0;
-        border-top: 1px solid var(--border);
-      }
-
-      .booking-row__summary {
-        display: grid;
-        gap: 4px;
-      }
-
-      .booking-row__checklists {
-        grid-column: 1 / -1;
-      }
-
       .vehicle-row:first-of-type {
         margin-top: 0;
-      }
-
-      .booking-row:first-of-type {
-        border-top: 0;
       }
 
       .vehicle-row__media,
@@ -1493,13 +1111,6 @@ type OwnerViewMode = 'dashboard' | 'ads';
         color: #fff;
       }
 
-      .booking-row__actions {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-      }
-
       .status {
         padding: 4px 8px;
         border-radius: 999px;
@@ -1535,137 +1146,6 @@ type OwnerViewMode = 'dashboard' | 'ads';
         color: var(--text-secondary);
       }
 
-      .blocked-date-list {
-        display: grid;
-        gap: 10px;
-      }
-
-      .blocked-date-item {
-        display: grid;
-        gap: 4px;
-        padding: 14px;
-        border-radius: 18px;
-        background: var(--surface-muted);
-        border: 1px solid var(--glass-border-soft);
-      }
-
-      .month-filter {
-        min-width: 0;
-        width: 100%;
-      }
-
-      .calendar-controls {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-      }
-
-      .calendar-legend {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-      }
-
-      .calendar-legend__item {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-      }
-
-      .calendar-dot {
-        width: 12px;
-        height: 12px;
-        border-radius: 999px;
-        display: inline-block;
-      }
-
-      .calendar-dot--booked {
-        background: rgba(88, 181, 158, 0.9);
-      }
-
-      .calendar-dot--blocked {
-        background: rgba(245, 158, 11, 0.9);
-      }
-
-      .calendar-dot--free {
-        background: rgba(34, 197, 94, 0.9);
-      }
-
-      .calendar-grid {
-        display: grid;
-        grid-template-columns: repeat(7, minmax(0, 1fr));
-        gap: 6px;
-      }
-
-      .calendar-weekday {
-        text-align: center;
-        font-size: 12px;
-        font-weight: 700;
-        text-transform: uppercase;
-      }
-
-      .calendar-day {
-        display: grid;
-        gap: 6px;
-        min-height: 72px;
-        padding: 10px;
-        border-radius: 16px;
-        background: var(--surface-dark-elevated);
-        border: 1px solid var(--glass-border-soft);
-      }
-
-      .calendar-day--booked {
-        background: rgba(88, 181, 158, 0.08);
-        border-color: rgba(88, 181, 158, 0.22);
-      }
-
-      .calendar-day--blocked {
-        background: rgba(245, 158, 11, 0.1);
-        border-color: rgba(245, 158, 11, 0.24);
-      }
-
-      .calendar-day--free {
-        background: rgba(34, 197, 94, 0.08);
-        border-color: rgba(34, 197, 94, 0.2);
-      }
-
-      .calendar-day--outside {
-        opacity: 0.45;
-      }
-
-      .calendar-day--today {
-        box-shadow: inset 0 0 0 2px rgba(88, 181, 158, 0.2);
-      }
-
-      .calendar-summary {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 12px;
-      }
-
-      .calendar-summary article,
-      .idle-periods {
-        display: grid;
-        gap: 6px;
-      }
-
-      .calendar-summary article {
-        padding: 14px;
-        border-radius: 18px;
-        background: var(--surface-muted);
-        border: 1px solid var(--glass-border-soft);
-      }
-
-      .idle-periods {
-        gap: 12px;
-      }
-
-      .idle-periods__head {
-        display: grid;
-        gap: 4px;
-      }
-
       .feedback {
         color: var(--success);
         font-weight: 600;
@@ -1681,6 +1161,10 @@ type OwnerViewMode = 'dashboard' | 'ads';
           align-items: center;
         }
 
+        .editor-highlights {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
         .form-grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
@@ -1689,19 +1173,7 @@ type OwnerViewMode = 'dashboard' | 'ads';
           grid-template-columns: repeat(3, minmax(0, 1fr));
         }
 
-        .stats-grid {
-          grid-template-columns: repeat(3, 1fr);
-        }
-
         .announcement-steps {
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-        }
-
-        .finance-grid {
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-        }
-
-        .calendar-summary {
           grid-template-columns: repeat(3, minmax(0, 1fr));
         }
 
@@ -1710,19 +1182,16 @@ type OwnerViewMode = 'dashboard' | 'ads';
           flex-direction: row;
         }
 
-        .month-filter {
+        .publication-guide__head {
+          flex-direction: row;
+        }
+
+        .publish-card .btn,
+        .form-actions .btn,
+        .card-head .btn-ghost {
           width: auto;
-          min-width: 180px;
         }
 
-        .calendar-grid {
-          gap: 8px;
-        }
-
-        .calendar-day {
-          min-height: 84px;
-          padding: 12px;
-        }
       }
 
       @media (min-width: 1080px) {
@@ -1732,9 +1201,18 @@ type OwnerViewMode = 'dashboard' | 'ads';
         }
 
         .owner-hero,
-        .dashboard-card,
-        .stats-grid article {
+        .dashboard-card {
           padding: 24px;
+        }
+
+        .editor-layout {
+          grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.75fr);
+          align-items: start;
+        }
+
+        .editor-sidebar {
+          position: sticky;
+          top: 24px;
         }
 
         .media-grid {
@@ -1745,15 +1223,6 @@ type OwnerViewMode = 'dashboard' | 'ads';
           padding: 24px;
         }
 
-        .calendar-day {
-          min-height: 92px;
-        }
-
-        .booking-row {
-          grid-template-columns: minmax(0, 1fr) auto;
-          align-items: center;
-          gap: 16px;
-        }
       }
 
       .vehicle-row__top {
@@ -1772,45 +1241,10 @@ export class OwnerDashboardPageComponent implements OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly availabilityApiService = inject(AvailabilityApiService);
   private readonly vehiclesApiService = inject(VehiclesApiService);
-  private readonly bookingsApiService = inject(BookingsApiService);
-  private readonly calendarMonthFormatter = new Intl.DateTimeFormat('pt-BR', {
-    month: 'long',
-    year: 'numeric',
-  });
-  private readonly shortDateFormatter = new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: 'short',
-  });
-  private readonly emptyScheduleSummary: ScheduleSummary = {
-    booked: 0,
-    blocked: 0,
-    free: 0,
-  };
-  private readonly emptyFinancialSnapshot: FinancialSnapshot = {
-    revenue: 0,
-    bookingCount: 0,
-    occupancyRate: 0,
-    averageTicket: 0,
-    longestIdleGapDays: 0,
-  };
-  private bookingStatusSummaryCacheSource: Booking[] | null = null;
-  private bookingStatusSummaryCache = {
-    pending: 0,
-    approved: 0,
-    completed: 0,
-  };
-  private manageableVehiclesCacheSource: OwnerVehicleItem[] | null = null;
-  private manageableVehiclesCache: OwnerVehicleItem[] = [];
   private editingVehicleCacheSource: OwnerVehicleItem[] | null = null;
   private editingVehicleCacheId: string | null = null;
   private editingVehicleCache: OwnerVehicleItem | null = null;
-  private selectedVehicleCacheSource: OwnerVehicleItem[] | null = null;
-  private selectedVehicleCacheId = '';
-  private selectedVehicleCache: OwnerVehicleItem | null = null;
-  private calendarMonthLabelCacheValue = '';
-  private calendarMonthLabelCache = '';
   private publicationChecklistCacheKey = '';
   private publicationChecklistCache: PublicationChecklistItem[] = [];
   private publicationChecklistSummaryCacheSource: PublicationChecklistItem[] | null = null;
@@ -1819,35 +1253,12 @@ export class OwnerDashboardPageComponent implements OnDestroy {
     percentage: 0,
     suggestions: [] as string[],
   };
-  private calendarDaysCacheMonth = '';
-  private calendarDaysCacheAvailability: VehicleAvailabilityResponse | null = null;
-  private calendarDaysCache: CalendarDayItem[] = [];
-  private scheduleSummaryCacheSource: CalendarDayItem[] | null = null;
-  private scheduleSummaryCache: ScheduleSummary = this.emptyScheduleSummary;
-  private idlePeriodsCacheSource: CalendarDayItem[] | null = null;
-  private idlePeriodsCache: IdlePeriodItem[] = [];
-  private financialSnapshotCacheMonth = '';
-  private financialSnapshotCacheBookings: Booking[] | null = null;
-  private financialSnapshotCacheVehicles: OwnerVehicleItem[] | null = null;
-  private financialSnapshotCacheIdlePeriods: IdlePeriodItem[] | null = null;
-  private financialSnapshotCache: FinancialSnapshot = this.emptyFinancialSnapshot;
 
   protected readonly fallbackImage =
     'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=80';
-  protected readonly today = new Date().toISOString().slice(0, 10);
-  protected readonly calendarWeekdays = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'];
   protected readonly vehicleTypeOptions: SelectOption<VehicleType>[] = [
     { label: 'Carro', value: 'CAR' },
     { label: 'Moto', value: 'MOTORCYCLE' },
-  ];
-  protected readonly bookingApprovalOptions: SelectOption<BookingApprovalMode>[] = [
-    { label: 'Manual', value: 'MANUAL' },
-    { label: 'Instantânea', value: 'INSTANT' },
-  ];
-  protected readonly cancellationPolicyOptions: SelectOption<CancellationPolicy>[] = [
-    { label: 'Flexível', value: 'FLEXIBLE' },
-    { label: 'Moderada', value: 'MODERATE' },
-    { label: 'Rígida', value: 'STRICT' },
   ];
   protected readonly categoryOptions: SelectOption<VehicleCategory>[] = [
     { label: 'Econômico', value: 'ECONOMY' },
@@ -1880,40 +1291,23 @@ export class OwnerDashboardPageComponent implements OnDestroy {
     { label: 'Touring', value: 'TOURING' },
   ];
   protected vehicles: OwnerVehicleItem[] = [];
-  protected bookings: Booking[] = [];
   protected loading = true;
-  protected loadError = '';
   protected vehicleFeedback = '';
   protected vehicleError = '';
   protected mediaFeedback = '';
   protected mediaError = '';
-  protected availabilityLoading = false;
-  protected calendarMonth = this.formatMonthValue(new Date());
-  protected selectedVehicleId = '';
-  protected selectedAvailability: VehicleAvailabilityResponse | null = null;
-  protected blockedDates: Array<{ id: string; startDate: string; endDate: string; reason?: string | null }> = [];
-  protected blockedDateDraft = {
-    startDate: '',
-    endDate: '',
-    reason: '',
-  };
-  protected blockedDateFeedback = '';
-  protected blockedDateError = '';
-  protected submittingBlockedDate = false;
   protected submittingVehicle = false;
   protected uploadingVehicleImages = false;
-  protected bookingActionId: string | null = null;
   protected vehicleActionId: string | null = null;
   protected imageActionId: string | null = null;
   protected editingVehicleId: string | null = null;
   protected createMode = false;
-  protected readonly viewMode: OwnerViewMode;
+  protected readonly viewMode: OwnerViewMode = 'ads';
   protected pendingVehicleFiles: File[] = [];
   protected pendingVehiclePreviews: Array<{ name: string; url: string }> = [];
   protected vehicleDraft = this.createVehicleDraft();
 
   constructor() {
-    this.viewMode = this.route.snapshot.data['view'] === 'dashboard' ? 'dashboard' : 'ads';
     this.createMode =
       this.isAdsView && this.route.snapshot.queryParamMap.get('editor') === 'create';
 
@@ -1928,24 +1322,8 @@ export class OwnerDashboardPageComponent implements OnDestroy {
     this.revokePendingPreviewUrls();
   }
 
-  protected get pendingCount() {
-    return this.bookingStatusSummary.pending;
-  }
-
-  protected get approvedCount() {
-    return this.bookingStatusSummary.approved;
-  }
-
-  protected get completedCount() {
-    return this.bookingStatusSummary.completed;
-  }
-
   protected get isEditingVehicle() {
     return !!this.editingVehicleId;
-  }
-
-  protected get isDashboardView() {
-    return this.viewMode === 'dashboard';
   }
 
   protected get isAdsView() {
@@ -1968,6 +1346,24 @@ export class OwnerDashboardPageComponent implements OnDestroy {
     return this.isEditingVehicle ? 'Salvar alterações' : 'Publicar anúncio';
   }
 
+  protected get totalVehiclePhotos() {
+    return (this.editingVehicle?.images.length ?? 0) + this.pendingVehicleFiles.length;
+  }
+
+  protected get editorStatusLabel() {
+    if (!this.isEditingVehicle) {
+      return this.vehicleDraft.isPublished ? 'Novo anúncio pronto' : 'Novo rascunho';
+    }
+
+    return this.vehicleDraft.isPublished ? 'Publicado' : 'Rascunho';
+  }
+
+  protected get editorStatusHint() {
+    return this.vehicleDraft.isPublished
+      ? 'Vai aparecer para quem estiver buscando no app.'
+      : 'Fica salvo sem aparecer na busca até você publicar.';
+  }
+
   protected get editingVehicle() {
     if (
       this.editingVehicleCacheSource === this.vehicles &&
@@ -1984,136 +1380,19 @@ export class OwnerDashboardPageComponent implements OnDestroy {
     return this.editingVehicleCache;
   }
 
-  protected get manageableVehicles() {
-    if (this.manageableVehiclesCacheSource === this.vehicles) {
-      return this.manageableVehiclesCache;
-    }
-
-    this.manageableVehiclesCacheSource = this.vehicles;
-    this.manageableVehiclesCache = this.vehicles.filter((vehicle) => vehicle.isActive);
-    return this.manageableVehiclesCache;
-  }
-
-  protected get selectedVehicle() {
-    const manageableVehicles = this.manageableVehicles;
-
-    if (
-      this.selectedVehicleCacheSource === manageableVehicles &&
-      this.selectedVehicleCacheId === this.selectedVehicleId
-    ) {
-      return this.selectedVehicleCache;
-    }
-
-    this.selectedVehicleCacheSource = manageableVehicles;
-    this.selectedVehicleCacheId = this.selectedVehicleId;
-    this.selectedVehicleCache =
-      manageableVehicles.find((vehicle) => vehicle.id === this.selectedVehicleId) ?? null;
-
-    return this.selectedVehicleCache;
-  }
-
-  protected get calendarMonthLabel() {
-    if (this.calendarMonthLabelCacheValue === this.calendarMonth) {
-      return this.calendarMonthLabelCache;
-    }
-
-    this.calendarMonthLabelCacheValue = this.calendarMonth;
-    this.calendarMonthLabelCache = this.calendarMonthFormatter.format(
-      this.getMonthStart(this.calendarMonth),
-    );
-
-    return this.calendarMonthLabelCache;
-  }
-
-  protected get financialSnapshot() {
-    const manageableVehicles = this.manageableVehicles;
-    const idlePeriods = this.idlePeriods;
-
-    if (
-      this.financialSnapshotCacheMonth === this.calendarMonth &&
-      this.financialSnapshotCacheBookings === this.bookings &&
-      this.financialSnapshotCacheVehicles === manageableVehicles &&
-      this.financialSnapshotCacheIdlePeriods === idlePeriods
-    ) {
-      return this.financialSnapshotCache;
-    }
-
-    const monthStart = this.getMonthStart(this.calendarMonth);
-    const monthEnd = this.getNextMonthStart(monthStart);
-    const relevantBookings = this.bookings.filter((booking) => {
-      if (!['APPROVED', 'IN_PROGRESS', 'COMPLETED'].includes(booking.status)) {
-        return false;
-      }
-
-      return this.countOverlapDays(booking.startDate, booking.endDate, monthStart, monthEnd) > 0;
-    });
-    const revenue = relevantBookings.reduce((total, booking) => {
-      const overlapDays = this.countOverlapDays(
-        booking.startDate,
-        booking.endDate,
-        monthStart,
-        monthEnd,
-      );
-      const bookingNetAmount = Math.max(0, booking.subtotal - booking.discountsAmount);
-      const proratedAmount =
-        booking.totalDays > 0 ? (bookingNetAmount / booking.totalDays) * overlapDays : 0;
-
-      return total + proratedAmount;
-    }, 0);
-    const daysInMonth = this.getDaysInMonth(monthStart);
-    const bookedDays = relevantBookings.reduce(
-      (total, booking) =>
-        total +
-        this.countOverlapDays(booking.startDate, booking.endDate, monthStart, monthEnd),
-      0,
-    );
-    const capacityDays = daysInMonth * Math.max(manageableVehicles.length, 1);
-
-    this.financialSnapshotCacheMonth = this.calendarMonth;
-    this.financialSnapshotCacheBookings = this.bookings;
-    this.financialSnapshotCacheVehicles = manageableVehicles;
-    this.financialSnapshotCacheIdlePeriods = idlePeriods;
-    this.financialSnapshotCache = {
-      revenue: Number(revenue.toFixed(2)),
-      bookingCount: relevantBookings.length,
-      occupancyRate: capacityDays
-        ? Number(((bookedDays / capacityDays) * 100).toFixed(1))
-        : 0,
-      averageTicket: relevantBookings.length
-        ? Number((revenue / relevantBookings.length).toFixed(2))
-        : 0,
-      longestIdleGapDays: idlePeriods.reduce(
-        (longest, period) => Math.max(longest, period.totalDays),
-        0,
-      ),
-    };
-
-    return this.financialSnapshotCache;
-  }
-
   protected get publicationChecklist() {
     const totalPhotos = (this.editingVehicle?.images.length ?? 0) + this.pendingVehicleFiles.length;
     const descriptionLength = this.vehicleDraft.description.trim().length;
     const hasPickupPoint = !!this.vehicleDraft.addressLine?.trim();
-    const hasCoordinates =
-      this.vehicleDraft.latitude !== undefined && this.vehicleDraft.longitude !== undefined;
     const hasTitleContext =
-      this.vehicleDraft.title.trim().length >= 18 &&
+      this.vehicleDraft.title.trim().length >= 12 &&
       !!this.vehicleDraft.brand.trim() &&
       !!this.vehicleDraft.model.trim();
-    const hasConversionBoost =
-      this.vehicleDraft.bookingApprovalMode === 'INSTANT' ||
-      this.vehicleDraft.addons.some((addon) => addon.enabled !== false) ||
-      this.vehicleDraft.firstBookingDiscountPercent > 0 ||
-      this.vehicleDraft.weeklyDiscountPercent > 0 ||
-      (!!this.vehicleDraft.couponCode && this.vehicleDraft.couponDiscountPercent > 0);
     const checklistCacheKey = [
       totalPhotos,
       descriptionLength,
       hasPickupPoint ? 1 : 0,
-      hasCoordinates ? 1 : 0,
       hasTitleContext ? 1 : 0,
-      hasConversionBoost ? 1 : 0,
       this.vehicleDraft.vehicleType,
       this.vehicleDraft.motorcycleStyle ?? '',
       this.vehicleDraft.engineCc ?? '',
@@ -2129,33 +1408,25 @@ export class OwnerDashboardPageComponent implements OnDestroy {
         title: 'Fotos do anúncio',
         description:
           totalPhotos >= 3
-            ? `${totalPhotos} fotos prontas para vender melhor.`
-            : 'Faltam fotos. Adicione pelo menos 3 imagens reais do veículo.',
+            ? `${totalPhotos} fotos prontas para publicar.`
+            : 'Adicione pelo menos 3 fotos reais do veículo.',
         done: totalPhotos >= 3,
       },
       {
         title: 'Descrição completa',
         description:
-          descriptionLength >= 120
-            ? 'Descrição boa o suficiente para responder as dúvidas básicas.'
-            : 'Faltou descrição. Explique regras, diferenciais e itens inclusos.',
-        done: descriptionLength >= 120,
+          descriptionLength >= 80
+            ? 'A descrição já responde as dúvidas principais.'
+            : 'Explique diferenciais, retirada e condições básicas do aluguel.',
+        done: descriptionLength >= 80,
       },
       {
-        title: 'Localização e retirada',
+        title: 'Retirada definida',
         description:
-          hasPickupPoint && hasCoordinates
-            ? 'Ponto de retirada e mapa já estão configurados.'
-            : 'Defina endereço e coordenadas para reduzir atrito antes da reserva.',
-        done: hasPickupPoint && hasCoordinates,
-      },
-      {
-        title: 'Anúncio pode converter mais',
-        description:
-          hasConversionBoost
-            ? 'Seu anúncio já tem algum incentivo de conversão ativo.'
-            : 'Ative reserva instantânea, extras ou promoção para melhorar a conversão.',
-        done: hasConversionBoost,
+          hasPickupPoint
+            ? 'O endereço de retirada já está definido.'
+            : 'Defina onde o carro pode ser retirado.',
+        done: hasPickupPoint,
       },
       {
         title: this.vehicleDraft.vehicleType === 'MOTORCYCLE' ? 'Ficha da moto' : 'Título específico',
@@ -2171,6 +1442,14 @@ export class OwnerDashboardPageComponent implements OnDestroy {
           this.vehicleDraft.vehicleType === 'MOTORCYCLE'
             ? !!this.vehicleDraft.motorcycleStyle && !!this.vehicleDraft.engineCc
             : hasTitleContext,
+      },
+      {
+        title: 'Preço definido',
+        description:
+          Number(this.vehicleDraft.dailyRate) > 0
+            ? 'O valor semanal já está pronto para publicação.'
+            : 'Informe o valor semanal para publicar.',
+        done: Number(this.vehicleDraft.dailyRate) > 0,
       },
     ];
 
@@ -2189,150 +1468,18 @@ export class OwnerDashboardPageComponent implements OnDestroy {
     return this.publicationChecklistSummary.suggestions;
   }
 
-  protected get calendarDays(): CalendarDayItem[] {
-    if (!this.selectedAvailability) {
-      return [];
-    }
-
-    if (
-      this.calendarDaysCacheMonth === this.calendarMonth &&
-      this.calendarDaysCacheAvailability === this.selectedAvailability
-    ) {
-      return this.calendarDaysCache;
-    }
-
-    const monthStart = this.getMonthStart(this.calendarMonth);
-    const startOffset = (monthStart.getDay() + 6) % 7;
-    const gridStart = new Date(monthStart);
-    gridStart.setDate(monthStart.getDate() - startOffset);
-
-    this.calendarDaysCacheMonth = this.calendarMonth;
-    this.calendarDaysCacheAvailability = this.selectedAvailability;
-    this.calendarDaysCache = Array.from({ length: 42 }, (_, index) => {
-      const day = new Date(gridStart);
-      day.setDate(gridStart.getDate() + index);
-      const date = this.formatDateKey(day);
-      const inCurrentMonth = day.getMonth() === monthStart.getMonth();
-      const isBooked =
-        this.selectedAvailability?.approvedBookings.some((booking) =>
-          this.dateKeyInsidePeriod(date, booking.startDate, booking.endDate),
-        ) ?? false;
-      const isBlocked =
-        !isBooked &&
-        (this.selectedAvailability?.blockedDates.some((period) =>
-          this.dateKeyInsidePeriod(date, period.startDate, period.endDate),
-        ) ?? false);
-      const state = !inCurrentMonth ? 'outside' : isBooked ? 'booked' : isBlocked ? 'blocked' : 'free';
-
-      return {
-        date,
-        dayNumber: day.getDate(),
-        inCurrentMonth,
-        state,
-        note:
-          state === 'booked'
-            ? 'Reserva'
-            : state === 'blocked'
-              ? 'Bloqueio'
-              : state === 'outside'
-                ? ''
-                : 'Livre',
-        isToday: date === this.today,
-      };
-    });
-
-    return this.calendarDaysCache;
-  }
-
-  protected get monthlyScheduleSummary() {
-    const calendarDays = this.calendarDays;
-
-    if (this.scheduleSummaryCacheSource === calendarDays) {
-      return this.scheduleSummaryCache;
-    }
-
-    this.scheduleSummaryCacheSource = calendarDays;
-    this.scheduleSummaryCache = calendarDays
-      .filter((day) => day.inCurrentMonth)
-      .reduce(
-        (summary, day) => {
-          if (day.state === 'booked') {
-            summary.booked += 1;
-          } else if (day.state === 'blocked') {
-            summary.blocked += 1;
-          } else if (day.state === 'free') {
-            summary.free += 1;
-          }
-
-          return summary;
-        },
-        {
-          ...this.emptyScheduleSummary,
-        },
-      );
-
-    return this.scheduleSummaryCache;
-  }
-
-  protected get idlePeriods(): IdlePeriodItem[] {
-    if (!this.selectedAvailability) {
-      return [];
-    }
-
-    const calendarDays = this.calendarDays;
-
-    if (this.idlePeriodsCacheSource === calendarDays) {
-      return this.idlePeriodsCache;
-    }
-
-    const periods: IdlePeriodItem[] = [];
-    let currentStart: string | null = null;
-    let currentLength = 0;
-
-    const pushPeriod = (endDate: string | null) => {
-      if (!currentStart || !endDate || currentLength <= 0) {
-        return;
-      }
-
-      periods.push({
-        startDate: currentStart,
-        endDate,
-        totalDays: currentLength,
-        label: `${this.formatShortDate(currentStart)} a ${this.formatShortDate(endDate)} • ${currentLength} dia(s) livre(s)`,
-      });
-    };
-
-    calendarDays
-      .filter((day) => day.inCurrentMonth)
-      .forEach((day) => {
-        if (day.state === 'free') {
-          currentStart = currentStart ?? day.date;
-          currentLength += 1;
-          return;
-        }
-
-        pushPeriod(this.getPreviousDateKey(day.date));
-        currentStart = null;
-        currentLength = 0;
-      });
-
-    pushPeriod(
-      currentStart
-        ? calendarDays.filter((day) => day.inCurrentMonth).at(-1)?.date ?? currentStart
-        : null,
-    );
-
-    this.idlePeriodsCacheSource = calendarDays;
-    this.idlePeriodsCache = periods;
-
-    return this.idlePeriodsCache;
+  protected get missingVehicleFields() {
+    return this.collectMissingVehicleFields();
   }
 
   protected saveVehicle() {
     const payload = this.normalizeVehicleDraft();
 
     if (!payload) {
-      this.vehicleError = 'Preencha todos os campos obrigatórios do anúncio.';
+      const missingFields = this.collectMissingVehicleFields();
+      this.vehicleError = missingFields.length
+        ? `Preencha os campos obrigatórios: ${missingFields.join(', ')}.`
+        : 'Preencha os campos obrigatórios do anúncio.';
       this.vehicleFeedback = '';
       return;
     }
@@ -2360,7 +1507,6 @@ export class OwnerDashboardPageComponent implements OnDestroy {
         this.createMode = false;
         this.clearCreateIntent();
         this.editingVehicleId = vehicleId;
-        this.selectedVehicleId = vehicleId;
         this.vehicleDraft = {
           ...payload,
           addressLine: payload.addressLine || '',
@@ -2388,7 +1534,6 @@ export class OwnerDashboardPageComponent implements OnDestroy {
     this.createMode = false;
     this.clearCreateIntent();
     this.editingVehicleId = vehicle.id;
-    this.selectedVehicleId = vehicle.id;
     this.vehicleDraft = {
       title: vehicle.title,
       brand: vehicle.brand,
@@ -2430,7 +1575,6 @@ export class OwnerDashboardPageComponent implements OnDestroy {
     this.vehicleError = '';
     this.mediaFeedback = '';
     this.mediaError = '';
-    this.loadSelectedVehicleAvailability();
   }
 
   protected cancelEditingVehicle() {
@@ -2443,22 +1587,6 @@ export class OwnerDashboardPageComponent implements OnDestroy {
     this.mediaFeedback = '';
     this.mediaError = '';
     this.clearCreateIntent();
-  }
-
-  protected goToDashboardView() {
-    if (this.isDashboardView) {
-      return;
-    }
-
-    this.router.navigate(['/owner-dashboard']);
-  }
-
-  protected goToAdsView() {
-    if (this.isAdsView && !this.createMode) {
-      return;
-    }
-
-    this.router.navigate(['/anunciar-carro']);
   }
 
   protected goToCreateView() {
@@ -2600,37 +1728,12 @@ export class OwnerDashboardPageComponent implements OnDestroy {
     return this.vehicleTypeOptions.find((option) => option.value === vehicleType)?.label ?? vehicleType;
   }
 
-  protected addAddon() {
-    this.vehicleDraft.addons = [...this.vehicleDraft.addons, this.createEmptyAddon()];
-  }
-
-  protected removeAddon(index: number) {
-    this.vehicleDraft.addons = this.vehicleDraft.addons.filter((_, addonIndex) => addonIndex !== index);
-  }
-
-  protected toggleAddon(index: number) {
-    this.vehicleDraft.addons = this.vehicleDraft.addons.map((addon, addonIndex) =>
-      addonIndex === index
-        ? {
-            ...addon,
-            enabled: addon.enabled === false,
-          }
-        : addon,
-    );
-  }
-
   protected transmissionLabel(transmission: TransmissionType) {
     return this.transmissionOptions.find((option) => option.value === transmission)?.label ?? transmission;
   }
 
   protected trackById(_index: number, item: { id: string }) {
     return item.id;
-  }
-
-  protected applyBookingUpdate(updatedBooking: Booking) {
-    this.bookings = this.bookings.map((booking) =>
-      booking.id === updatedBooking.id ? updatedBooking : booking,
-    );
   }
 
   protected trackByString(_index: number, value: string) {
@@ -2641,128 +1744,8 @@ export class OwnerDashboardPageComponent implements OnDestroy {
     return item.title;
   }
 
-  protected trackByAddon(index: number, item: VehicleAddon) {
-    return item.id || `${item.name}-${index}`;
-  }
-
   protected trackByPreview(_index: number, item: { name: string; url: string }) {
     return item.url;
-  }
-
-  protected trackByBlockedDate(_index: number, item: { id: string; startDate: string; endDate: string }) {
-    return item.id || `${item.startDate}-${item.endDate}`;
-  }
-
-  protected trackByCalendarDay(_index: number, item: CalendarDayItem) {
-    return item.date;
-  }
-
-  protected trackByIdlePeriod(_index: number, item: IdlePeriodItem) {
-    return `${item.startDate}-${item.endDate}`;
-  }
-
-  protected approve(bookingId: string) {
-    this.bookingActionId = bookingId;
-    this.bookingsApiService.approve(bookingId).subscribe({
-      next: () => {
-        this.bookingActionId = null;
-        this.loadData();
-      },
-      error: () => {
-        this.bookingActionId = null;
-        this.loadError = 'Não foi possível aprovar a reserva agora.';
-      },
-    });
-  }
-
-  protected reject(bookingId: string) {
-    this.bookingActionId = bookingId;
-    this.bookingsApiService
-      .reject(bookingId, 'Indisponibilidade no período')
-      .subscribe({
-        next: () => {
-          this.bookingActionId = null;
-          this.loadData();
-        },
-        error: () => {
-          this.bookingActionId = null;
-          this.loadError = 'Não foi possível recusar a reserva agora.';
-        },
-      });
-  }
-
-  protected blockDates() {
-    if (!this.selectedVehicleId || !this.blockedDateDraft.startDate || !this.blockedDateDraft.endDate) {
-      this.blockedDateError = 'Escolha o veículo e o período que deve ser bloqueado.';
-      this.blockedDateFeedback = '';
-      return;
-    }
-
-    this.submittingBlockedDate = true;
-    this.blockedDateError = '';
-
-    this.availabilityApiService
-      .blockDates(this.selectedVehicleId, {
-        ...this.blockedDateDraft,
-        reason: this.blockedDateDraft.reason.trim() || undefined,
-      })
-      .subscribe({
-        next: () => {
-          this.submittingBlockedDate = false;
-          this.blockedDateFeedback = 'Período bloqueado com sucesso.';
-          this.blockedDateDraft = {
-            startDate: '',
-            endDate: '',
-            reason: '',
-          };
-          this.loadSelectedVehicleAvailability();
-        },
-        error: (error) => {
-          this.submittingBlockedDate = false;
-          this.blockedDateFeedback = '';
-          this.blockedDateError =
-            error?.error?.message || 'Não foi possível bloquear este período.';
-        },
-      });
-  }
-
-  protected loadSelectedVehicleAvailability() {
-    if (!this.selectedVehicleId) {
-      this.blockedDates = [];
-      this.selectedAvailability = null;
-      return;
-    }
-
-    this.availabilityLoading = true;
-    this.blockedDateError = '';
-
-    this.availabilityApiService
-      .getVehicleAvailability(this.selectedVehicleId)
-      .subscribe({
-        next: (availability) => {
-          this.blockedDates = availability.blockedDates;
-          this.selectedAvailability = availability;
-          this.availabilityLoading = false;
-        },
-        error: (error) => {
-          this.availabilityLoading = false;
-          this.selectedAvailability = null;
-          this.blockedDateError =
-            error?.error?.message || 'Não foi possível carregar o calendário do veículo.';
-        },
-      });
-  }
-
-  protected changeCalendarMonth(step: number) {
-    const nextMonth = this.getMonthStart(this.calendarMonth);
-    nextMonth.setMonth(nextMonth.getMonth() + step);
-    this.calendarMonth = this.formatMonthValue(nextMonth);
-  }
-
-  protected updateCalendarMonth(value: string) {
-    this.calendarMonth = /^\d{4}-\d{2}$/.test(value)
-      ? value
-      : this.formatMonthValue(new Date());
   }
 
   private uploadPendingVehicleFiles(vehicleId: string, successMessage: string) {
@@ -2807,36 +1790,26 @@ export class OwnerDashboardPageComponent implements OnDestroy {
 
   private loadData(focusVehicleId?: string) {
     this.loading = true;
-    this.loadError = '';
-
-    forkJoin({
-      vehicles: this.vehiclesApiService.getMine(),
-      bookings: this.bookingsApiService.getOwnerBookings(),
-    }).subscribe({
-      next: ({ vehicles, bookings }) => {
+    this.vehiclesApiService.getMine().subscribe({
+      next: (vehicles) => {
         this.vehicles = vehicles;
-        this.bookings = bookings;
 
         if (this.editingVehicleId && !this.vehicles.some((vehicle) => vehicle.id === this.editingVehicleId)) {
           this.cancelEditingVehicle();
         }
 
-        if (this.manageableVehicles.length > 0) {
-          const preferredVehicleId = focusVehicleId || this.selectedVehicleId;
-          const stillExists = this.manageableVehicles.some((vehicle) => vehicle.id === preferredVehicleId);
-          this.selectedVehicleId = stillExists ? preferredVehicleId : this.manageableVehicles[0].id;
-          this.loadSelectedVehicleAvailability();
-        } else {
-          this.selectedVehicleId = '';
-          this.blockedDates = [];
-          this.selectedAvailability = null;
+        if (
+          focusVehicleId &&
+          !this.editingVehicleId &&
+          this.vehicles.some((vehicle) => vehicle.id === focusVehicleId)
+        ) {
+          this.editingVehicleId = focusVehicleId;
         }
+
         this.loading = false;
       },
-      error: (error) => {
+      error: () => {
         this.loading = false;
-        this.loadError =
-          error?.error?.message || 'Não foi possível carregar seu painel.';
       },
     });
   }
@@ -2888,7 +1861,7 @@ export class OwnerDashboardPageComponent implements OnDestroy {
       hasAbs: false,
       hasTopCase: false,
       description: '',
-      addressLine: '',
+      addressLine: profile?.addressLine || '',
       latitude: undefined,
       longitude: undefined,
       isPublished: true,
@@ -2959,6 +1932,7 @@ export class OwnerDashboardPageComponent implements OnDestroy {
       !payload.plate ||
       !payload.city ||
       payload.state.length !== 2 ||
+      !payload.addressLine ||
       !payload.description ||
       Number.isNaN(payload.year) ||
       Number.isNaN(payload.seats) ||
@@ -2975,16 +1949,6 @@ export class OwnerDashboardPageComponent implements OnDestroy {
     }
 
     return payload;
-  }
-
-  private createEmptyAddon(): VehicleAddon {
-    return {
-      id: '',
-      name: '',
-      description: '',
-      price: 0,
-      enabled: true,
-    };
   }
 
   private cloneAddons(addons: VehicleAddon[] | undefined) {
@@ -3006,67 +1970,54 @@ export class OwnerDashboardPageComponent implements OnDestroy {
     return Number.isNaN(parsed) ? undefined : parsed;
   }
 
-  private getMonthStart(monthValue: string) {
-    const [year, month] = monthValue.split('-').map((part) => Number(part));
-    return new Date(year, (month || 1) - 1, 1);
-  }
+  private collectMissingVehicleFields() {
+    const missingFields: string[] = [];
 
-  private getNextMonthStart(date: Date) {
-    return new Date(date.getFullYear(), date.getMonth() + 1, 1);
-  }
-
-  private getDaysInMonth(date: Date) {
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-  }
-
-  private formatMonthValue(date: Date) {
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-  }
-
-  private formatDateKey(date: Date) {
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
-      date.getDate(),
-    ).padStart(2, '0')}`;
-  }
-
-  private getPreviousDateKey(dateKey: string) {
-    const date = this.getDateFromKey(dateKey);
-    date.setDate(date.getDate() - 1);
-    return this.formatDateKey(date);
-  }
-
-  private formatShortDate(dateKey: string) {
-    return new Intl.DateTimeFormat('pt-BR', {
-      day: '2-digit',
-      month: 'short',
-    })
-      .format(this.getDateFromKey(dateKey))
-      .replace('.', '');
-  }
-
-  private getDateFromKey(dateKey: string) {
-    const [year, month, day] = dateKey.split('-').map((part) => Number(part));
-    return new Date(year, (month || 1) - 1, day || 1);
-  }
-
-  private dateKeyInsidePeriod(dateKey: string, startDate: string, endDate: string) {
-    const periodStart = startDate.slice(0, 10);
-    const periodEnd = endDate.slice(0, 10);
-
-    return periodStart <= dateKey && periodEnd > dateKey;
-  }
-
-  private countOverlapDays(startDate: string, endDate: string, monthStart: Date, monthEnd: Date) {
-    const start = this.getDateFromKey(startDate.slice(0, 10));
-    const end = this.getDateFromKey(endDate.slice(0, 10));
-    const overlapStart = Math.max(start.getTime(), monthStart.getTime());
-    const overlapEnd = Math.min(end.getTime(), monthEnd.getTime());
-
-    if (overlapEnd <= overlapStart) {
-      return 0;
+    if (!this.vehicleDraft.title.trim()) {
+      missingFields.push('título');
     }
 
-    return Math.round((overlapEnd - overlapStart) / (1000 * 60 * 60 * 24));
+    if (!this.vehicleDraft.plate.trim()) {
+      missingFields.push('placa');
+    }
+
+    if (!this.vehicleDraft.brand.trim()) {
+      missingFields.push('marca');
+    }
+
+    if (!this.vehicleDraft.model.trim()) {
+      missingFields.push('modelo');
+    }
+
+    if (!Number(this.vehicleDraft.year)) {
+      missingFields.push('ano');
+    }
+
+    if (!this.vehicleDraft.city.trim()) {
+      missingFields.push('cidade');
+    }
+
+    if (this.vehicleDraft.state.trim().length !== 2) {
+      missingFields.push('estado');
+    }
+
+    if (!this.vehicleDraft.addressLine?.trim()) {
+      missingFields.push('endereço de retirada');
+    }
+
+    if (!Number(this.vehicleDraft.seats)) {
+      missingFields.push('assentos');
+    }
+
+    if (!Number(this.vehicleDraft.dailyRate)) {
+      missingFields.push('valor semanal');
+    }
+
+    if (!this.vehicleDraft.description.trim()) {
+      missingFields.push('descrição');
+    }
+
+    return missingFields;
   }
 
   private normalizeDiscountPercent(value: number | null | undefined) {
@@ -3081,34 +2032,6 @@ export class OwnerDashboardPageComponent implements OnDestroy {
 
   private normalizeCouponCode(value: string | null | undefined) {
     return (value || '').trim().toUpperCase();
-  }
-
-  private get bookingStatusSummary() {
-    if (this.bookingStatusSummaryCacheSource === this.bookings) {
-      return this.bookingStatusSummaryCache;
-    }
-
-    this.bookingStatusSummaryCacheSource = this.bookings;
-    this.bookingStatusSummaryCache = this.bookings.reduce(
-      (summary, booking) => {
-        if (booking.status === 'PENDING') {
-          summary.pending += 1;
-        } else if (booking.status === 'APPROVED') {
-          summary.approved += 1;
-        } else if (booking.status === 'COMPLETED') {
-          summary.completed += 1;
-        }
-
-        return summary;
-      },
-      {
-        pending: 0,
-        approved: 0,
-        completed: 0,
-      },
-    );
-
-    return this.bookingStatusSummaryCache;
   }
 
   private get publicationChecklistSummary() {

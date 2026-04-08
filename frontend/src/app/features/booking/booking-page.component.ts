@@ -802,7 +802,7 @@ export class BookingPageComponent {
               ? 'Reserva confirmada instantaneamente.'
               : 'Solicitação enviada. Agora o proprietário pode aprovar ou recusar.';
           this.submitting = false;
-          setTimeout(() => this.router.navigate(['/my-bookings']), 900);
+          setTimeout(() => this.router.navigate(['/profile']), 900);
         },
         error: (error) => {
           this.feedback =

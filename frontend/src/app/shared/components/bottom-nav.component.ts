@@ -124,7 +124,7 @@ export class BottomNavComponent {
 
     if (item.key === 'host') {
       this.router.navigateByUrl(
-        this.authService.hasSession() ? '/owner-dashboard' : item.link,
+        this.authService.hasSession() ? '/anunciar-carro' : item.link,
       );
       return;
     }
@@ -144,7 +144,7 @@ export class BottomNavComponent {
     }
 
     if (item.key === 'host') {
-      return currentUrl.startsWith('/anunciar') || currentUrl.startsWith('/owner-dashboard');
+      return currentUrl.startsWith('/anunciar');
     }
 
     return currentUrl.startsWith(item.link);

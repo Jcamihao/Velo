@@ -94,10 +94,6 @@ export class AppComponent {
     this.navigateProtected('/profile');
   }
 
-  protected openBookings() {
-    this.navigateProtected('/my-bookings');
-  }
-
   protected openFavorites() {
     this.navigateProtected('/favorites');
   }
@@ -114,17 +110,6 @@ export class AppComponent {
 
     this.closeMenu();
     this.router.navigate(['/anunciar-carro']);
-  }
-
-  protected openOwnerDashboard() {
-    if (!this.authService.hasSession()) {
-      this.closeMenu();
-      this.router.navigate(['/auth/login']);
-      return;
-    }
-
-    this.closeMenu();
-    this.router.navigate(['/owner-dashboard']);
   }
 
   protected goToLogin() {
@@ -179,7 +164,7 @@ export class AppComponent {
   }
 
   protected get showInstallBanner() {
-    return this.pwaInstallService.canShowBanner();
+    return !this.showPrivacyBanner && this.pwaInstallService.canShowBanner();
   }
 
   protected get shouldOffsetShellForBanners() {
@@ -187,7 +172,7 @@ export class AppComponent {
   }
 
   protected get shouldUseStackedBannerOffset() {
-    return this.showBottomNav() && this.showPrivacyBanner && this.showInstallBanner;
+    return false;
   }
 
   readonly showBottomNav = () => {
@@ -241,13 +226,6 @@ export class AppComponent {
 
   protected get showMenuBrand() {
     return !this.authService.currentUser()?.profile?.fullName?.trim();
-  }
-
-  protected get hasDashboardAccess() {
-    return !!(
-      this.authService.currentUser() ??
-      this.authService.getSessionRole()
-    );
   }
 
   protected handlePullStart(event: TouchEvent) {

@@ -61,14 +61,6 @@ export const routes: Routes = [
       ),
   },
   {
-    path: 'my-bookings',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./features/my-bookings/my-bookings-page.component').then(
-        (m) => m.MyBookingsPageComponent,
-      ),
-  },
-  {
     path: 'profile',
     canActivate: [authGuard],
     loadComponent: () =>
@@ -117,12 +109,8 @@ export const routes: Routes = [
   },
   {
     path: 'owner-dashboard',
-    canActivate: [authGuard],
-    data: { view: 'dashboard' },
-    loadComponent: () =>
-      import('./features/owner-dashboard/owner-dashboard-page.component').then(
-        (m) => m.OwnerDashboardPageComponent,
-      ),
+    redirectTo: 'anunciar-carro',
+    pathMatch: 'full',
   },
   {
     path: 'admin',

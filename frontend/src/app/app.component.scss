@@ -108,10 +108,6 @@
   padding-bottom: calc(286px + env(safe-area-inset-bottom, 0px));
 }
 
-.app-shell.with-bottom-nav.with-floating-banner.with-stacked-banner {
-  padding-bottom: calc(492px + env(safe-area-inset-bottom, 0px));
-}
-
 .menu-overlay {
   position: fixed;
   inset: 0;
@@ -336,10 +332,6 @@
   transform: translateX(-50%);
 }
 
-.install-banner--stacked {
-  bottom: calc(302px + env(safe-area-inset-bottom, 0px));
-}
-
 .install-banner strong,
 .install-banner p {
   margin: 0;
@@ -387,8 +379,7 @@
 
 @media (min-width: 1024px) {
   .app-shell.with-bottom-nav,
-  .app-shell.with-bottom-nav.with-floating-banner,
-  .app-shell.with-bottom-nav.with-floating-banner.with-stacked-banner {
+  .app-shell.with-bottom-nav.with-floating-banner {
     padding-bottom: calc(132px + env(safe-area-inset-bottom, 0px));
   }
 
@@ -429,10 +420,6 @@
   .privacy-banner--docked,
   .install-banner--docked {
     bottom: 108px;
-  }
-
-  .install-banner--stacked {
-    bottom: 190px;
   }
 }
 

@@ -2,7 +2,6 @@
   class="app-shell"
   [class.with-bottom-nav]="showBottomNav()"
   [class.with-floating-banner]="shouldOffsetShellForBanners"
-  [class.with-stacked-banner]="shouldUseStackedBannerOffset"
   [class.app-shell--pulling]="pullDistance() > 0"
   [class.app-shell--refreshing]="isPullRefreshing()"
   [style.--pull-distance.px]="pullDistance()"
@@ -65,7 +64,7 @@
           <p>
             {{
               authService.currentUser()?.email ||
-              'Entre para acessar perfil, reservas, favoritos e seus anúncios.'
+              'Entre para acessar perfil, favoritos, chat e seus anúncios.'
             }}
           </p>
         </div>
@@ -77,14 +76,6 @@
     </header>
 
     <nav class="menu-drawer__nav">
-      <button type="button" class="menu-link" *ngIf="hasDashboardAccess" (click)="openOwnerDashboard()">
-        <span class="material-icons" aria-hidden="true">dashboard</span>
-        <div>
-          <strong>Dashboard de anúncios</strong>
-          <small>Seus anúncios, agenda e pedidos</small>
-        </div>
-      </button>
-
       <button type="button" class="menu-link" (click)="openProfile()">
         <span class="material-icons" aria-hidden="true">person</span>
         <div>
@@ -93,19 +84,11 @@
         </div>
       </button>
 
-      <button type="button" class="menu-link" (click)="openBookings()">
-        <span class="material-icons" aria-hidden="true">event_available</span>
-        <div>
-          <strong>Minhas reservas</strong>
-          <small>Histórico, pagamento e status</small>
-        </div>
-      </button>
-
       <button type="button" class="menu-link" (click)="openMyAds()">
         <span class="material-icons" aria-hidden="true">directions_car</span>
         <div>
           <strong>Meus anúncios</strong>
-          <small>Publicar, editar e acompanhar pedidos</small>
+          <small>Publicar e editar seus classificados</small>
         </div>
       </button>
 
@@ -175,7 +158,6 @@
   class="install-banner"
   *ngIf="showInstallBanner"
   [class.install-banner--docked]="showBottomNav()"
-  [class.install-banner--stacked]="showBottomNav() && showPrivacyBanner"
 >
   <div>
     <strong>Instale a Triluga no celular</strong>
