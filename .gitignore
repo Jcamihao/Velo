@@ -13,3 +13,4 @@
 
 /backend/.vscode
 /frontend/.vscode
+.DS_Store

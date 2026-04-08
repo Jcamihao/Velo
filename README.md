@@ -1,14 +1,14 @@
-# Triluga 0.2.0
+# Triluga 0.3.0
 
-Marketplace mobile-first de aluguel de carros entre pessoas, com frontend Angular PWA, backend NestJS modular e uma nova base de marca, operação e confiança para locatários e anunciantes.
+Marketplace mobile-first de aluguel de carros entre pessoas, com frontend Angular PWA, backend NestJS modular e uma base mais pronta para deploy contínuo, cadastro estável e configuração dinâmica em produção.
 
 ## Destaques da versão
 
-- identidade oficial `Triluga` aplicada ao produto, PWA, iOS, assets e ambiente local
-- comparação de veículos no fluxo de busca e detalhe
-- perfil público do anunciante com avaliações de usuário
-- checklist de retirada e devolução com fotos dentro da reserva
-- seed, infraestrutura local e docs alinhados ao novo domínio da plataforma
+- blueprint `render.yaml` para subir frontend, backend e banco no Render
+- descoberta automática da URL pública do backend no runtime config do frontend
+- registro com telefone inicial vazio e formatação mais robusta para números brasileiros
+- cobertura de testes ampliada para bootstrap da aplicação e cadastro
+- documentação de deploy atualizada com fluxo principal no Render
 
 ## Arquitetura
 
@@ -217,7 +217,14 @@ Os wireframes textuais mobile first estão em [docs/wireframes.md](./docs/wirefr
 
 ## Deploy
 
-Guia de produção para frontend no Vercel e backend no Railway em [docs/deploy-vercel-railway.md](./docs/deploy-vercel-railway.md).
+Guia para subir tudo no Render em [docs/deploy-render.md](./docs/deploy-render.md).
+
+Guia alternativo para frontend no Vercel e backend no Railway em [docs/deploy-vercel-railway.md](./docs/deploy-vercel-railway.md).
+
+## Releases
+
+- release notes 0.3.0: [docs/releases/v0.3.0.md](./docs/releases/v0.3.0.md)
+- release notes 0.2.0: [docs/releases/v0.2.0.md](./docs/releases/v0.2.0.md)
 
 ## iOS com Capacitor
 

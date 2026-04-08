@@ -1,8 +1,8 @@
 {
   "name": "backend",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Triluga backend API",
-  "author": "Codex",
+  "author": "codeStage Soluções",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
