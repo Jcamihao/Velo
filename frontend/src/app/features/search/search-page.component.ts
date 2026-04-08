@@ -10,13 +10,11 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../core/services/auth.service';
-import { CompareService } from '../../core/services/compare.service';
 import { SearchAlertsApiService } from '../../core/services/search-alerts-api.service';
 import { FilterModalComponent } from '../../shared/components/filter-modal.component';
 import { SearchHeaderComponent } from '../../shared/components/search-header.component';
 import { VehicleMapComponent } from '../../shared/components/vehicle-map.component';
 import { SearchAlert, VehicleCardItem, VehicleType } from '../../core/models/domain.models';
-import { FavoritesService } from '../../core/services/favorites.service';
 import { VehiclesApiService } from '../../core/services/vehicles-api.service';
 import { VehicleCardComponent } from '../../shared/components/vehicle-card.component';
 
@@ -72,6 +70,9 @@ type SearchQuery = {
         </div>
 
         <div class="search-page__summary-actions">
+          <button type="button" class="btn btn-primary" (click)="filtersOpen = true">
+            Abrir filtros
+          </button>
           <button type="button" class="btn btn-secondary" (click)="useCurrentLocation()">
             Usar minha posição
           </button>
@@ -106,6 +107,21 @@ type SearchQuery = {
         <div class="search-page__summary-pills" *ngIf="activeSearchPills.length">
           <span *ngFor="let pill of activeSearchPills">{{ pill }}</span>
         </div>
+      </section>
+
+      <section class="search-page__journey">
+        <button type="button" class="search-page__journey-chip" (click)="showAllAds()">
+          Ver todos os anúncios
+        </button>
+        <button type="button" class="search-page__journey-chip" (click)="browseCars()">
+          Só carros
+        </button>
+        <button type="button" class="search-page__journey-chip" (click)="browseMotorcycles()">
+          Só motos
+        </button>
+        <button type="button" class="search-page__journey-chip" (click)="goToPublish()">
+          Publicar anúncio
+        </button>
       </section>
 
       <section class="search-page__alerts-card" *ngIf="authService.hasSession()">
@@ -287,6 +303,24 @@ type SearchQuery = {
         font-weight: 600;
       }
 
+      .search-page__journey {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .search-page__journey-chip {
+        min-height: 42px;
+        padding: 0 16px;
+        border-radius: 999px;
+        border: 1px solid rgba(88, 181, 158, 0.16);
+        background: rgba(250, 253, 252, 0.92);
+        color: var(--text-primary);
+        font: inherit;
+        font-weight: 700;
+        box-shadow: var(--shadow-soft);
+      }
+
       .search-page__section-head h2,
       .search-page__section-head span {
         margin: 0;
@@ -431,8 +465,6 @@ export class SearchPageComponent implements AfterViewInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   protected readonly authService = inject(AuthService);
-  private readonly compareService = inject(CompareService);
-  private readonly favoritesService = inject(FavoritesService);
   private readonly searchAlertsApiService = inject(SearchAlertsApiService);
   private readonly vehiclesApiService = inject(VehiclesApiService);
 
@@ -449,8 +481,6 @@ export class SearchPageComponent implements AfterViewInit, OnDestroy {
   protected alertSaving = false;
   protected alertFeedback = '';
   protected removingAlertId: string | null = null;
-  protected readonly fallbackImage =
-    'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=80';
   protected query: SearchQuery = {
     q: '',
     city: '',
@@ -589,36 +619,32 @@ export class SearchPageComponent implements AfterViewInit, OnDestroy {
     });
   }
 
-  protected goToVehicle(vehicleId: string) {
-    this.router.navigate(['/vehicles', vehicleId]);
+  protected showAllAds() {
+    this.router.navigate(['/search'], {
+      queryParams: {},
+    });
   }
 
-  protected isFavorite(vehicleId: string) {
-    return this.favoritesService.isFavorite(vehicleId);
+  protected browseCars() {
+    this.router.navigate(['/search'], {
+      queryParams: {
+        ...this.query,
+        vehicleType: 'CAR',
+      },
+    });
   }
 
-  protected isFavoritePending(vehicleId: string) {
-    return this.favoritesService.isPending(vehicleId);
+  protected browseMotorcycles() {
+    this.router.navigate(['/search'], {
+      queryParams: {
+        ...this.query,
+        vehicleType: 'MOTORCYCLE',
+      },
+    });
   }
 
-  protected toggleFavorite(vehicle: VehicleCardItem, event: Event) {
-    event.preventDefault();
-    event.stopPropagation();
-    this.favoritesService.toggleFavorite(vehicle);
-  }
-
-  protected isCompared(vehicleId: string) {
-    return this.compareService.isSelected(vehicleId);
-  }
-
-  protected compareDisabled(vehicleId: string) {
-    return !this.compareService.isSelected(vehicleId) && this.compareService.isFull();
-  }
-
-  protected toggleCompare(vehicle: VehicleCardItem, event: Event) {
-    event.preventDefault();
-    event.stopPropagation();
-    this.compareService.toggle(vehicle);
+  protected goToPublish() {
+    this.router.navigate(['/anunciar']);
   }
 
   protected saveCurrentSearchAlert() {
@@ -696,16 +722,6 @@ export class SearchPageComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  protected transmissionLabel(transmission: string) {
-    const labels: Record<string, string> = {
-      AUTOMATIC: 'Auto',
-      MANUAL: 'Manual',
-      CVT: 'CVT',
-    };
-
-    return labels[transmission] || transmission;
-  }
-
   protected get mapMarkers() {
     return this.vehicles
       .filter(
@@ -778,15 +794,15 @@ export class SearchPageComponent implements AfterViewInit, OnDestroy {
       return this.query.city ? `Carros em radar por ${this.query.city}` : 'Carros em radar';
     }
 
-    return this.query.city ? `Veículos com saída em ${this.query.city}` : 'Veículos com saída imediata';
+    return this.query.city ? `Classificados em ${this.query.city}` : 'Classificados disponíveis';
   }
 
   protected get searchOverviewSubtitle() {
     if (this.hasLocationFilter) {
-      return 'O mapa já está calibrado com seu raio atual. Ajuste a rota, salve um radar e acompanhe quando aparecer algo melhor com mais presença visual.';
+      return 'Use o mapa e os filtros para encontrar anúncios perto de você e seguir direto para o contato com o anunciante.';
     }
 
-    return 'Combine termo, período, tipo de veículo e preço para transformar a busca em um recorte mais rápido, técnico e menos genérico.';
+    return 'Filtre por cidade, período, tipo de veículo e faixa de preço para encontrar o anúncio certo mais rápido.';
   }
 
   protected get searchTitle() {
@@ -799,12 +815,12 @@ export class SearchPageComponent implements AfterViewInit, OnDestroy {
 
   protected get searchSubtitle() {
     if (this.query.vehicleType === 'CAR') {
-      return 'Escolha o modelo, ajuste o período e encontre carros com mais energia visual na sua faixa de preço.';
+      return 'Filtre por modelo, período e preço para encontrar carros e seguir para o chat com quem anunciou.';
     }
 
     return this.query.vehicleType === 'MOTORCYCLE'
-      ? 'Escolha o modelo, ajuste o período e encontre motos com presença urbana e recorte mais agressivo.'
-      : 'Escolha o modelo, ajuste o período e filtre entre carros e motos com um radar mais afiado.';
+      ? 'Filtre por modelo, período e preço para encontrar motos e ir direto ao anúncio.'
+      : 'Filtre por modelo, período, cidade e preço para encontrar o anúncio certo.';
   }
 
   protected get resultsLabel() {

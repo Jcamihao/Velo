@@ -39,14 +39,21 @@ import { ChatSocketService } from '../../core/services/chat-socket.service';
           </div>
 
           <p class="chat-sidebar__hint">
-            Abra uma conversa a partir da tela de um veículo para falar direto com o proprietário.
+            Abra uma conversa a partir da tela de um anúncio para falar direto com o anunciante.
           </p>
+
+          <div class="chat-sidebar__actions">
+            <a class="btn btn-secondary" routerLink="/search">Ver anúncios</a>
+          </div>
 
           <div class="chat-empty" *ngIf="!isLoadingConversations && !conversations.length">
             <span class="material-icons" aria-hidden="true">forum</span>
             <strong>Nenhuma conversa ainda</strong>
-            <p>Quando você falar com um anfitrião, a conversa aparece aqui.</p>
-            <a class="btn btn-primary" routerLink="/search">Buscar carros</a>
+            <p>Quando você falar com um anunciante, a conversa aparece aqui.</p>
+            <div class="chat-empty__actions">
+              <a class="btn btn-primary" routerLink="/search">Ver anúncios</a>
+              <a class="btn btn-secondary" routerLink="/">Voltar para início</a>
+            </div>
           </div>
 
           <div class="conversation-list" *ngIf="conversations.length">
@@ -95,7 +102,7 @@ import { ChatSocketService } from '../../core/services/chat-socket.service';
                 <a
                   class="chat-thread__identity"
                   [routerLink]="['/users', selectedConversation.otherParticipant.id]"
-                  aria-label="Abrir perfil do usuário"
+                  aria-label="Abrir perfil do anunciante"
                 >
                   <img
                     class="chat-thread__avatar"
@@ -134,7 +141,7 @@ import { ChatSocketService } from '../../core/services/chat-socket.service';
                       aria-label="Mais opções"
                       (click)="toggleHeaderMenu()"
                     >
-                      <span class="material-icons" aria-hidden="true">more_vert</span>
+                          <span class="material-icons" aria-hidden="true">more_vert</span>
                     </button>
 
                     <div class="chat-thread__menu-panel" *ngIf="headerMenuOpen">
@@ -234,14 +241,14 @@ import { ChatSocketService } from '../../core/services/chat-socket.service';
         <ng-template #loginPrompt>
         <section class="guest-card glass-panel-strong">
           <span class="eyebrow">Chat</span>
-          <h1>Converse em tempo real com o anfitrião</h1>
+          <h1>Converse em tempo real com o anunciante</h1>
           <p>
             Entre na sua conta para acompanhar conversas, combinar retirada e responder mensagens na hora.
           </p>
 
           <div class="guest-card__actions">
             <a class="btn btn-primary" routerLink="/auth/login">Entrar</a>
-            <a class="btn btn-secondary" routerLink="/search">Buscar carros</a>
+            <a class="btn btn-secondary" routerLink="/search">Ver anúncios</a>
           </div>
         </section>
         </ng-template>
@@ -305,6 +312,7 @@ import { ChatSocketService } from '../../core/services/chat-socket.service';
 
       .chat-sidebar__header,
       .conversation-card__top {
+        align-items: flex-start;
         justify-content: space-between;
         gap: 12px;
       }
@@ -316,6 +324,13 @@ import { ChatSocketService } from '../../core/services/chat-socket.service';
       .chat-thread__summary p,
       .message__bubble span {
         color: var(--text-secondary);
+      }
+
+      .chat-sidebar__actions,
+      .chat-empty__actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
       }
 
       .eyebrow {
@@ -375,11 +390,6 @@ import { ChatSocketService } from '../../core/services/chat-socket.service';
         text-align: left;
       }
 
-      .conversation-card--active {
-        border-color: rgba(88, 181, 158, 0.24);
-        background: rgba(88, 181, 158, 0.08);
-      }
-
       .conversation-card__image {
         width: 64px;
         height: 64px;
@@ -398,6 +408,12 @@ import { ChatSocketService } from '../../core/services/chat-socket.service';
       .conversation-card__vehicle,
       .message__bubble strong {
         display: block;
+      }
+
+      .conversation-card strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .conversation-card__vehicle {
@@ -420,6 +436,7 @@ import { ChatSocketService } from '../../core/services/chat-socket.service';
       .conversation-card__top span {
         font-size: 12px;
         white-space: nowrap;
+        flex-shrink: 0;
       }
 
       .conversation-card__badge {
@@ -481,8 +498,8 @@ import { ChatSocketService } from '../../core/services/chat-socket.service';
 
       .chat-thread__topbar {
         display: grid;
-        grid-template-columns: auto minmax(0, 1fr) auto;
-        align-items: center;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: start;
         gap: 8px;
       }
 
@@ -513,19 +530,28 @@ import { ChatSocketService } from '../../core/services/chat-socket.service';
       .chat-thread__summary h2 {
         font-size: 16px;
         line-height: 1.15;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .chat-thread__summary p {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        flex-wrap: wrap;
+        display: grid;
+        gap: 2px;
+        overflow: hidden;
+        white-space: normal;
+      }
+
+      .chat-thread__summary p span[aria-hidden='true'] {
+        display: none;
       }
 
       .chat-thread__actions {
         display: inline-flex;
         align-items: center;
         gap: 8px;
+        grid-column: 1 / -1;
+        justify-self: end;
       }
 
       .chat-thread__action {
@@ -645,8 +671,8 @@ import { ChatSocketService } from '../../core/services/chat-socket.service';
       .chat-composer textarea {
         width: 100%;
         min-width: 0;
-        min-height: 80px;
-        max-height: 80px;
+        min-height: 96px;
+        max-height: 120px;
         padding: 16px 18px;
         border: 0;
         resize: none;
@@ -737,6 +763,11 @@ import { ChatSocketService } from '../../core/services/chat-socket.service';
           gap: 14px;
         }
 
+        .chat-thread__topbar {
+          grid-template-columns: auto minmax(0, 1fr) auto;
+          align-items: center;
+        }
+
         .chat-thread__avatar {
           width: 64px;
           height: 64px;
@@ -745,6 +776,23 @@ import { ChatSocketService } from '../../core/services/chat-socket.service';
 
         .chat-thread__summary h2 {
           font-size: 19px;
+        }
+
+        .chat-thread__summary p {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+        }
+
+        .chat-thread__summary p span[aria-hidden='true'] {
+          display: inline;
+        }
+
+        .chat-thread__actions {
+          grid-column: auto;
+          justify-self: auto;
         }
 
         .chat-thread__action {

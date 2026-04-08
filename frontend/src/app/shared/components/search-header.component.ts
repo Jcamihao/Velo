@@ -57,7 +57,7 @@ import { AuthService } from '../../core/services/auth.service';
 
         <div class="search-header__copy" *ngIf="!minimal && (title || subtitle)">
           <div class="search-header__copy-top">
-            <span class="search-header__eyebrow">Linha de saída</span>
+            <span class="search-header__eyebrow">Classificados</span>
 
             <button
               *ngIf="showFiltersAction"
@@ -65,7 +65,7 @@ import { AuthService } from '../../core/services/auth.service';
               class="search-header__filters-link"
               (click)="filters.emit()"
             >
-              Tunar busca
+              Filtros
             </button>
           </div>
 

@@ -19,17 +19,6 @@ type DetailFactItem = {
   value: string;
 };
 
-type PromotionDetailItem = {
-  title: string;
-  description: string;
-  code: string | null;
-};
-
-type PricingRuleHighlightItem = {
-  title: string;
-  description: string;
-};
-
 type RatingDistributionItem = {
   stars: number;
   count: number;
@@ -115,7 +104,8 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
               {{ fuelTypeLabel(vehicle.fuelType) }}
             </span>
             <span>
-              <span class="material-icons" aria-hidden="true">more_horiz</span>
+              <span class="material-icons" aria-hidden="true">event_seat</span>
+              {{ vehicle.seats }} lugares
             </span>
           </div>
 
@@ -125,27 +115,12 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
           </strong>
         </section>
 
-        <div
-          class="detail-stage__promotions"
-          *ngIf="promotionHighlights.length"
-        >
-          <span
-            class="detail-stage__promo"
-            *ngFor="
-              let promotion of promotionHighlights;
-              trackBy: trackByString
-            "
-          >
-            {{ promotion }}
-          </span>
-        </div>
-
         <app-image-gallery [images]="vehicle.images"></app-image-gallery>
       </section>
 
       <section class="detail-panels">
         <header class="detail-panels__header">
-          <h2>Detalhes</h2>
+          <h2>O que voce precisa saber</h2>
         </header>
 
         <div class="detail-facts">
@@ -183,57 +158,12 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
           <p>{{ vehicle.description }}</p>
         </section>
 
-        <section class="detail-info-card" *ngIf="promotionDetails.length">
-          <span class="detail-info-card__eyebrow">Promoções ativas</span>
-          <div class="detail-promo-list">
-            <article
-              class="detail-promo"
-              *ngFor="let promotion of promotionDetails; trackBy: trackByTitle"
-            >
-              <strong>{{ promotion.title }}</strong>
-              <p>{{ promotion.description }}</p>
-              <span *ngIf="promotion.code">{{ promotion.code }}</span>
-            </article>
-          </div>
-        </section>
-
-        <section class="detail-info-card" *ngIf="pricingRuleHighlights.length">
-          <span class="detail-info-card__eyebrow">Preço dinâmico</span>
-          <div class="detail-promo-list">
-            <article
-              class="detail-promo"
-              *ngFor="let rule of pricingRuleHighlights; trackBy: trackByTitle"
-            >
-              <strong>{{ rule.title }}</strong>
-              <p>{{ rule.description }}</p>
-            </article>
-          </div>
-        </section>
-
-        <section class="detail-info-card" *ngIf="vehicle.addons.length">
-          <span class="detail-info-card__eyebrow">Itens extras</span>
-          <div class="detail-addon-list">
-            <article
-              class="detail-addon"
-              *ngFor="let addon of vehicle.addons; trackBy: trackByAddon"
-            >
-              <strong>{{ addon.name }}</strong>
-              <p>
-                {{ addon.description || 'Adicional opcional para a reserva.' }}
-              </p>
-              <span class="price-text">{{
-                addon.price | currency: 'BRL' : 'symbol' : '1.2-2'
-              }}</span>
-            </article>
-          </div>
-        </section>
-
         <section
           class="detail-info-card"
           *ngIf="vehicle.latitude && vehicle.longitude"
         >
           <span class="detail-info-card__eyebrow">Mapa</span>
-          <p>Veja o ponto aproximado de retirada no mapa antes de reservar.</p>
+          <p>Confira o ponto aproximado de retirada antes de falar com o anunciante.</p>
           <a
             class="detail-map-link"
             [href]="mapLink"
@@ -250,11 +180,11 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
             <img
               class="detail-owner-profile__avatar"
               [src]="vehicle.owner?.avatarUrl || fallbackAvatarImage"
-              [alt]="vehicle.owner?.fullName || 'Anfitrião Triluga'"
+              [alt]="vehicle.owner?.fullName || 'Anunciante Triluga'"
             />
 
             <div class="detail-owner-profile__copy">
-              <h3 class="profile-name-text">{{ vehicle.owner?.fullName || 'Anfitrião Triluga' }}</h3>
+              <h3 class="profile-name-text">{{ vehicle.owner?.fullName || 'Anunciante Triluga' }}</h3>
               <p>{{ ownerRatingLabel }}</p>
             </div>
           </div>
@@ -434,11 +364,11 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
 
         <section class="detail-info-card detail-info-card--trust">
           <div class="detail-info-card__head">
-            <span class="detail-info-card__eyebrow">Reserva protegida</span>
-            <span class="material-icons" aria-hidden="true">check_circle</span>
+            <span class="detail-info-card__eyebrow">Como funciona</span>
+            <span class="material-icons" aria-hidden="true">chat</span>
           </div>
-          <p>Cancelamento grátis até 24h antes da retirada.</p>
-          <span class="detail-info-card__meta">Termos e condições</span>
+          <p>Veja o anúncio, chame no chat e alinhe retirada, documentos e disponibilidade direto com quem publicou.</p>
+          <span class="detail-info-card__meta">Fluxo simples, direto e com menos atrito.</span>
         </section>
       </section>
 
@@ -537,9 +467,9 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
 
       .detail-stage__toolbar {
         display: grid;
-        grid-template-columns: auto 1fr auto;
+        grid-template-columns: auto minmax(0, 1fr) auto auto;
         align-items: center;
-        gap: 12px;
+        gap: 8px;
         position: relative;
         z-index: 1;
         color: var(--text-primary);
@@ -550,15 +480,19 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
       .detail-stage__toolbar > span {
         min-width: 0;
         line-height: 1.3;
+        display: -webkit-box;
+        overflow: hidden;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
       }
 
       .icon-chip {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-height: 42px;
-        min-width: 42px;
-        padding: 0 14px;
+        min-height: 40px;
+        min-width: 40px;
+        padding: 0 12px;
         border-radius: 999px;
         border: 0;
         background: rgba(237, 244, 241, 0.96);
@@ -638,7 +572,7 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
       .detail-stage__meta-strip {
         display: flex;
         align-items: center;
-        gap: 16px;
+        gap: 10px;
         flex-wrap: wrap;
         padding: 12px 14px;
         border-radius: 14px;
@@ -656,7 +590,7 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
         align-items: center;
         gap: 6px;
         color: var(--detail-stage-card-ink);
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 600;
       }
 
@@ -670,29 +604,9 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
         display: inline-flex;
         justify-content: flex-start;
         color: var(--primary);
-        font-size: 24px;
+        font-size: 22px;
         font-weight: 800;
         letter-spacing: -0.04em;
-      }
-
-      .detail-stage__promotions {
-        position: relative;
-        z-index: 1;
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-      }
-
-      .detail-stage__promo {
-        display: inline-flex;
-        align-items: center;
-        min-height: 32px;
-        padding: 0 12px;
-        border-radius: 999px;
-        background: rgba(88, 181, 158, 0.12);
-        color: #3f7568;
-        font-size: 12px;
-        font-weight: 700;
       }
 
       .detail-panels {
@@ -787,49 +701,11 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
         color: var(--detail-card-ink);
       }
 
-      .detail-addon-list {
-        display: grid;
-        gap: 10px;
-      }
-
-      .detail-promo-list {
-        display: grid;
-        gap: 10px;
-      }
-
-      .detail-promo {
-        display: grid;
-        gap: 4px;
-        padding: 12px;
-        border-radius: 14px;
-        background: var(--detail-card-surface-elevated);
-        border: 1px solid var(--detail-card-border-soft);
-      }
-
-      .detail-promo span {
-        color: var(--primary);
-        font-weight: 700;
-      }
-
-      .detail-addon {
-        display: grid;
-        gap: 4px;
-        padding: 12px;
-        border-radius: 14px;
-        background: var(--detail-card-surface-elevated);
-        border: 1px solid var(--detail-card-border-soft);
-      }
-
-      .detail-addon span {
-        color: var(--primary);
-        font-weight: 700;
-      }
-
       .detail-map-link {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: fit-content;
+        width: 100%;
         min-height: 40px;
         padding: 0 14px;
         border-radius: 999px;
@@ -869,14 +745,10 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
       }
 
       .detail-info-card p,
-      .detail-promo p,
-      .detail-addon p,
       .review p {
         color: var(--detail-card-ink-soft);
       }
 
-      .detail-promo strong,
-      .detail-addon strong,
       .review strong {
         color: var(--detail-card-ink);
       }
@@ -1152,6 +1024,10 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
           padding: 20px 16px 220px;
         }
 
+        .detail-map-link {
+          width: fit-content;
+        }
+
         .detail-facts {
           gap: 14px;
         }
@@ -1264,12 +1140,6 @@ export class VehicleDetailPageComponent {
   private visibleDetailItemsCacheSource: DetailFactItem[] | null = null;
   private visibleDetailItemsCacheShowAll = false;
   private visibleDetailItemsCache: DetailFactItem[] = [];
-  private promotionHighlightsCacheVehicle?: VehicleDetail;
-  private promotionHighlightsCache: string[] = [];
-  private promotionDetailsCacheVehicle?: VehicleDetail;
-  private promotionDetailsCache: PromotionDetailItem[] = [];
-  private pricingRuleHighlightsCacheVehicle?: VehicleDetail;
-  private pricingRuleHighlightsCache: PricingRuleHighlightItem[] = [];
   private reviewAnalyticsCacheVehicle?: VehicleDetail;
   private reviewAnalyticsCache = {
     totalReviewCount: 0,
@@ -1304,16 +1174,14 @@ export class VehicleDetailPageComponent {
     const user = this.authService.currentUser();
 
     if (!user) {
-      return 'Entrar para reservar';
+      return 'Entrar para continuar';
     }
 
     if (this.isOwnVehicle) {
-      return 'Gerenciar meu anúncio';
+      return 'Editar anúncio';
     }
 
-    return this.vehicle?.bookingApprovalMode === 'INSTANT'
-      ? 'Reservar agora'
-      : 'Solicitar reserva';
+    return 'Quero alugar';
   }
 
   protected get ctaIcon() {
@@ -1327,19 +1195,19 @@ export class VehicleDetailPageComponent {
       return 'edit_square';
     }
 
-    return 'event_available';
+    return 'directions_car';
   }
 
   protected get footerHelper() {
-    if (this.showChatAction) {
-      return 'Converse com o anunciante e reserve com segurança';
-    }
-
     if (this.isOwnVehicle) {
-      return 'Gerencie seu anúncio em tempo real';
+      return 'Edite fotos, preço e informações do seu anúncio';
     }
 
-    return 'Reserva protegida pela Triluga';
+    if (this.showChatAction) {
+      return 'Veja os detalhes e fale direto com o anunciante';
+    }
+
+    return 'Classificado publicado na Triluga';
   }
 
   protected get pickupTitle() {
@@ -1360,7 +1228,7 @@ export class VehicleDetailPageComponent {
 
     return this.vehicle.addressLine?.trim()
       ? `${this.vehicle.city}, ${this.vehicle.state}`
-      : 'Retirada combinada com o anfitrião';
+      : 'Retirada combinada com o anunciante';
   }
 
   protected get detailItems() {
@@ -1413,19 +1281,6 @@ export class VehicleDetailPageComponent {
         label: 'Localização',
         value: `${this.vehicle.city}, ${this.vehicle.state}`,
       },
-      {
-        icon: 'bolt',
-        label: 'Reserva',
-        value:
-          this.vehicle.bookingApprovalMode === 'INSTANT'
-            ? 'Confirmação instantânea'
-            : 'Aprovação manual',
-      },
-      {
-        icon: 'policy',
-        label: 'Cancelamento',
-        value: this.cancellationPolicyLabel(this.vehicle.cancellationPolicy),
-      },
     ];
 
     if (this.vehicle.vehicleType === 'MOTORCYCLE') {
@@ -1456,108 +1311,6 @@ export class VehicleDetailPageComponent {
     this.detailItemsCache = items;
 
     return this.detailItemsCache;
-  }
-
-  protected get promotionHighlights() {
-    if (!this.vehicle) {
-      return [];
-    }
-
-    if (this.promotionHighlightsCacheVehicle === this.vehicle) {
-      return this.promotionHighlightsCache;
-    }
-
-    this.promotionHighlightsCacheVehicle = this.vehicle;
-    this.promotionHighlightsCache = [
-      this.vehicle.firstBookingDiscountPercent
-        ? `Primeira reserva ${this.vehicle.firstBookingDiscountPercent}% off`
-        : '',
-      this.vehicle.weeklyDiscountPercent
-        ? `Pacote semanal ${this.vehicle.weeklyDiscountPercent}% off`
-        : '',
-      this.vehicle.couponCode && this.vehicle.couponDiscountPercent
-        ? `Cupom ${this.vehicle.couponDiscountPercent}% off`
-        : '',
-    ].filter(Boolean);
-
-    return this.promotionHighlightsCache;
-  }
-
-  protected get promotionDetails() {
-    if (!this.vehicle) {
-      return [];
-    }
-
-    if (this.promotionDetailsCacheVehicle === this.vehicle) {
-      return this.promotionDetailsCache;
-    }
-
-    this.promotionDetailsCacheVehicle = this.vehicle;
-    this.promotionDetailsCache = [
-      this.vehicle.firstBookingDiscountPercent
-        ? {
-            title: 'Desconto de primeira reserva',
-            description: `Novos locatários recebem ${this.vehicle.firstBookingDiscountPercent}% de desconto no valor base da reserva.`,
-            code: null,
-          }
-        : null,
-      this.vehicle.weeklyDiscountPercent
-        ? {
-            title: 'Pacote semanal automático',
-            description: `Reservas com 7 dias ou mais recebem ${this.vehicle.weeklyDiscountPercent}% de desconto automaticamente.`,
-            code: null,
-          }
-        : null,
-      this.vehicle.couponCode && this.vehicle.couponDiscountPercent
-        ? {
-            title: 'Cupom promocional',
-            description: `Use este código para aplicar ${this.vehicle.couponDiscountPercent}% de desconto no valor base da reserva.`,
-            code: this.vehicle.couponCode,
-          }
-        : null,
-    ].filter((promotion): promotion is PromotionDetailItem => !!promotion);
-
-    return this.promotionDetailsCache;
-  }
-
-  protected get pricingRuleHighlights() {
-    if (!this.vehicle) {
-      return [];
-    }
-
-    if (this.pricingRuleHighlightsCacheVehicle === this.vehicle) {
-      return this.pricingRuleHighlightsCache;
-    }
-
-    this.pricingRuleHighlightsCacheVehicle = this.vehicle;
-    this.pricingRuleHighlightsCache = [
-      this.vehicle.weekendSurchargePercent
-        ? {
-            title: 'Fim de semana',
-            description: `${this.vehicle.weekendSurchargePercent}% de acréscimo automático nas diárias de sábado e domingo.`,
-          }
-        : null,
-      this.vehicle.holidaySurchargePercent
-        ? {
-            title: 'Feriados',
-            description: `${this.vehicle.holidaySurchargePercent}% de ajuste para datas de feriado nacional.`,
-          }
-        : null,
-      this.vehicle.highDemandSurchargePercent
-        ? {
-            title: 'Alta demanda',
-            description: `${this.vehicle.highDemandSurchargePercent}% extra quando o mês já estiver com ocupação elevada.`,
-          }
-        : null,
-      this.vehicle.advanceBookingDiscountPercent
-        ? {
-            title: 'Antecedência',
-            description: `${this.vehicle.advanceBookingDiscountPercent}% de desconto para reservas feitas com ${this.vehicle.advanceBookingDaysThreshold} dia(s) ou mais.`,
-          }
-        : null,
-    ].filter((rule): rule is PricingRuleHighlightItem => !!rule);
-
-    return this.pricingRuleHighlightsCache;
   }
 
   protected get visibleDetailItems() {
@@ -1651,18 +1404,6 @@ export class VehicleDetailPageComponent {
     };
 
     return labels[fuelType] || fuelType;
-  }
-
-  protected cancellationPolicyLabel(
-    policy: VehicleDetail['cancellationPolicy'],
-  ) {
-    const labels = {
-      FLEXIBLE: 'Flexível',
-      MODERATE: 'Moderada',
-      STRICT: 'Rígida',
-    } as const;
-
-    return labels[policy] || policy;
   }
 
   protected motorcycleStyleLabel(style: string) {
@@ -1882,24 +1623,12 @@ export class VehicleDetailPageComponent {
     return item.id;
   }
 
-  protected trackByString(_index: number, value: string) {
-    return value;
-  }
-
-  protected trackByTitle(_index: number, item: { title: string }) {
-    return item.title;
-  }
-
   protected trackByStars(_index: number, item: { stars: number }) {
     return item.stars;
   }
 
   protected trackByDetailLabel(_index: number, item: DetailFactItem) {
     return item.label;
-  }
-
-  protected trackByAddon(index: number, item: { id?: string; name: string }) {
-    return item.id || `${item.name}-${index}`;
   }
 
   private startChatFlow() {

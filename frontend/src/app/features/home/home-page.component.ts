@@ -76,8 +76,8 @@ const POPULAR_BRANDS: BrandShortcut[] = [
 
       <article class="home-hero">
         <span class="home-hero__eyebrow">Comece por aqui</span>
-        <h2>Menos distração. Mais saída.</h2>
-        <p>Escolha um tipo de veículo ou entre direto por marca.</p>
+        <h2>Veja o anúncio, fale no chat e combine a retirada.</h2>
+        <p>Escolha um tipo de veículo, filtre rápido e siga direto para o contato com quem anunciou.</p>
 
         <div class="home-hero__actions">
           <button
@@ -96,6 +96,24 @@ const POPULAR_BRANDS: BrandShortcut[] = [
           </button>
         </div>
       </article>
+
+      <section class="journey-strip" aria-label="Como funciona">
+        <article>
+          <strong>1</strong>
+          <h3>Encontre</h3>
+          <p>Use busca, marcas e filtros para achar o anúncio certo.</p>
+        </article>
+        <article>
+          <strong>2</strong>
+          <h3>Compare</h3>
+          <p>Abra os detalhes, veja fotos e entenda o ponto de retirada.</p>
+        </article>
+        <article>
+          <strong>3</strong>
+          <h3>Converse</h3>
+          <p>Chame no chat para alinhar disponibilidade e fechar o aluguel.</p>
+        </article>
+      </section>
 
       <section class="brands-section">
         <div class="section-title section-title--compact">
@@ -179,7 +197,7 @@ const POPULAR_BRANDS: BrandShortcut[] = [
           <span>Disponíveis</span>
           <h2>Em destaque</h2>
         </div>
-        <a (click)="goToSearch({})">Ver tudo</a>
+        <a (click)="goToSearch({})">Ver todos os anúncios</a>
       </section>
 
       <section class="vehicle-grid">
@@ -201,7 +219,8 @@ const POPULAR_BRANDS: BrandShortcut[] = [
       }
 
       .home-hero,
-      .brands-section {
+      .brands-section,
+      .journey-strip article {
         position: relative;
         overflow: hidden;
         border-radius: 24px;
@@ -250,6 +269,44 @@ const POPULAR_BRANDS: BrandShortcut[] = [
         display: flex;
         gap: 10px;
         flex-wrap: wrap;
+      }
+
+      .journey-strip {
+        display: grid;
+        gap: 12px;
+      }
+
+      .journey-strip article {
+        display: grid;
+        gap: 8px;
+        padding: 18px;
+        background: rgba(250, 253, 252, 0.96);
+      }
+
+      .journey-strip strong,
+      .journey-strip h3,
+      .journey-strip p {
+        margin: 0;
+      }
+
+      .journey-strip strong {
+        display: inline-grid;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 999px;
+        background: rgba(88, 181, 158, 0.12);
+        color: var(--primary);
+      }
+
+      .journey-strip h3 {
+        color: var(--text-primary);
+        font-size: 18px;
+      }
+
+      .journey-strip p {
+        color: rgba(64, 84, 79, 0.76);
+        line-height: 1.45;
       }
 
       .brands-section {
@@ -370,6 +427,10 @@ const POPULAR_BRANDS: BrandShortcut[] = [
 
         .home-hero {
           padding: 24px;
+        }
+
+        .journey-strip {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
         }
 
         .vehicle-grid {

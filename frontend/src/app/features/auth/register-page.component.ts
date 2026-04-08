@@ -24,7 +24,7 @@ import { ProfileApiService } from '../../core/services/profile-api.service';
 
         <label>
           <span>Nome completo</span>
-          <input [(ngModel)]="fullName" />
+          <input [(ngModel)]="fullName" placeholder="Ex.: Maria Oliveira" />
         </label>
 
         <section class="avatar-section">
@@ -103,13 +103,42 @@ import { ProfileApiService } from '../../core/services/profile-api.service';
 
         <label>
           <span>E-mail</span>
-          <input [(ngModel)]="email" type="email" />
+          <input [(ngModel)]="email" type="email" placeholder="voce@email.com" />
         </label>
 
-        <label>
-          <span>Senha</span>
-          <input [(ngModel)]="password" type="password" />
-        </label>
+        <div class="password-grid">
+          <label>
+            <span>Senha</span>
+            <div class="password-field">
+              <input
+                [(ngModel)]="password"
+                [type]="showPassword ? 'text' : 'password'"
+                placeholder="Crie uma senha forte"
+              />
+              <button type="button" class="password-field__toggle" (click)="showPassword = !showPassword">
+                {{ showPassword ? 'Ocultar' : 'Mostrar' }}
+              </button>
+            </div>
+          </label>
+
+          <label>
+            <span>Confirmar senha</span>
+            <div class="password-field">
+              <input
+                [(ngModel)]="confirmPassword"
+                [type]="showConfirmPassword ? 'text' : 'password'"
+                placeholder="Repita a senha"
+              />
+              <button
+                type="button"
+                class="password-field__toggle"
+                (click)="showConfirmPassword = !showConfirmPassword"
+              >
+                {{ showConfirmPassword ? 'Ocultar' : 'Mostrar' }}
+              </button>
+            </div>
+          </label>
+        </div>
 
         <button type="button" class="btn btn-primary" (click)="register()" [disabled]="loading">
           {{ loading ? 'Criando conta...' : 'Criar conta' }}
@@ -308,9 +337,36 @@ import { ProfileApiService } from '../../core/services/profile-api.service';
         gap: 12px;
       }
 
+      .password-grid {
+        display: grid;
+        gap: 12px;
+      }
+
+      .password-field {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .password-field__toggle {
+        min-width: 86px;
+        height: 52px;
+        border-radius: 18px;
+        border: 1px solid rgba(103, 203, 176, 0.18);
+        background: rgba(103, 203, 176, 0.08);
+        color: var(--primary);
+        font: inherit;
+        font-weight: 700;
+      }
+
       @media (min-width: 481px) {
         .grid {
           grid-template-columns: minmax(0, 1fr) 96px;
+        }
+
+        .password-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
         .avatar-section {
@@ -400,7 +456,10 @@ export class RegisterPageComponent implements OnDestroy {
   protected city = 'São Paulo';
   protected state = 'SP';
   protected email = '';
-  protected password = 'Senha123!';
+  protected password = '';
+  protected confirmPassword = '';
+  protected showPassword = false;
+  protected showConfirmPassword = false;
   protected loading = false;
   protected feedback = '';
   protected zipCodeHint = '';
@@ -527,6 +586,30 @@ export class RegisterPageComponent implements OnDestroy {
   }
 
   protected register() {
+    const normalizedFullName = this.fullName.trim();
+    const normalizedAddressLine = this.addressLine.trim();
+    const normalizedCity = this.city.trim();
+    const normalizedState = this.formatState(this.state);
+    const normalizedEmail = this.email.trim();
+
+    if (
+      !normalizedFullName ||
+      !this.phone ||
+      !this.zipCode ||
+      !normalizedAddressLine ||
+      !normalizedCity ||
+      !normalizedState ||
+      !normalizedEmail
+    ) {
+      this.feedback = 'Preencha os campos obrigatórios para criar sua conta.';
+      return;
+    }
+
+    if (this.password !== this.confirmPassword) {
+      this.feedback = 'A confirmação de senha precisa ser igual à senha digitada.';
+      return;
+    }
+
     this.loading = true;
     this.feedback = '';
     const pendingAvatarFile = this.pendingAvatarFile;
@@ -534,14 +617,14 @@ export class RegisterPageComponent implements OnDestroy {
 
     this.authService
       .register({
-        fullName: this.fullName.trim(),
+        fullName: normalizedFullName,
         phone: this.phone,
         zipCode: this.zipCode,
-        addressLine: this.addressLine.trim(),
+        addressLine: normalizedAddressLine,
         addressComplement: this.addressComplement.trim() || undefined,
-        city: this.city.trim(),
-        state: this.formatState(this.state),
-        email: this.email.trim(),
+        city: normalizedCity,
+        state: normalizedState,
+        email: normalizedEmail,
         password: this.password,
       })
       .pipe(

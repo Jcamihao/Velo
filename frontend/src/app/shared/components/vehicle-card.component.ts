@@ -66,34 +66,6 @@ import { FavoritesService } from '../../core/services/favorites.service';
           </div>
         </div>
 
-        <div
-          class="vehicle-card__promo-row"
-          *ngIf="
-            vehicle.firstBookingDiscountPercent ||
-            vehicle.weeklyDiscountPercent ||
-            (vehicle.couponCode && vehicle.couponDiscountPercent)
-          "
-        >
-          <span
-            class="vehicle-card__promo-pill"
-            *ngIf="vehicle.firstBookingDiscountPercent"
-          >
-            1a reserva {{ vehicle.firstBookingDiscountPercent }}% off
-          </span>
-          <span
-            class="vehicle-card__promo-pill"
-            *ngIf="vehicle.weeklyDiscountPercent"
-          >
-            Semanal {{ vehicle.weeklyDiscountPercent }}% off
-          </span>
-          <span
-            class="vehicle-card__promo-pill"
-            *ngIf="vehicle.couponCode && vehicle.couponDiscountPercent"
-          >
-            Cupom ativo
-          </span>
-        </div>
-
         <button
           *ngIf="vehicle.owner?.id"
           type="button"
@@ -334,26 +306,6 @@ import { FavoritesService } from '../../core/services/favorites.service';
         font-size: 16px;
       }
 
-      .vehicle-card__promo-row {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-      }
-
-      .vehicle-card__promo-pill {
-        display: inline-flex;
-        align-items: center;
-        min-height: 28px;
-        padding: 0 11px;
-        border-radius: 999px;
-        background: rgba(88, 181, 158, 0.12);
-        color: #3a6f61;
-        font-size: 10px;
-        font-weight: 700;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-      }
-
       .vehicle-card__top h3 {
         margin: 0;
       }
@@ -572,7 +524,7 @@ export class VehicleCardComponent {
   }
 
   protected get ownerDisplayName() {
-    return this.vehicle.owner?.fullName?.trim() || 'Usuário Triluga';
+    return this.vehicle.owner?.fullName?.trim() || 'Anunciante Triluga';
   }
 
   protected get ownerRatingLabel() {

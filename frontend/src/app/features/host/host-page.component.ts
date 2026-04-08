@@ -11,8 +11,8 @@ import { AuthService } from '../../core/services/auth.service';
     <main class="page host-page">
       <section class="hero-card">
         <span class="eyebrow">Anunciar</span>
-        <h1>Transforme seu carro em renda</h1>
-        <p>Publique fotos, ajuste o valor semanal e gerencie pedidos em um fluxo simples, com cara de app.</p>
+        <h1>Seu carro vira anúncio em poucos minutos</h1>
+        <p>Publique fotos, informe o valor semanal e comece a receber contatos sem painel complicado.</p>
 
         <div class="actions" *ngIf="!user">
           <button type="button" class="btn btn-primary" (click)="router.navigate(['/auth/register'])">
@@ -38,18 +38,18 @@ import { AuthService } from '../../core/services/auth.service';
       <section class="info-grid">
         <article>
           <strong>1</strong>
-          <h2>Cadastre o veículo</h2>
-          <p>Preencha os dados, valor semanal e regras básicas do anúncio.</p>
+          <h2>Monte o classificado</h2>
+          <p>Preencha os dados essenciais e deixe o anúncio pronto para aparecer na busca.</p>
         </article>
         <article>
           <strong>2</strong>
           <h2>Envie boas fotos</h2>
-          <p>A primeira imagem vira a capa do anúncio e melhora a conversão.</p>
+          <p>A primeira imagem vira a capa do anúncio e ajuda o carro a chamar atenção.</p>
         </article>
         <article>
           <strong>3</strong>
-          <h2>Receba pedidos</h2>
-          <p>Aprove, recuse e bloqueie datas direto pela central de anúncios.</p>
+          <h2>Feche pelo chat</h2>
+          <p>Converse com interessados para alinhar retirada, disponibilidade e combinar o aluguel.</p>
         </article>
       </section>
     </main>
