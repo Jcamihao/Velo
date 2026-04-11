@@ -257,11 +257,38 @@ export class VehiclesService {
             position: 'asc',
           },
         },
+        _count: {
+          select: {
+            views: true,
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',
       },
     });
+    const vehicleIds = vehicles.map((vehicle) => vehicle.id);
+    const recentViewsSince = new Date();
+    recentViewsSince.setDate(recentViewsSince.getDate() - 30);
+    const recentViewCounts = vehicleIds.length
+      ? await this.prisma.vehicleView.groupBy({
+          by: ['vehicleId'],
+          where: {
+            vehicleId: {
+              in: vehicleIds,
+            },
+            createdAt: {
+              gte: recentViewsSince,
+            },
+          },
+          _count: {
+            vehicleId: true,
+          },
+        })
+      : [];
+    const recentViewCountsByVehicleId = new Map(
+      recentViewCounts.map((item) => [item.vehicleId, item._count.vehicleId]),
+    );
 
     return vehicles.map((vehicle) => ({
       id: vehicle.id,
@@ -309,7 +336,51 @@ export class VehiclesService {
       })),
       ratingAverage: Number(vehicle.ratingAverage),
       reviewsCount: vehicle.reviewsCount,
+      viewsCount: vehicle._count.views,
+      viewsLast30Days: recentViewCountsByVehicleId.get(vehicle.id) ?? 0,
     }));
+  }
+
+  async findPublicSummariesByIds(vehicleIds: string[]) {
+    if (!vehicleIds.length) {
+      return [];
+    }
+
+    const vehicles = await this.prisma.vehicle.findMany({
+      where: {
+        id: {
+          in: vehicleIds,
+        },
+        isActive: true,
+        isPublished: true,
+      },
+      include: {
+        images: {
+          orderBy: {
+            position: 'asc',
+          },
+          take: 1,
+        },
+        owner: {
+          include: {
+            profile: true,
+            userReviewsReceived: {
+              select: {
+                rating: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const summariesById = new Map(
+      vehicles.map((vehicle) => [vehicle.id, this.mapVehicleSummary(vehicle)]),
+    );
+
+    return vehicleIds
+      .map((vehicleId) => summariesById.get(vehicleId))
+      .filter((vehicle): vehicle is NonNullable<typeof vehicle> => !!vehicle);
   }
 
   async findOne(vehicleId: string) {
