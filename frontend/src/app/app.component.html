@@ -4,7 +4,7 @@
   [class.with-floating-banner]="shouldOffsetShellForBanners"
   [class.app-shell--pulling]="pullDistance() > 0"
   [class.app-shell--refreshing]="isPullRefreshing()"
-  [style.--pull-distance.px]="pullDistance()"
+  [ngClass]="pullDistanceClass"
   (touchstart)="handlePullStart($event)"
   (touchmove)="handlePullMove($event)"
   (touchend)="handlePullEnd()"

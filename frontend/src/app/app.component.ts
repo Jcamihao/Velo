@@ -10,8 +10,8 @@ import { PwaInstallService } from './core/services/pwa-install.service';
 import { PrivacyApiService } from './core/services/privacy-api.service';
 import { PrivacyPreferencesService } from './core/services/privacy-preferences.service';
 import { RouteTraceService } from './core/services/route-trace.service';
-import { BottomNavComponent } from './shared/components/bottom-nav.component';
-import { CompareTrayComponent } from './shared/components/compare-tray.component';
+import { BottomNavComponent } from './shared/components/bottom-nav/bottom-nav.component';
+import { CompareTrayComponent } from './shared/components/compare-tray/compare-tray.component';
 
 @Component({
   selector: 'app-root',
@@ -173,6 +173,17 @@ export class AppComponent {
 
   protected get shouldUseStackedBannerOffset() {
     return false;
+  }
+
+  protected get pullDistanceClass() {
+    const distance = this.pullDistance();
+
+    if (distance <= 0 || this.isPullRefreshing()) {
+      return '';
+    }
+
+    const level = Math.min(6, Math.max(1, Math.ceil(distance / 20)));
+    return `app-shell--pull-${level}`;
   }
 
   readonly showBottomNav = () => {
