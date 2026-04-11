@@ -1,9 +1,12 @@
-# Triluga 0.3.0
+# Triluga 0.4.0
 
 Marketplace mobile-first de aluguel de carros entre pessoas, com frontend Angular PWA, backend NestJS modular e uma base mais pronta para deploy contínuo, cadastro estável e configuração dinâmica em produção.
 
 ## Destaques da versão
 
+- **Sistema de Analytics**: Rastreamento de visualizações de veículos para identificar os mais populares.
+- **Carrossel de Anúncios**: Destaque dinâmico dos veículos mais visualizados na home page.
+- **Reorganização de Componentes**: Migração para estrutura de diretórios, facilitando a manutenção e escalabilidade.
 - blueprint `render.yaml` para subir frontend, backend e banco no Render
 - descoberta automática da URL pública do backend no runtime config do frontend
 - registro com telefone inicial vazio e formatação mais robusta para números brasileiros
@@ -229,6 +232,7 @@ Guia alternativo para frontend no Vercel e backend no Railway em [docs/deploy-ve
 
 ## Releases
 
+- release notes 0.4.0: [docs/releases/v0.4.0.md](./docs/releases/v0.4.0.md)
 - release notes 0.3.0: [docs/releases/v0.3.0.md](./docs/releases/v0.3.0.md)
 - release notes 0.2.0: [docs/releases/v0.2.0.md](./docs/releases/v0.2.0.md)
 
