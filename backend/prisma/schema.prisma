@@ -262,6 +262,7 @@ model Vehicle {
   chatConversations             ChatConversation[]
   favorites                     Favorite[]
   searchAlertMatches            SearchAlertMatch[]
+  views                         VehicleView[]
 
   @@index([ownerId])
   @@index([city, state, vehicleType, category, isActive, isPublished])
@@ -574,6 +575,21 @@ model SiteVisit {
   @@index([visitorId, createdAt])
   @@index([createdAt])
   @@index([isFirstVisit, createdAt])
+}
+
+model VehicleView {
+  id        String   @id @default(uuid())
+  vehicleId String
+  visitorId String
+  path      String
+  referrer  String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId, createdAt])
+  @@index([visitorId, vehicleId, createdAt])
+  @@index([createdAt])
 }
 
 model PrivacyRequest {
