@@ -33,142 +33,253 @@
     </div>
 
     <div class="announcement-steps">
-      <article>
+      <article [class.announcement-steps__active]="currentStep === 1">
         <strong>1</strong>
         <span>Dados principais</span>
       </article>
-      <article>
+      <article [class.announcement-steps__active]="currentStep === 2">
         <strong>2</strong>
-        <span>Fotos reais</span>
+        <span>Condições gerais</span>
       </article>
-      <article>
+      <article [class.announcement-steps__active]="currentStep === 3">
         <strong>3</strong>
-        <span>Publicar</span>
+        <span>Fotos e Publicar</span>
       </article>
     </div>
 
     <div class="editor-layout">
       <div class="editor-main">
-        <section class="editor-panel editor-panel--highlights">
-          <div class="editor-highlights">
-            <article>
-              <span>Status do anúncio</span>
-              <strong>{{ editorStatusLabel }}</strong>
-              <small>{{ editorStatusHint }}</small>
-            </article>
-
-            <article>
-              <span>Fotos carregadas</span>
-              <strong>{{ totalVehiclePhotos }}</strong>
-              <small>{{ totalVehiclePhotos >= 3 ? 'Capa e galeria prontas' : 'Adicione pelo menos 3 fotos' }}</small>
-            </article>
-
-            <article>
-              <span>Retirada</span>
-              <strong>{{ vehicleDraft.addressLine?.trim() ? 'Definida' : 'Pendente' }}</strong>
-              <small>{{ vehicleDraft.addressLine?.trim() || 'Informe o bairro, avenida ou ponto de encontro' }}</small>
-            </article>
-          </div>
-        </section>
-
-        <section class="editor-panel">
-          <div class="editor-panel__head">
-            <div>
-              <span class="eyebrow eyebrow--soft">Etapa 1</span>
-              <h3>Dados do anúncio</h3>
-              <p>Preencha a ficha principal do carro para ele aparecer bem na busca.</p>
+        <!-- STEP 1: Basic Info -->
+        <ng-container *ngIf="currentStep === 1">
+          <section class="editor-panel">
+            <div class="editor-panel__head">
+              <div>
+                <span class="eyebrow eyebrow--soft">Etapa 1</span>
+                <h3>Dados do anúncio</h3>
+                <p>Preencha a ficha principal do carro para ele aparecer bem na busca.</p>
+              </div>
             </div>
-          </div>
 
-          <div class="form-grid">
-            <label>
-              <span>Título do anúncio <em>*</em></span>
-              <input [(ngModel)]="vehicleDraft.title" placeholder="Ex.: Jeep Renegade 2022 completo" />
-            </label>
+            <div class="form-grid">
+              <label>
+                <span>Título do anúncio <em>*</em></span>
+                <input [(ngModel)]="vehicleDraft.title" placeholder="Ex.: Jeep Renegade 2022 completo" />
+              </label>
 
-            <label>
-              <span>Placa <em>*</em></span>
-              <input [(ngModel)]="vehicleDraft.plate" placeholder="ABC1D23" maxlength="8" />
-            </label>
-          </div>
-
-          <div class="form-grid form-grid--triple">
-            <label>
-              <span>Marca <em>*</em></span>
-              <input [(ngModel)]="vehicleDraft.brand" placeholder="Jeep" />
-            </label>
-
-            <label>
-              <span>Modelo <em>*</em></span>
-              <input [(ngModel)]="vehicleDraft.model" placeholder="Renegade" />
-            </label>
-
-            <label>
-              <span>Ano <em>*</em></span>
-              <input [(ngModel)]="vehicleDraft.year" type="number" min="1990" max="2100" />
-            </label>
-          </div>
-
-          <div class="form-grid">
-            <label>
-              <span>Tipo de veículo <em>*</em></span>
-              <select [(ngModel)]="vehicleDraft.vehicleType">
-                <option *ngFor="let option of vehicleTypeOptions" [value]="option.value">
-                  {{ option.label }}
-                </option>
-              </select>
-            </label>
-
-            <label>
-              <span>Categoria <em>*</em></span>
-              <select [(ngModel)]="vehicleDraft.category">
-                <option *ngFor="let option of categoryOptions" [value]="option.value">
-                  {{ option.label }}
-                </option>
-              </select>
-            </label>
-
-            <label>
-              <span>Câmbio <em>*</em></span>
-              <select [(ngModel)]="vehicleDraft.transmission">
-                <option *ngFor="let option of transmissionOptions" [value]="option.value">
-                  {{ option.label }}
-                </option>
-              </select>
-            </label>
-          </div>
-
-          <div class="form-grid">
-            <label>
-              <span>Combustível <em>*</em></span>
-              <select [(ngModel)]="vehicleDraft.fuelType">
-                <option *ngFor="let option of fuelOptions" [value]="option.value">
-                  {{ option.label }}
-                </option>
-              </select>
-            </label>
-
-            <label>
-              <span>Assentos <em>*</em></span>
-              <input [(ngModel)]="vehicleDraft.seats" type="number" min="2" max="12" />
-            </label>
-          </div>
-        </section>
-
-        <section class="editor-panel">
-          <div class="editor-panel__head">
-            <div>
-              <span class="eyebrow eyebrow--soft">Etapa 2</span>
-              <h3>Preço e retirada</h3>
-              <p>Defina o valor e deixe claro de onde o veículo sai.</p>
+              <label>
+                <span>Placa <em>*</em></span>
+                <input [(ngModel)]="vehicleDraft.plate" placeholder="ABC1D23" maxlength="8" />
+              </label>
             </div>
-          </div>
 
-          <div class="form-grid">
+            <div class="form-grid form-grid--triple">
+              <label>
+                <span>Marca <em>*</em></span>
+                <input [(ngModel)]="vehicleDraft.brand" placeholder="Jeep" />
+              </label>
+
+              <label>
+                <span>Modelo <em>*</em></span>
+                <input [(ngModel)]="vehicleDraft.model" placeholder="Renegade" />
+              </label>
+
+              <label>
+                <span>Ano <em>*</em></span>
+                <input [(ngModel)]="vehicleDraft.year" type="number" min="1990" max="2100" />
+              </label>
+            </div>
+
+            <div class="form-grid">
+              <label>
+                <span>Tipo de veículo <em>*</em></span>
+                <select [(ngModel)]="vehicleDraft.vehicleType">
+                  <option *ngFor="let option of vehicleTypeOptions" [value]="option.value">
+                    {{ option.label }}
+                  </option>
+                </select>
+              </label>
+
+              <label>
+                <span>Categoria <em>*</em></span>
+                <select [(ngModel)]="vehicleDraft.category">
+                  <option *ngFor="let option of categoryOptions" [value]="option.value">
+                    {{ option.label }}
+                  </option>
+                </select>
+              </label>
+
+              <label>
+                <span>Câmbio <em>*</em></span>
+                <select [(ngModel)]="vehicleDraft.transmission">
+                  <option *ngFor="let option of transmissionOptions" [value]="option.value">
+                    {{ option.label }}
+                  </option>
+                </select>
+              </label>
+            </div>
+
+            <div class="form-grid">
+              <label>
+                <span>Combustível <em>*</em></span>
+                <select [(ngModel)]="vehicleDraft.fuelType">
+                  <option *ngFor="let option of fuelOptions" [value]="option.value">
+                    {{ option.label }}
+                  </option>
+                </select>
+              </label>
+
+              <label>
+                <span>Assentos <em>*</em></span>
+                <input [(ngModel)]="vehicleDraft.seats" type="number" min="2" max="12" />
+              </label>
+            </div>
+          </section>
+
+          <section class="editor-panel" *ngIf="vehicleDraft.vehicleType === 'MOTORCYCLE'">
+            <div class="editor-panel__head">
+              <div>
+                <span class="eyebrow eyebrow--soft">Etapa extra</span>
+                <h3>Detalhes da moto</h3>
+                <p>Essas informações ajudam a moto aparecer nos filtros certos.</p>
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <label>
+                <span>Estilo da moto</span>
+                <select [(ngModel)]="vehicleDraft.motorcycleStyle">
+                  <option value="">Selecione</option>
+                  <option *ngFor="let option of motorcycleStyleOptions" [value]="option.value">
+                    {{ option.label }}
+                  </option>
+                </select>
+              </label>
+
+              <label>
+                <span>Cilindrada</span>
+                <input [(ngModel)]="vehicleDraft.engineCc" type="number" min="50" max="2500" step="1" />
+              </label>
+            </div>
+
+            <div class="form-grid">
+              <label class="toggle-field">
+                <span>Freio ABS</span>
+                <button
+                  type="button"
+                  class="toggle-button"
+                  [class.toggle-button--active]="vehicleDraft.hasAbs"
+                  (click)="vehicleDraft.hasAbs = !vehicleDraft.hasAbs"
+                >
+                  {{ vehicleDraft.hasAbs ? 'Incluído' : 'Não' }}
+                </button>
+              </label>
+
+              <label class="toggle-field">
+                <span>Baú</span>
+                <button
+                  type="button"
+                  class="toggle-button"
+                  [class.toggle-button--active]="vehicleDraft.hasTopCase"
+                  (click)="vehicleDraft.hasTopCase = !vehicleDraft.hasTopCase"
+                >
+                  {{ vehicleDraft.hasTopCase ? 'Incluído' : 'Não' }}
+                </button>
+              </label>
+            </div>
+          </section>
+
+          <div class="form-actions">
+            <button
+              type="button"
+              class="btn btn-primary"
+              (click)="nextStep()"
+            >
+              Continuar
+            </button>
+            <button
+              *ngIf="isEditingVehicle"
+              type="button"
+              class="btn btn-secondary"
+              (click)="cancelEditingVehicle()"
+            >
+              Cancelar edição
+            </button>
+          </div>
+        </ng-container>
+
+        <!-- STEP 2: Pricing and Setup -->
+        <ng-container *ngIf="currentStep === 2">
+          <section class="editor-panel">
+            <div class="editor-panel__head">
+              <div>
+                <span class="eyebrow eyebrow--soft">Etapa 2</span>
+                <h3>Preço e retirada</h3>
+                <p>Defina o valor e deixe claro de onde o veículo sai.</p>
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <label>
+                <span>Valor semanal <em>*</em></span>
+                <input [(ngModel)]="vehicleDraft.dailyRate" type="number" min="1" step="0.01" />
+              </label>
+            </div>
+
+            <div class="form-grid">
+              <label>
+                <span>Cidade <em>*</em></span>
+                <input [(ngModel)]="vehicleDraft.city" placeholder="São Paulo" />
+              </label>
+
+              <label>
+                <span>Estado <em>*</em></span>
+                <input [(ngModel)]="vehicleDraft.state" maxlength="2" placeholder="SP" />
+              </label>
+            </div>
+
             <label>
-              <span>Valor semanal <em>*</em></span>
-              <input [(ngModel)]="vehicleDraft.dailyRate" type="number" min="1" step="0.01" />
+              <span>Endereço de retirada <em>*</em></span>
+              <input [(ngModel)]="vehicleDraft.addressLine" placeholder="Bairro, avenida ou ponto de encontro" />
             </label>
+
+            <label>
+              <span>Descrição <em>*</em></span>
+              <textarea
+                [(ngModel)]="vehicleDraft.description"
+                rows="4"
+                placeholder="Conte os diferenciais do carro, regras básicas e itens inclusos."
+              ></textarea>
+            </label>
+          </section>
+
+          <div class="form-actions">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              (click)="prevStep()"
+            >
+              Voltar
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              (click)="nextStep()"
+            >
+              Continuar
+            </button>
+          </div>
+        </ng-container>
+
+        <!-- STEP 3: Photos and Publish -->
+        <ng-container *ngIf="currentStep === 3">
+          <section class="editor-panel">
+            <div class="editor-panel__head">
+              <div>
+                <span class="eyebrow eyebrow--soft">Etapa final</span>
+                <h3>Visibilidade</h3>
+                <p>Defina se o anúncio deve ir ao ar logo após clicar em salvar.</p>
+              </div>
+            </div>
 
             <label class="toggle-field">
               <span>Publicação</span>
@@ -178,178 +289,84 @@
                 [class.toggle-button--active]="vehicleDraft.isPublished"
                 (click)="vehicleDraft.isPublished = !vehicleDraft.isPublished"
               >
-                {{ vehicleDraft.isPublished ? 'Publicado' : 'Rascunho' }}
+                {{ vehicleDraft.isPublished ? 'Publicar automaticamente' : 'Salvar como rascunho' }}
               </button>
             </label>
-          </div>
+          </section>
 
-          <div class="form-grid">
-            <label>
-              <span>Cidade <em>*</em></span>
-              <input [(ngModel)]="vehicleDraft.city" placeholder="São Paulo" />
-            </label>
+          <section class="editor-panel media-manager">
+            <div class="media-manager__head">
+              <div>
+                <span class="eyebrow eyebrow--soft">Etapa 3</span>
+                <h3>Fotos do veículo</h3>
+                <p>A primeira imagem vira a capa do anúncio e aparece na busca.</p>
+              </div>
 
-            <label>
-              <span>Estado <em>*</em></span>
-              <input [(ngModel)]="vehicleDraft.state" maxlength="2" placeholder="SP" />
-            </label>
-          </div>
-
-          <label>
-            <span>Endereço de retirada <em>*</em></span>
-            <input [(ngModel)]="vehicleDraft.addressLine" placeholder="Bairro, avenida ou ponto de encontro" />
-          </label>
-
-          <label>
-            <span>Descrição <em>*</em></span>
-            <textarea
-              [(ngModel)]="vehicleDraft.description"
-              rows="4"
-              placeholder="Conte os diferenciais do carro, regras básicas e itens inclusos."
-            ></textarea>
-          </label>
-
-          <div class="form-grid">
-            <label>
-              <span>Latitude</span>
-              <input [(ngModel)]="vehicleDraft.latitude" type="number" step="0.000001" placeholder="-23.550520" />
-            </label>
-
-            <label>
-              <span>Longitude</span>
-              <input [(ngModel)]="vehicleDraft.longitude" type="number" step="0.000001" placeholder="-46.633308" />
-            </label>
-          </div>
-        </section>
-
-        <section class="editor-panel" *ngIf="vehicleDraft.vehicleType === 'MOTORCYCLE'">
-          <div class="editor-panel__head">
-            <div>
-              <span class="eyebrow eyebrow--soft">Etapa extra</span>
-              <h3>Detalhes da moto</h3>
-              <p>Essas informações ajudam a moto aparecer nos filtros certos.</p>
-            </div>
-          </div>
-
-          <div class="form-grid">
-            <label>
-              <span>Estilo da moto</span>
-              <select [(ngModel)]="vehicleDraft.motorcycleStyle">
-                <option value="">Selecione</option>
-                <option *ngFor="let option of motorcycleStyleOptions" [value]="option.value">
-                  {{ option.label }}
-                </option>
-              </select>
-            </label>
-
-            <label>
-              <span>Cilindrada</span>
-              <input [(ngModel)]="vehicleDraft.engineCc" type="number" min="50" max="2500" step="1" />
-            </label>
-          </div>
-
-          <div class="form-grid">
-            <label class="toggle-field">
-              <span>Freio ABS</span>
-              <button
-                type="button"
-                class="toggle-button"
-                [class.toggle-button--active]="vehicleDraft.hasAbs"
-                (click)="vehicleDraft.hasAbs = !vehicleDraft.hasAbs"
-              >
-                {{ vehicleDraft.hasAbs ? 'Incluído' : 'Não' }}
-              </button>
-            </label>
-
-            <label class="toggle-field">
-              <span>Baú</span>
-              <button
-                type="button"
-                class="toggle-button"
-                [class.toggle-button--active]="vehicleDraft.hasTopCase"
-                (click)="vehicleDraft.hasTopCase = !vehicleDraft.hasTopCase"
-              >
-                {{ vehicleDraft.hasTopCase ? 'Incluído' : 'Não' }}
-              </button>
-            </label>
-          </div>
-        </section>
-
-        <section class="editor-panel media-manager">
-          <div class="media-manager__head">
-            <div>
-              <span class="eyebrow eyebrow--soft">Etapa 3</span>
-              <h3>Fotos do veículo</h3>
-              <p>A primeira imagem vira a capa do anúncio e aparece na busca.</p>
+              <label class="upload-trigger">
+                <input type="file" accept="image/*" multiple (change)="onVehicleFilesSelected($event)" />
+                <span>Adicionar fotos</span>
+              </label>
             </div>
 
-            <label class="upload-trigger">
-              <input type="file" accept="image/*" multiple (change)="onVehicleFilesSelected($event)" />
-              <span>Adicionar fotos</span>
-            </label>
-          </div>
+            <p class="state-message" *ngIf="!isEditingVehicle">
+              Você pode selecionar as fotos agora. Elas serão enviadas automaticamente depois que o anúncio for salvo.
+            </p>
 
-          <p class="state-message" *ngIf="!isEditingVehicle">
-            Você pode selecionar as fotos agora. Elas serão enviadas automaticamente depois que o anúncio for salvo.
-          </p>
-
-          <div class="media-grid" *ngIf="editingVehicle?.images?.length || pendingVehiclePreviews.length">
-            <article
-              class="media-card"
-              *ngFor="let image of editingVehicle?.images; let index = index; trackBy: trackById"
-            >
-              <img [src]="image.url" [alt]="image.alt || vehicleDraft.title || 'Foto do veículo'" />
-              <span class="media-badge" *ngIf="index === 0">Capa</span>
-              <button
-                type="button"
-                class="media-card__action"
-                [disabled]="imageActionId === image.id"
-                (click)="removeVehicleImage(image)"
+            <div class="media-grid" *ngIf="editingVehicle?.images?.length || pendingVehiclePreviews.length">
+              <article
+                class="media-card"
+                *ngFor="let image of editingVehicle?.images; let index = index; trackBy: trackById"
               >
-                {{ imageActionId === image.id ? 'Removendo...' : 'Excluir' }}
-              </button>
-            </article>
+                <img [src]="image.url" [alt]="image.alt || vehicleDraft.title || 'Foto do veículo'" />
+                <span class="media-badge" *ngIf="index === 0">Capa</span>
+                <button
+                  type="button"
+                  class="media-card__action"
+                  [disabled]="imageActionId === image.id"
+                  (click)="removeVehicleImage(image)"
+                >
+                  {{ imageActionId === image.id ? 'Removendo...' : 'Excluir' }}
+                </button>
+              </article>
 
-            <article
-              class="media-card media-card--pending"
-              *ngFor="let preview of pendingVehiclePreviews; let index = index; trackBy: trackByPreview"
+              <article
+                class="media-card media-card--pending"
+                *ngFor="let preview of pendingVehiclePreviews; let index = index; trackBy: trackByPreview"
+              >
+                <img [src]="preview.url" [alt]="preview.name" />
+                <span class="media-badge media-badge--pending">Nova</span>
+                <button type="button" class="media-card__action" (click)="removePendingVehicleFile(index)">
+                  Remover
+                </button>
+              </article>
+            </div>
+
+            <p class="state-message" *ngIf="!editingVehicle?.images?.length && !pendingVehiclePreviews.length">
+              Adicione pelo menos 3 fotos para aumentar a taxa de conversão do anúncio.
+            </p>
+
+            <p class="feedback" *ngIf="mediaFeedback">{{ mediaFeedback }}</p>
+            <p class="feedback feedback--error" *ngIf="mediaError">{{ mediaError }}</p>
+          </section>
+
+          <div class="form-actions">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              (click)="prevStep()"
             >
-              <img [src]="preview.url" [alt]="preview.name" />
-              <span class="media-badge media-badge--pending">Nova</span>
-              <button type="button" class="media-card__action" (click)="removePendingVehicleFile(index)">
-                Remover
-              </button>
-            </article>
+              Voltar
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              (click)="saveVehicle()"
+              [disabled]="submittingVehicle || uploadingVehicleImages"
+            >
+              {{ vehicleSubmitLabel }}
+            </button>
           </div>
-
-          <p class="state-message" *ngIf="!editingVehicle?.images?.length && !pendingVehiclePreviews.length">
-            Adicione pelo menos 3 fotos para aumentar a taxa de conversão do anúncio.
-          </p>
-
-          <p class="feedback" *ngIf="mediaFeedback">{{ mediaFeedback }}</p>
-          <p class="feedback feedback--error" *ngIf="mediaError">{{ mediaError }}</p>
-        </section>
-
-        <div class="form-actions">
-          <button
-            type="button"
-            class="btn btn-primary"
-            (click)="saveVehicle()"
-            [disabled]="submittingVehicle || uploadingVehicleImages"
-          >
-            {{ vehicleSubmitLabel }}
-          </button>
-
-          <button
-            *ngIf="isEditingVehicle"
-            type="button"
-            class="btn btn-secondary"
-            (click)="cancelEditingVehicle()"
-            [disabled]="submittingVehicle || uploadingVehicleImages"
-          >
-            Cancelar edição
-          </button>
-        </div>
+        </ng-container>
       </div>
 
       <aside class="editor-sidebar">
@@ -364,12 +381,12 @@
             <strong>{{ publicationReadinessPercentage }}%</strong>
           </div>
 
-              <progress
-                class="publication-guide__progress"
-                [value]="publicationReadinessPercentage"
-                max="100"
-                aria-label="Progresso da publicação"
-              ></progress>
+          <progress
+            class="publication-guide__progress"
+            [value]="publicationReadinessPercentage"
+            max="100"
+            aria-label="Progresso da publicação"
+          ></progress>
 
           <div class="publication-checklist">
             <article
@@ -386,49 +403,7 @@
               </div>
             </article>
           </div>
-
-          <div class="publication-suggestions" *ngIf="publicationSuggestions.length">
-            <strong>O que falta para publicar</strong>
-            <p *ngFor="let suggestion of publicationSuggestions; trackBy: trackByString">{{ suggestion }}</p>
-          </div>
         </section>
-
-        <section class="required-fields-card" *ngIf="missingVehicleFields.length">
-          <div class="required-fields-card__head">
-            <div>
-              <span class="eyebrow eyebrow--soft">Campos obrigatórios</span>
-              <h3>Faltam {{ missingVehicleFields.length }} campo(s)</h3>
-            </div>
-            <strong>Revise antes de publicar</strong>
-          </div>
-
-          <div class="required-fields-card__list">
-            <span *ngFor="let field of missingVehicleFields; trackBy: trackByString">{{ field }}</span>
-          </div>
-        </section>
-
-        <div class="publish-card">
-          <div>
-            <span class="eyebrow eyebrow--soft">Finalizar anúncio</span>
-            <h3>{{ isEditingVehicle ? 'Salvar e manter anúncio atualizado' : 'Publicar classificado' }}</h3>
-            <p>
-              {{
-                missingVehicleFields.length
-                  ? 'Complete os campos obrigatórios e confira as fotos antes de publicar.'
-                  : 'Seu anúncio já está pronto para receber interessados.'
-              }}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            class="btn btn-primary"
-            (click)="saveVehicle()"
-            [disabled]="submittingVehicle || uploadingVehicleImages"
-          >
-            {{ vehicleSubmitLabel }}
-          </button>
-        </div>
       </aside>
     </div>
 
