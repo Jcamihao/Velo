@@ -1,6 +1,6 @@
-# Triluga 0.4.0
+# Triluga 0.5.0
 
-Marketplace mobile-first de aluguel de carros entre pessoas, com frontend Angular PWA, backend NestJS modular e uma base mais pronta para deploy contínuo, cadastro estável e configuração dinâmica em produção.
+Classificado mobile-first de veículos entre pessoas, com frontend Angular PWA, backend NestJS modular e uma base mais pronta para deploy contínuo, cadastro estável e configuração dinâmica em produção.
 
 ## Destaques da versão
 
@@ -21,7 +21,6 @@ Marketplace mobile-first de aluguel de carros entre pessoas, com frontend Angula
 - Infra local: Docker Compose com PostgreSQL, Redis, MinIO, backend e frontend.
 - Integrações desacopladas:
   - `StorageService` para MinIO/S3 futuro.
-  - `MockPaymentGateway` para evoluir para gateway real.
   - `CacheQueueService` para cache Redis e filas BullMQ.
 
 ## Estrutura
@@ -36,9 +35,6 @@ Marketplace mobile-first de aluguel de carros entre pessoas, com frontend Angula
 │       ├── profiles
 │       ├── vehicles
 │       ├── vehicle-images
-│       ├── availability
-│       ├── bookings
-│       ├── payments
 │       ├── reviews
 │       ├── notifications
 │       ├── admin
@@ -64,22 +60,16 @@ Entidades principais modeladas no Prisma:
 - `Profile`
 - `Vehicle`
 - `VehicleImage`
-- `VehicleAvailability`
-- `VehicleBlockedDate`
-- `Booking`
-- `BookingStatusHistory`
-- `Payment`
 - `Review`
 - `Notification`
 
 Regras centrais já refletidas no schema e nos serviços:
 
 - múltiplos veículos por proprietário
-- busca por cidade/período
-- prevenção de conflito com reservas aprovadas e datas bloqueadas
-- cálculo de subtotal, taxa da plataforma e total
-- histórico de status da reserva
-- avaliações pós-locação
+- busca por cidade, tipo, categoria, preço e localização
+- anúncios com fotos, descrição, reputação e contato por chat
+- favoritos e alertas de busca
+- avaliações públicas de anúncios e usuários
 
 ## Backend
 
@@ -103,16 +93,6 @@ Endpoints principais implementados:
 - `PATCH /vehicles/:id`
 - `DELETE /vehicles/:id`
 - `POST /vehicles/:id/images`
-- `GET /vehicles/:id/availability`
-- `PUT /vehicles/:id/availability`
-- `POST /vehicles/:id/blocked-dates`
-- `POST /bookings`
-- `GET /bookings/my`
-- `GET /bookings/owner`
-- `PATCH /bookings/:id/approve`
-- `PATCH /bookings/:id/reject`
-- `PATCH /bookings/:id/cancel`
-- `POST /payments/checkout`
 - `POST /reviews`
 - `GET /reviews/vehicle/:vehicleId`
 - `GET /notifications/my`
@@ -120,7 +100,6 @@ Endpoints principais implementados:
 - `GET /admin/dashboard`
 - `GET /admin/users`
 - `GET /admin/vehicles`
-- `GET /admin/bookings`
 - `GET /admin/privacy/requests`
 - `PATCH /admin/users/:id/block`
 - `PATCH /admin/vehicles/:id/deactivate`
@@ -134,9 +113,7 @@ Fluxos disponíveis no Angular:
 - home com busca rápida
 - lista com filtros e carregamento progressivo
 - detalhe do veículo com galeria e reviews
-- solicitação de reserva
 - login e cadastro
-- minhas reservas
 - perfil com notificações
 - política de privacidade pública
 - central de privacidade autenticada

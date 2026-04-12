@@ -12,9 +12,8 @@ Versão: `2026-03-27`
 
 - conta ativa: enquanto a conta estiver em uso
 - perfil básico: enquanto a conta estiver ativa
-- reservas e pagamentos: conforme prazo contratual, fiscal, contábil e de defesa aplicável
+- anúncios, favoritos e alertas: enquanto a conta estiver ativa ou até exclusão pelo usuário
 - notificações: até `12 meses`, salvo necessidade operacional maior
-- favoritos e alertas: enquanto a conta estiver ativa ou até exclusão pelo usuário
 - pedidos LGPD: até `5 anos` para trilha de atendimento e evidência de resposta
 - logs técnicos sem payload sensível: `90 a 180 dias`, conforme capacidade e criticidade
 - analytics não essencial: somente com consentimento; retenção recomendada de `12 meses`

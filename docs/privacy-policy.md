@@ -4,14 +4,14 @@ Versão: `2026-03-27`
 
 ## 1. Escopo
 
-Esta política resume como a Triluga trata dados pessoais para operar o marketplace de aluguel de veículos entre pessoas.
+Esta política resume como a Triluga trata dados pessoais para operar um classificado de veículos entre pessoas.
 
 ## 2. Dados tratados
 
 - cadastro da conta: nome, e-mail, telefone, cidade e estado
 - autenticação e segurança: senha com hash, tokens de sessão e registros de acesso
 - perfil e confiança: foto, bio, status de verificação, documento e CNH
-- operação do marketplace: veículos, reservas, pagamentos, avaliações, favoritos e notificações
+- operação do marketplace: veículos, anúncios, avaliações, favoritos e notificações
 - suporte e atendimento: histórico de conversas e solicitações
 - preferências de privacidade: consentimento para analytics não essencial e pedidos LGPD
 
@@ -19,7 +19,7 @@ Esta política resume como a Triluga trata dados pessoais para operar o marketpl
 
 - criar e manter contas
 - autenticar usuários e proteger sessões
-- permitir anúncios, reservas, comunicação e suporte
+- permitir anúncios, comunicação e suporte
 - verificar identidade e reduzir fraude
 - cumprir obrigações legais, regulatórias e contratuais
 - tratar incidentes, auditorias e solicitações do titular
@@ -32,7 +32,7 @@ Os dados podem ser compartilhados com operadores e fornecedores necessários par
 - hospedagem e infraestrutura
 - banco de dados e armazenamento de arquivos
 - mensageria, monitoramento e suporte
-- gateways de pagamento e antifraude, quando aplicável
+- serviços antifraude, quando aplicável
 
 ## 5. Direitos do titular
 

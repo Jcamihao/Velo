@@ -13,7 +13,7 @@ O foco aqui e:
 
 ## O que e o Triluga
 
-Triluga e um marketplace P2P de aluguel de veiculos. O fluxo principal conecta um locatario a um proprietario, com busca, detalhe do anuncio, reserva, acompanhamento de status, favoritos, chat e paines de gestao.
+Triluga e um classificado P2P de veiculos. O fluxo principal conecta interessados a anunciantes, com busca, detalhe do anuncio, favoritos, chat e paines de gestao.
 
 O projeto esta dividido assim:
 
@@ -26,8 +26,8 @@ O projeto esta dividido assim:
 
 Existem 3 papeis principais:
 
-- `RENTER`: navega, favorita, conversa e solicita reservas
-- `OWNER`: cadastra veiculos, publica anuncios, gerencia agenda e responde pedidos
+- `USER`: navega, favorita, anuncia e conversa com outros usuarios
+- `OWNER`: papel de negocio usado para quem publica anuncios
 - `ADMIN`: modera usuarios, veiculos, verificacao documental e pedidos de privacidade
 
 ## Estado atual do produto
@@ -38,19 +38,16 @@ Hoje, o Triluga cobre estes fluxos:
 - busca de veiculos com filtros
 - detalhe do anuncio
 - favoritos
-- chat entre locatario e proprietario
-- criacao e acompanhamento de reservas
+- chat entre interessado e anunciante
 - painel do proprietario
 - painel admin
 - politica/central de privacidade e controles LGPD
 
 Limites importantes para QA:
 
-- nao existe billing real. O sistema calcula preco, subtotal, descontos e taxa, mas nao faz cobranca real em gateway.
-- nao existe checkout operacional no frontend.
-- o `README` ainda lista `POST /payments/checkout`, mas o modulo de pagamentos real nao esta implementado.
+- nao existe fluxo transacional operacional.
+- o produto atual e um classificado: a negociacao acontece pelo chat.
 - a criacao de review existe no backend, mas nao ha um fluxo dedicado e visivel no frontend para o usuario enviar avaliacao.
-- cancelamento hoje altera status da reserva, mas nao executa estorno financeiro.
 - documento e CNH agora sao privados; o acesso acontece por URL temporaria assinada.
 
 ## Dados seed
@@ -59,10 +56,8 @@ O seed cria:
 
 - 1 admin
 - 1 usuária anunciante
-- 1 usuário locatário
+- 1 usuário interessado
 - 3 veiculos
-- 1 reserva concluida
-- 1 pagamento mockado como `PAID`
 - 1 review
 - notificacoes e visitas do site
 
@@ -128,14 +123,12 @@ npx prisma studio
 - detalhe do veiculo
 - politica publica de privacidade
 
-### Locatario
+### Interessado
 
 - cadastro/login
 - alertas de busca
 - favoritos
 - chat
-- reserva
-- historico em "Minhas reservas"
 - perfil
 - central de privacidade
 
@@ -145,9 +138,7 @@ npx prisma studio
 - dashboard com indicadores
 - criacao e edicao de anuncio
 - upload de fotos
-- configuracao de promocao e preco
-- disponibilidade e bloqueios
-- aprovacao e rejeicao de reservas
+- preco anunciado
 - chat
 
 ### Admin
@@ -162,7 +153,7 @@ npx prisma studio
 
 ### Autenticacao e sessao
 
-- cadastro so permite `OWNER` e `RENTER`
+- cadastro publico cria usuarios comuns
 - `ADMIN` nao pode ser criado via cadastro publico
 - refresh token fica em cookie `httpOnly`
 - frontend guarda apenas sessao reduzida em `sessionStorage`
@@ -173,12 +164,10 @@ npx prisma studio
 - resultados filtram por:
   - texto
   - cidade
-  - periodo
   - tipo de veiculo
   - categoria
   - faixa de preco
   - geolocalizacao e raio
-- veiculos com conflito de reserva aprovada ou bloqueio manual devem sair do resultado quando o periodo e informado
 
 ### Favoritos
 
@@ -193,29 +182,10 @@ npx prisma studio
 - mensagens atualizam a conversa e contagem de nao lidas
 - ha integracao REST + socket
 
-### Reserva
-
-- o backend calcula preco com:
-  - diaria media
-  - extras
-  - descontos
-  - taxa da plataforma
-- `INSTANT` aprova a reserva na hora
-- `MANUAL` cria reserva `PENDING`
-- owner pode aprovar ou rejeitar reservas pendentes
-- renter e owner podem cancelar reservas `PENDING` ou `APPROVED`
-- reservas aprovadas migram automaticamente para `IN_PROGRESS` e depois `COMPLETED` conforme datas
-
-### Pagamento
-
-- o pagamento exibido hoje e conceitual/mock
-- nao ha checkout real, split real ou reembolso financeiro real
-- a reserva pode existir sem cobranca real
-
 ### Reviews
 
-- uma review so pode ser criada pelo locatario da reserva
-- a reserva precisa estar concluida
+- reviews podem ser criadas para um anuncio ou para um usuario
+- o backend impede autoavaliacao e duplicidade do mesmo autor para o mesmo alvo
 - hoje isso e mais facil de validar via API do que via UI
 
 ### Privacidade/LGPD
@@ -228,8 +198,6 @@ npx prisma studio
 
 ## Areas de risco que merecem atencao extra
 
-- copy de preco: varias telas exibem `dailyRate` com rotulo visual de "`/ semana`"; vale validar se isso esta consistente com o calculo real da reserva.
-- billing: como nao existe checkout real, qualquer comportamento de cobranca deve ser tratado como fora do escopo atual, nao como bug automatico.
 - rotas protegidas: testar navegacao logada e anonima para chat, favoritos, profile, owner dashboard, admin e privacy center.
 - arquivos privados: validar que documento/CNH abrem por endpoint de URL temporaria, nao por campo publico direto.
 - sessao: validar restauracao apos reload, expiracao de token e logout.
@@ -238,24 +206,19 @@ npx prisma studio
 
 Execute este roteiro sempre que houver build nova:
 
-1. Subir ambiente, rodar seed e fazer login com `RENTER`.
+1. Subir ambiente, rodar seed e fazer login com um usuario comum.
 2. Abrir home, navegar para busca e confirmar que veiculos seed aparecem.
 3. Salvar um alerta de busca e confirmar que ele aparece na propria pagina de busca.
 4. Favoritar um veiculo e confirmar que ele entra em `/favorites`.
 5. Abrir detalhe de um veiculo, iniciar chat e enviar mensagem.
-6. Criar uma reserva em um veiculo `INSTANT` e validar status aprovado imediato.
-7. Criar uma reserva em um veiculo `MANUAL` e validar status pendente.
-8. Acessar `/my-bookings` e confirmar dados, total, status e botao de cancelar quando aplicavel.
-9. Fazer logout e validar limpeza da sessao no navegador.
-10. Fazer login com `OWNER` e abrir `/owner-dashboard`.
-11. Aprovar ou rejeitar uma reserva pendente e confirmar atualizacao para o locatario.
-12. Criar ou editar um anuncio, publicar e validar presenca na busca.
-13. Subir foto(s) do anuncio e validar a galeria.
-14. Ajustar disponibilidade/bloqueio e validar reflexo na reserva e na busca por periodo.
-15. Fazer login com `ADMIN` e validar dashboard, usuarios, veiculos e reservas.
-16. Aprovar ou recusar documento/CNH e validar status no perfil do usuario.
-17. Abrir `/privacy` e `/privacy-center`, mudar consentimento de analytics, exportar dados e criar uma solicitacao LGPD.
-18. Em `/admin`, validar que a solicitacao LGPD aparece e pode mudar para `IN_REVIEW` e `COMPLETED`.
+6. Fazer logout e validar limpeza da sessao no navegador.
+7. Fazer login com `OWNER` e abrir `/owner-dashboard`.
+8. Criar ou editar um anuncio, publicar e validar presenca na busca.
+9. Subir foto(s) do anuncio e validar a galeria.
+10. Fazer login com `ADMIN` e validar dashboard, usuarios, veiculos e privacidade.
+11. Aprovar ou recusar documento/CNH e validar status no perfil do usuario.
+12. Abrir `/privacy` e `/privacy-center`, mudar consentimento de analytics, exportar dados e criar uma solicitacao LGPD.
+13. Em `/admin`, validar que a solicitacao LGPD aparece e pode mudar para `IN_REVIEW` e `COMPLETED`.
 
 ## Roteiro de regressao por perfil
 
@@ -266,16 +229,13 @@ Execute este roteiro sempre que houver build nova:
 - detalhe abre a partir da busca
 - links de privacidade funcionam
 
-### Locatario
+### Interessado
 
 - cadastro com avatar opcional
 - login redireciona corretamente
 - alerta de busca salva e remove corretamente
 - favoritos persistem
 - chat cria conversa e envia mensagem
-- reserva com datas invalidas falha com mensagem
-- reserva com conflito de agenda nao pode ser enviada
-- cancelamento de reserva atualiza lista
 - perfil salva dados e uploads
 - central de privacidade responde
 
@@ -286,9 +246,6 @@ Execute este roteiro sempre que houver build nova:
 - editar anuncio existente
 - alternar entre rascunho/publicado
 - adicionar imagens
-- configurar promocoes
-- bloquear datas
-- aprovar/rejeitar reserva
 - acompanhar indicadores no dashboard
 
 ### Admin
@@ -305,11 +262,8 @@ Execute este roteiro sempre que houver build nova:
 ## Casos negativos importantes
 
 - tentar cadastrar `ADMIN`
-- tentar reservar veiculo proprio
 - tentar iniciar chat no proprio anuncio
-- tentar aprovar reserva ja aprovada
-- tentar cancelar reserva `COMPLETED`
-- tentar enviar review antes do fim da reserva
+- tentar criar review duplicada para o mesmo anuncio ou usuario
 - tentar salvar alerta de busca sem filtro
 - tentar abrir rota protegida sem login
 - tentar abrir arquivo de verificacao inexistente
@@ -338,13 +292,10 @@ Ao testar documentos:
 Use Swagger para:
 
 - autenticar
-- validar endpoints de `vehicles`, `bookings`, `profiles`, `privacy`, `admin` e `reviews`
+- validar endpoints de `vehicles`, `profiles`, `privacy`, `admin` e `reviews`
 
 Use Prisma Studio para conferir:
 
-- `Booking`
-- `BookingStatusHistory`
-- `Payment`
 - `Profile`
 - `PrivacyRequest`
 - `Favorite`
@@ -358,23 +309,18 @@ Use MinIO para conferir:
 
 ## Sugestao de dados para teste
 
-Para evitar conflito com a reserva seed, prefira datas futuras, por exemplo:
-
-- retirada: 10 dias a frente
-- devolucao: 13 dias a frente
-
 Use estes cenarios:
 
-- veiculo instantaneo: teste aprovacao automatica
-- veiculo manual: teste fluxo pendente -> aprovada/rejeitada
-- veiculo com addons: teste impacto no valor total
-- veiculo com promocao/cupom: teste descontos na preview
+- anuncio de carro: validar busca, detalhe, favorito e chat
+- anuncio de moto: validar filtros por estilo e cilindrada
+- anuncio novo: validar publicacao, fotos e presenca na busca
+- review: validar bloqueio de autoavaliacao e duplicidade
 
 ## Como registrar bugs
 
 Ao abrir bug, capture:
 
-- perfil usado (`RENTER`, `OWNER`, `ADMIN`)
+- perfil usado (`USER`, `OWNER`, `ADMIN`)
 - rota/tela
 - dados usados
 - resultado esperado
@@ -384,7 +330,7 @@ Ao abrir bug, capture:
 
 Classifique com este raciocinio:
 
-- `P0`: bloqueia reserva, login, acesso, upload ou admin
+- `P0`: bloqueia login, acesso, upload ou admin
 - `P1`: quebra fluxo principal mas ha contorno
 - `P2`: problema funcional secundario
 - `P3`: copy, layout, polish ou inconsistencias nao bloqueantes
@@ -399,15 +345,15 @@ Antes de encerrar a rodada, confirme:
 - nenhum arquivo sensivel ficou publico
 - analytics respeitou consentimento
 - owner e admin conseguiram executar suas acoes principais
-- tickets de billing foram avaliados com o escopo atual em mente
+- tickets sobre cobranca foram avaliados com o escopo atual em mente
 
 ## Resumo rapido para um QA novo
 
 Se voce tiver 15 minutos para conhecer o Triluga, faca isto:
 
 1. Rode o ambiente local e o seed.
-2. Entre como `RENTER`, navegue da home ate uma reserva.
-3. Entre como `OWNER`, aprove ou rejeite a reserva.
+2. Entre como usuario comum, navegue da home ate um anuncio e abra o chat.
+3. Entre como `OWNER`, publique ou edite um anuncio.
 4. Entre como `ADMIN`, veja usuarios e privacidade.
 5. Revise cookies, storage e links temporarios de documento.
 
