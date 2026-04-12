@@ -1,13 +1,11 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  BookingApprovalMode,
   MotorcycleStyle,
   VehicleCategory,
   VehicleType,
 } from '@prisma/client';
 import { Type } from 'class-transformer';
 import {
-  IsDateString,
   IsEnum,
   IsInt,
   IsNumber,
@@ -28,25 +26,10 @@ export class ListVehiclesQueryDto {
   @IsString()
   city?: string;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsDateString()
-  startDate?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsDateString()
-  endDate?: string;
-
   @ApiPropertyOptional({ enum: VehicleType })
   @IsOptional()
   @IsEnum(VehicleType)
   vehicleType?: VehicleType;
-
-  @ApiPropertyOptional({ enum: BookingApprovalMode })
-  @IsOptional()
-  @IsEnum(BookingApprovalMode)
-  bookingApprovalMode?: BookingApprovalMode;
 
   @ApiPropertyOptional()
   @IsOptional()

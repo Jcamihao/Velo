@@ -19,10 +19,9 @@ export class AdminService {
   ) {}
 
   async getDashboard() {
-    const [users, vehicles, bookings, privacyRequests] = await Promise.all([
+    const [users, vehicles, privacyRequests] = await Promise.all([
       this.prisma.user.count(),
       this.prisma.vehicle.count(),
-      this.prisma.booking.count(),
       this.prisma.privacyRequest.count(),
     ]);
 
@@ -30,7 +29,6 @@ export class AdminService {
       totals: {
         users,
         vehicles,
-        bookings,
         privacyRequests,
       },
     };
@@ -87,27 +85,6 @@ export class AdminService {
             position: 'asc',
           },
           take: 1,
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-  }
-
-  async getBookings() {
-    return this.prisma.booking.findMany({
-      include: {
-        vehicle: true,
-        renter: {
-          include: {
-            profile: true,
-          },
-        },
-        owner: {
-          include: {
-            profile: true,
-          },
         },
       },
       orderBy: {

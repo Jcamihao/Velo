@@ -5,14 +5,9 @@ const {
   Role,
   VehicleCategory,
   VehicleType,
-  BookingApprovalMode,
-  CancellationPolicy,
   MotorcycleStyle,
   FuelType,
   Transmission,
-  BookingStatus,
-  PaymentMethod,
-  PaymentStatus,
   NotificationType,
 } = require('@prisma/client');
 
@@ -108,7 +103,7 @@ async function createUserWithProfile({
 }
 
 async function main() {
-  const [admin, listingUser, bookingUser] = await Promise.all([
+  const [admin, listingUser, buyerUser] = await Promise.all([
     createUserWithProfile({
       email: 'admin@triluga.local',
       password: 'Admin123!',
@@ -147,14 +142,10 @@ async function main() {
     }),
   ]);
 
+  await prisma.userReview.deleteMany();
   await prisma.review.deleteMany();
-  await prisma.payment.deleteMany();
-  await prisma.bookingStatusHistory.deleteMany();
-  await prisma.booking.deleteMany();
   await prisma.siteVisit.deleteMany();
   await prisma.vehicleImage.deleteMany();
-  await prisma.vehicleAvailability.deleteMany();
-  await prisma.vehicleBlockedDate.deleteMany();
   await prisma.vehicle.deleteMany({
     where: { ownerId: listingUser.id },
   });
@@ -173,30 +164,12 @@ async function main() {
         state: 'SP',
         vehicleType: VehicleType.CAR,
         category: VehicleCategory.SUV,
-        bookingApprovalMode: BookingApprovalMode.INSTANT,
-        cancellationPolicy: CancellationPolicy.MODERATE,
         transmission: Transmission.AUTOMATIC,
         fuelType: FuelType.FLEX,
         seats: 5,
         dailyRate: 289.9,
-        addons: [
-          {
-            id: 'delivery',
-            name: 'Entrega no local',
-            description: 'Receba o veículo em um ponto combinado da cidade.',
-            price: 45,
-            enabled: true,
-          },
-          {
-            id: 'baby-seat',
-            name: 'Cadeirinha',
-            description: 'Item extra para transporte infantil.',
-            price: 35,
-            enabled: true,
-          },
-        ],
         description:
-          'SUV confortável para viagens curtas e uso urbano com multimídia, câmera de ré e ar digital.',
+          'SUV confortável para uso urbano e viagens curtas, com multimídia, câmera de ré e ar digital.',
         latitude: -23.55052,
         longitude: -46.633308,
         images: {
@@ -223,23 +196,12 @@ async function main() {
         state: 'SP',
         vehicleType: VehicleType.CAR,
         category: VehicleCategory.HATCH,
-        bookingApprovalMode: BookingApprovalMode.MANUAL,
-        cancellationPolicy: CancellationPolicy.FLEXIBLE,
         transmission: Transmission.AUTOMATIC,
         fuelType: FuelType.FLEX,
         seats: 5,
         dailyRate: 179.9,
-        addons: [
-          {
-            id: 'airport-pickup',
-            name: 'Retirada no aeroporto',
-            description: 'Entrega e retirada no aeroporto de Campinas.',
-            price: 55,
-            enabled: true,
-          },
-        ],
         description:
-          'Hatch econômico, ótimo para cidade, com direção elétrica, central multimídia e seguro simplificado.',
+          'Hatch econômico, ótimo para cidade, com direção elétrica e central multimídia.',
         latitude: -22.90556,
         longitude: -47.06083,
         images: {
@@ -266,28 +228,10 @@ async function main() {
         state: 'SP',
         vehicleType: VehicleType.MOTORCYCLE,
         category: VehicleCategory.ECONOMY,
-        bookingApprovalMode: BookingApprovalMode.INSTANT,
-        cancellationPolicy: CancellationPolicy.FLEXIBLE,
         transmission: Transmission.CVT,
         fuelType: FuelType.GASOLINE,
         seats: 2,
         dailyRate: 89.9,
-        addons: [
-          {
-            id: 'helmet-plus',
-            name: 'Capacete extra',
-            description: 'Capacete adicional para garupa.',
-            price: 20,
-            enabled: true,
-          },
-          {
-            id: 'top-case',
-            name: 'Baú expandido',
-            description: 'Baú traseiro com espaço extra para bagagem.',
-            price: 15,
-            enabled: true,
-          },
-        ],
         motorcycleStyle: MotorcycleStyle.SCOOTER,
         engineCc: 160,
         hasAbs: true,
@@ -310,58 +254,23 @@ async function main() {
     }),
   ]);
 
-  const completedBooking = await prisma.booking.create({
+  await prisma.review.create({
     data: {
       vehicleId: vehicles[1].id,
+      authorId: buyerUser.id,
       ownerId: listingUser.id,
-      renterId: bookingUser.id,
-      startDate: new Date('2026-03-01T10:00:00.000Z'),
-      endDate: new Date('2026-03-04T10:00:00.000Z'),
-      totalDays: 3,
-      dailyRate: 179.9,
-      subtotal: 539.7,
-      platformFee: 64.76,
-      totalAmount: 604.46,
-      status: BookingStatus.COMPLETED,
-      approvedAt: new Date('2026-02-26T15:00:00.000Z'),
-      completedAt: new Date('2026-03-04T12:00:00.000Z'),
-      statusHistory: {
-        create: [
-          { toStatus: BookingStatus.PENDING, changedById: bookingUser.id },
-          {
-            fromStatus: BookingStatus.PENDING,
-            toStatus: BookingStatus.APPROVED,
-            changedById: listingUser.id,
-          },
-          {
-            fromStatus: BookingStatus.APPROVED,
-            toStatus: BookingStatus.COMPLETED,
-            changedById: listingUser.id,
-          },
-        ],
-      },
-      payment: {
-        create: {
-          amount: 604.46,
-          platformFee: 64.76,
-          ownerAmount: 539.7,
-          method: PaymentMethod.PIX,
-          status: PaymentStatus.PAID,
-          transactionId: 'mock_tx_seed_001',
-          checkoutReference: 'mock_ref_seed_001',
-          paidAt: new Date('2026-02-27T09:00:00.000Z'),
-        },
-      },
-      review: {
-        create: {
-          vehicleId: vehicles[1].id,
-          authorId: bookingUser.id,
-          ownerId: listingUser.id,
-          rating: 5,
-          comment:
-            'Carro impecável e entrega super tranquila. Repetiria a locação com certeza.',
-        },
-      },
+      rating: 5,
+      comment:
+        'Carro impecável e negociação super tranquila. Recomendo o anúncio.',
+    },
+  });
+
+  await prisma.userReview.create({
+    data: {
+      authorId: buyerUser.id,
+      targetUserId: listingUser.id,
+      rating: 5,
+      comment: 'Atendimento rápido e informações claras sobre o veículo.',
     },
   });
 
@@ -377,12 +286,12 @@ async function main() {
     data: [
       {
         userId: listingUser.id,
-        type: NotificationType.BOOKING_COMPLETED,
-        title: 'Locação concluída',
-        message: `A reserva ${completedBooking.id} foi concluída com sucesso.`,
+        type: NotificationType.REVIEW_CREATED,
+        title: 'Nova avaliação recebida',
+        message: 'Seu anúncio recebeu uma nova avaliação.',
       },
       {
-        userId: bookingUser.id,
+        userId: buyerUser.id,
         type: NotificationType.REVIEW_CREATED,
         title: 'Avaliação registrada',
         message: 'Sua avaliação foi registrada e já aparece no anúncio.',

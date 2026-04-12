@@ -78,7 +78,7 @@ async function bootstrap() {
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Triluga API')
-    .setDescription('API do marketplace de aluguel de carros entre pessoas.')
+    .setDescription('API do classificado de veículos entre pessoas.')
     .setVersion('1.0.0')
     .addBearerAuth()
     .build();

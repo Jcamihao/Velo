@@ -41,17 +41,6 @@ enum VehicleType {
   MOTORCYCLE
 }
 
-enum BookingApprovalMode {
-  MANUAL
-  INSTANT
-}
-
-enum CancellationPolicy {
-  FLEXIBLE
-  MODERATE
-  STRICT
-}
-
 enum MotorcycleStyle {
   SCOOTER
   STREET
@@ -76,36 +65,6 @@ enum Transmission {
   CVT
 }
 
-enum BookingStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  CANCELLED
-  IN_PROGRESS
-  COMPLETED
-}
-
-enum BookingChecklistType {
-  PICKUP
-  RETURN
-}
-
-enum PaymentStatus {
-  PENDING
-  AUTHORIZED
-  PAID
-  FAILED
-  CANCELLED
-  REFUNDED
-}
-
-enum PaymentMethod {
-  CREDIT_CARD
-  PIX
-  BOLETO
-  BANK_TRANSFER
-}
-
 enum PrivacyRequestType {
   ACCESS
   PORTABILITY
@@ -126,12 +85,6 @@ enum PrivacyRequestStatus {
 }
 
 enum NotificationType {
-  BOOKING_REQUEST
-  BOOKING_APPROVED
-  BOOKING_REJECTED
-  BOOKING_CANCELLED
-  BOOKING_COMPLETED
-  PAYMENT_UPDATE
   REVIEW_CREATED
   CHAT_MESSAGE
   SYSTEM_ALERT
@@ -156,30 +109,27 @@ enum SupportMessageConfidence {
 }
 
 model User {
-  id                        String                 @id @default(uuid())
-  email                     String                 @unique
+  id                        String                @id @default(uuid())
+  email                     String                @unique
   passwordHash              String
   role                      Role
-  status                    UserStatus             @default(ACTIVE)
+  status                    UserStatus            @default(ACTIVE)
   refreshTokenHash          String?
   lastLoginAt               DateTime?
-  analyticsConsentGranted   Boolean                @default(false)
+  analyticsConsentGranted   Boolean               @default(false)
   analyticsConsentUpdatedAt DateTime?
-  createdAt                 DateTime               @default(now())
-  updatedAt                 DateTime               @updatedAt
+  createdAt                 DateTime              @default(now())
+  updatedAt                 DateTime              @updatedAt
   profile                   Profile?
-  ownedVehicles             Vehicle[]              @relation("VehicleOwner")
-  ownerBookings             Booking[]              @relation("BookingOwner")
-  renterBookings            Booking[]              @relation("BookingRenter")
-  reviewsWritten            Review[]               @relation("ReviewAuthor")
-  reviewsReceived           Review[]               @relation("ReviewOwner")
-  userReviewsWritten        UserReview[]           @relation("UserReviewAuthor")
-  userReviewsReceived       UserReview[]           @relation("UserReviewTarget")
+  ownedVehicles             Vehicle[]             @relation("VehicleOwner")
+  reviewsWritten            Review[]              @relation("ReviewAuthor")
+  reviewsReceived           Review[]              @relation("ReviewOwner")
+  userReviewsWritten        UserReview[]          @relation("UserReviewAuthor")
+  userReviewsReceived       UserReview[]          @relation("UserReviewTarget")
   notifications             Notification[]
-  bookingStatusChanges      BookingStatusHistory[]
   chatConversations         ChatParticipant[]
   sentChatMessages          ChatMessage[]
-  createdChats              ChatConversation[]     @relation("ChatConversationCreator")
+  createdChats              ChatConversation[]    @relation("ChatConversationCreator")
   favorites                 Favorite[]
   searchAlerts              SearchAlert[]
   supportConversations      SupportConversation[]
@@ -212,57 +162,42 @@ model Profile {
 }
 
 model Vehicle {
-  id                            String                @id @default(uuid())
-  ownerId                       String
-  title                         String
-  brand                         String
-  model                         String
-  year                          Int
-  plate                         String                @unique
-  city                          String
-  state                         String
-  vehicleType                   VehicleType           @default(CAR)
-  category                      VehicleCategory
-  bookingApprovalMode           BookingApprovalMode   @default(MANUAL)
-  cancellationPolicy            CancellationPolicy    @default(FLEXIBLE)
-  transmission                  Transmission
-  fuelType                      FuelType
-  seats                         Int
-  dailyRate                     Decimal               @db.Decimal(10, 2)
-  addons                        Json                  @default("[]")
-  firstBookingDiscountPercent   Int                   @default(0)
-  weeklyDiscountPercent         Int                   @default(0)
-  couponCode                    String?
-  couponDiscountPercent         Int                   @default(0)
-  weekendSurchargePercent       Int                   @default(0)
-  holidaySurchargePercent       Int                   @default(0)
-  highDemandSurchargePercent    Int                   @default(0)
-  advanceBookingDiscountPercent Int                   @default(0)
-  advanceBookingDaysThreshold   Int                   @default(0)
-  motorcycleStyle               MotorcycleStyle?
-  engineCc                      Int?
-  hasAbs                        Boolean?
-  hasTopCase                    Boolean?
-  description                   String
-  addressLine                   String?
-  latitude                      Decimal?              @db.Decimal(10, 7)
-  longitude                     Decimal?              @db.Decimal(10, 7)
-  isActive                      Boolean               @default(true)
-  isPublished                   Boolean               @default(true)
-  ratingAverage                 Decimal               @default(0) @db.Decimal(3, 2)
-  reviewsCount                  Int                   @default(0)
-  createdAt                     DateTime              @default(now())
-  updatedAt                     DateTime              @updatedAt
-  owner                         User                  @relation("VehicleOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  images                        VehicleImage[]
-  availability                  VehicleAvailability[]
-  blockedDates                  VehicleBlockedDate[]
-  bookings                      Booking[]
-  reviews                       Review[]
-  chatConversations             ChatConversation[]
-  favorites                     Favorite[]
-  searchAlertMatches            SearchAlertMatch[]
-  views                         VehicleView[]
+  id                 String             @id @default(uuid())
+  ownerId            String
+  title              String
+  brand              String
+  model              String
+  year               Int
+  plate              String             @unique
+  city               String
+  state              String
+  vehicleType        VehicleType        @default(CAR)
+  category           VehicleCategory
+  transmission       Transmission
+  fuelType           FuelType
+  seats              Int
+  dailyRate          Decimal            @db.Decimal(10, 2)
+  motorcycleStyle    MotorcycleStyle?
+  engineCc           Int?
+  hasAbs             Boolean?
+  hasTopCase         Boolean?
+  description        String
+  addressLine        String?
+  latitude           Decimal?           @db.Decimal(10, 7)
+  longitude          Decimal?           @db.Decimal(10, 7)
+  isActive           Boolean            @default(true)
+  isPublished        Boolean            @default(true)
+  ratingAverage      Decimal            @default(0) @db.Decimal(3, 2)
+  reviewsCount       Int                @default(0)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  owner              User               @relation("VehicleOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  images             VehicleImage[]
+  reviews            Review[]
+  chatConversations  ChatConversation[]
+  favorites          Favorite[]
+  searchAlertMatches SearchAlertMatch[]
+  views              VehicleView[]
 
   @@index([ownerId])
   @@index([city, state, vehicleType, category, isActive, isPublished])
@@ -323,123 +258,8 @@ model VehicleImage {
   @@index([vehicleId, position])
 }
 
-model VehicleAvailability {
-  id          String   @id @default(uuid())
-  vehicleId   String
-  dayOfWeek   Int
-  startTime   String
-  endTime     String
-  isAvailable Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  vehicle     Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-
-  @@unique([vehicleId, dayOfWeek, startTime, endTime])
-}
-
-model VehicleBlockedDate {
-  id        String   @id @default(uuid())
-  vehicleId String
-  startDate DateTime
-  endDate   DateTime
-  reason    String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-
-  @@index([vehicleId, startDate, endDate])
-}
-
-model Booking {
-  id                String                 @id @default(uuid())
-  vehicleId         String
-  ownerId           String
-  renterId          String
-  startDate         DateTime
-  endDate           DateTime
-  totalDays         Int
-  dailyRate         Decimal                @db.Decimal(10, 2)
-  subtotal          Decimal                @db.Decimal(10, 2)
-  platformFee       Decimal                @db.Decimal(10, 2)
-  totalAmount       Decimal                @db.Decimal(10, 2)
-  discountsAmount   Decimal                @default(0) @db.Decimal(10, 2)
-  notes             String?
-  status            BookingStatus          @default(PENDING)
-  approvedAt        DateTime?
-  rejectedAt        DateTime?
-  cancelledAt       DateTime?
-  completedAt       DateTime?
-  addonsAmount      Decimal                @default(0) @db.Decimal(10, 2)
-  selectedAddons    Json                   @default("[]")
-  appliedPromotions Json                   @default("[]")
-  couponCode        String?
-  createdAt         DateTime               @default(now())
-  updatedAt         DateTime               @updatedAt
-  vehicle           Vehicle                @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-  owner             User                   @relation("BookingOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  renter            User                   @relation("BookingRenter", fields: [renterId], references: [id], onDelete: Cascade)
-  statusHistory     BookingStatusHistory[]
-  payment           Payment?
-  review            Review?
-  userReview        UserReview?
-  checklists        BookingChecklist[]
-
-  @@index([vehicleId, startDate, endDate, status])
-  @@index([ownerId, status])
-  @@index([renterId, status])
-}
-
-model BookingChecklist {
-  id          String               @id @default(uuid())
-  bookingId   String
-  type        BookingChecklistType
-  items       Json                 @default("[]")
-  notes       String?
-  photos      Json                 @default("[]")
-  completedAt DateTime?
-  updatedById String?
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
-  booking     Booking              @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-
-  @@unique([bookingId, type])
-  @@index([bookingId, updatedAt])
-}
-
-model BookingStatusHistory {
-  id          String         @id @default(uuid())
-  bookingId   String
-  fromStatus  BookingStatus?
-  toStatus    BookingStatus
-  reason      String?
-  changedById String?
-  changedAt   DateTime       @default(now())
-  booking     Booking        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  changedBy   User?          @relation(fields: [changedById], references: [id], onDelete: SetNull)
-
-  @@index([bookingId, changedAt])
-}
-
-model Payment {
-  id                String        @id @default(uuid())
-  bookingId         String        @unique
-  amount            Decimal       @db.Decimal(10, 2)
-  platformFee       Decimal       @db.Decimal(10, 2)
-  ownerAmount       Decimal       @db.Decimal(10, 2)
-  status            PaymentStatus @default(PENDING)
-  method            PaymentMethod
-  transactionId     String?
-  checkoutReference String?
-  metadata          Json?
-  paidAt            DateTime?
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
-  booking           Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-}
-
 model Review {
   id        String   @id @default(uuid())
-  bookingId String   @unique
   vehicleId String
   authorId  String
   ownerId   String
@@ -447,7 +267,6 @@ model Review {
   comment   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
   author    User     @relation("ReviewAuthor", fields: [authorId], references: [id], onDelete: Cascade)
   owner     User     @relation("ReviewOwner", fields: [ownerId], references: [id], onDelete: Cascade)
@@ -458,14 +277,12 @@ model Review {
 
 model UserReview {
   id           String   @id @default(uuid())
-  bookingId    String   @unique
   authorId     String
   targetUserId String
   rating       Int
   comment      String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  booking      Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   author       User     @relation("UserReviewAuthor", fields: [authorId], references: [id], onDelete: Cascade)
   targetUser   User     @relation("UserReviewTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
 

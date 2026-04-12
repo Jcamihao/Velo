@@ -29,12 +29,6 @@ export class AdminController {
     return this.adminService.getVehicles();
   }
 
-  @Get('bookings')
-  @ApiOperation({ summary: 'Lista reservas da plataforma' })
-  getBookings() {
-    return this.adminService.getBookings();
-  }
-
   @Get('users/:id/verification-file')
   @ApiOperation({ summary: 'Gera uma URL temporária para o documento ou CNH de um usuário' })
   getUserVerificationFileUrl(

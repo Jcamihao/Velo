@@ -29,12 +29,12 @@ export class PrivacyService {
         {
           title: 'Dados coletados',
           summary:
-            'Cadastro, autenticação, perfil, anúncios, reservas, suporte, notificações e preferências de privacidade.',
+            'Cadastro, autenticação, perfil, anúncios, suporte, notificações e preferências de privacidade.',
         },
         {
           title: 'Finalidades',
           summary:
-            'Operar o marketplace, cumprir obrigações regulatórias, prevenir fraude, atender suporte e executar reservas.',
+            'Operar o marketplace, cumprir obrigações regulatórias, prevenir fraude e atender suporte.',
         },
         {
           title: 'Direitos do titular',
@@ -118,8 +118,6 @@ export class PrivacyService {
     const [
       user,
       ownedVehicles,
-      renterBookings,
-      ownerBookings,
       notifications,
       favorites,
       searchAlerts,
@@ -140,24 +138,6 @@ export class PrivacyService {
           images: {
             orderBy: { position: 'asc' },
           },
-        },
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.booking.findMany({
-        where: { renterId: userId },
-        include: {
-          vehicle: true,
-          payment: true,
-          review: true,
-        },
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.booking.findMany({
-        where: { ownerId: userId },
-        include: {
-          vehicle: true,
-          payment: true,
-          review: true,
         },
         orderBy: { createdAt: 'desc' },
       }),
@@ -234,8 +214,6 @@ export class PrivacyService {
           : null,
       },
       ownedVehicles,
-      renterBookings,
-      ownerBookings,
       notifications,
       favorites,
       searchAlerts,

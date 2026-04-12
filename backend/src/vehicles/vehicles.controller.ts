@@ -14,7 +14,6 @@ import { Public } from '../common/decorators/public.decorator';
 import { AuthenticatedUser } from '../common/interfaces/authenticated-user.interface';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { ListVehiclesQueryDto } from './dto/list-vehicles-query.dto';
-import { PricingPreviewQueryDto } from './dto/pricing-preview-query.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { VehiclesService } from './vehicles.service';
 
@@ -42,20 +41,6 @@ export class VehiclesController {
   @ApiOperation({ summary: 'Detalha um veículo específico' })
   findOne(@Param('id') vehicleId: string) {
     return this.vehiclesService.findOne(vehicleId);
-  }
-
-  @Public()
-  @Get(':id/pricing-preview')
-  @ApiOperation({ summary: 'Calcula um preview de preço para o período informado' })
-  getPricingPreview(
-    @Param('id') vehicleId: string,
-    @Query() query: PricingPreviewQueryDto,
-  ) {
-    return this.vehiclesService.getPricingPreview(
-      vehicleId,
-      query.startDate,
-      query.endDate,
-    );
   }
 
   @Post()

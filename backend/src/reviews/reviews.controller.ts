@@ -14,7 +14,7 @@ export class ReviewsController {
 
   @Post()
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Cria uma avaliação ao final da locação' })
+  @ApiOperation({ summary: 'Cria uma avaliação para um anúncio' })
   create(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateReviewDto) {
     return this.reviewsService.create(user.sub, dto);
   }
@@ -22,7 +22,7 @@ export class ReviewsController {
   @Post('user')
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Cria uma avaliação geral para o anunciante ao final da locação',
+    summary: 'Cria uma avaliação geral para um anunciante',
   })
   createUserReview(
     @CurrentUser() user: AuthenticatedUser,

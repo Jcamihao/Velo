@@ -12,7 +12,7 @@ import {
 export class CreateReviewDto {
   @ApiProperty()
   @IsUUID()
-  bookingId: string;
+  vehicleId: string;
 
   @ApiProperty({ minimum: 1, maximum: 5 })
   @IsInt()

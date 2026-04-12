@@ -74,7 +74,7 @@ export class StorageService {
 
   async uploadPublicFile(
     file: Express.Multer.File,
-    folder: 'vehicles' | 'users' | 'documents' | 'bookings',
+    folder: 'vehicles' | 'users' | 'documents',
   ) {
     const extension = extname(file.originalname || '');
     const objectKey = `${folder}/${uuidv4()}${extension}`;

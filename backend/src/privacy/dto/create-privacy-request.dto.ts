@@ -8,7 +8,7 @@ export class CreatePrivacyRequestDto {
   type: PrivacyRequestType;
 
   @ApiPropertyOptional({
-    example: 'Quero solicitar a exclusão da minha conta após o encerramento das reservas em aberto.',
+    example: 'Quero solicitar a exclusão da minha conta e dos meus dados.',
   })
   @IsOptional()
   @IsString()

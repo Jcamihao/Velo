@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { BookingStatus, NotificationType, Prisma } from '@prisma/client';
+import { NotificationType, Prisma } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSearchAlertDto } from './dto/create-search-alert.dto';
@@ -11,8 +11,6 @@ import { CreateSearchAlertDto } from './dto/create-search-alert.dto';
 type NormalizedAlertFilters = {
   q?: string;
   city?: string;
-  startDate?: string;
-  endDate?: string;
   vehicleType?: string;
   category?: string;
   motorcycleStyle?: string;
@@ -103,25 +101,6 @@ export class SearchAlertsService {
         id: vehicleId,
         isActive: true,
         isPublished: true,
-      },
-      include: {
-        bookings: {
-          where: {
-            status: {
-              in: [BookingStatus.APPROVED, BookingStatus.IN_PROGRESS],
-            },
-          },
-          select: {
-            startDate: true,
-            endDate: true,
-          },
-        },
-        blockedDates: {
-          select: {
-            startDate: true,
-            endDate: true,
-          },
-        },
       },
     });
 
@@ -219,14 +198,6 @@ export class SearchAlertsService {
       normalized.city = readString(filters.city);
     }
 
-    if (readString(filters.startDate)) {
-      normalized.startDate = readString(filters.startDate);
-    }
-
-    if (readString(filters.endDate)) {
-      normalized.endDate = readString(filters.endDate);
-    }
-
     if (readString(filters.vehicleType)) {
       normalized.vehicleType = readString(filters.vehicleType);
     }
@@ -246,16 +217,6 @@ export class SearchAlertsService {
     normalized.latitude = readNumber(filters.latitude);
     normalized.longitude = readNumber(filters.longitude);
     normalized.radiusKm = readNumber(filters.radiusKm);
-
-    if (
-      normalized.startDate &&
-      normalized.endDate &&
-      new Date(normalized.endDate) <= new Date(normalized.startDate)
-    ) {
-      throw new BadRequestException(
-        'O alerta precisa ter data final maior que a inicial.',
-      );
-    }
 
     return Object.fromEntries(
       Object.entries(normalized).filter(([, value]) => value !== undefined && value !== ''),
@@ -277,8 +238,6 @@ export class SearchAlertsService {
       dailyRate: Prisma.Decimal | number | string;
       latitude: Prisma.Decimal | number | null;
       longitude: Prisma.Decimal | number | null;
-      bookings: Array<{ startDate: Date; endDate: Date }>;
-      blockedDates: Array<{ startDate: Date; endDate: Date }>;
     },
     filters: NormalizedAlertFilters,
   ) {
@@ -361,23 +320,6 @@ export class SearchAlertsService {
         longitude < filters.longitude - longitudeDelta ||
         longitude > filters.longitude + longitudeDelta
       ) {
-        return false;
-      }
-    }
-
-    if (filters.startDate && filters.endDate) {
-      const hasBookingConflict = vehicle.bookings.some(
-        (booking) =>
-          booking.startDate.toISOString().slice(0, 10) < filters.endDate! &&
-          booking.endDate.toISOString().slice(0, 10) > filters.startDate!,
-      );
-      const hasBlockedConflict = vehicle.blockedDates.some(
-        (period) =>
-          period.startDate.toISOString().slice(0, 10) < filters.endDate! &&
-          period.endDate.toISOString().slice(0, 10) > filters.startDate!,
-      );
-
-      if (hasBookingConflict || hasBlockedConflict) {
         return false;
       }
     }

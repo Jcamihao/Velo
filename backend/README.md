@@ -1,12 +1,12 @@
-# Triluga Backend 0.2.0
+# Triluga Backend 0.5.0
 
-API NestJS do marketplace Triluga.
+API NestJS do classificado Triluga.
 
 ## Escopo atual
 
 - autenticação com access e refresh token
 - perfis, veículos, favoritos e alertas
-- reservas com aprovações, cancelamento e checklist de retirada/devolução
+- anúncios classificados com busca, imagens, favoritos e chat
 - avaliações de veículos e avaliações públicas de usuários
 - storage público para imagens e arquivos operacionais
 - analytics, privacidade e admin

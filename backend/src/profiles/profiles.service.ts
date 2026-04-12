@@ -4,7 +4,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { BookingStatus, UserStatus, VerificationStatus } from '@prisma/client';
+import { UserStatus, VerificationStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -27,8 +27,7 @@ export class ProfilesService {
   }
 
   async getPublicProfile(userId: string) {
-    const [user, reviewsAggregate, reviews, vehicles, ownerBookings] =
-      await Promise.all([
+    const [user, reviewsAggregate, reviews, vehicles] = await Promise.all([
       this.prisma.user.findFirst({
         where: {
           id: userId,
@@ -85,26 +84,6 @@ export class ProfilesService {
           createdAt: 'desc',
         },
       }),
-      this.prisma.booking.findMany({
-        where: {
-          ownerId: userId,
-        },
-        select: {
-          id: true,
-          status: true,
-          createdAt: true,
-          statusHistory: {
-            select: {
-              toStatus: true,
-              changedById: true,
-              changedAt: true,
-            },
-            orderBy: {
-              changedAt: 'asc',
-            },
-          },
-        },
-      }),
     ]);
 
     if (!user) {
@@ -117,78 +96,7 @@ export class ProfilesService {
     const driverLicenseStatus =
       user.profile?.driverLicenseVerification ??
       VerificationStatus.NOT_SUBMITTED;
-    const ownerResponseStatuses: BookingStatus[] = [
-      BookingStatus.APPROVED,
-      BookingStatus.REJECTED,
-      BookingStatus.CANCELLED,
-    ];
-    const decisionStatuses: BookingStatus[] = [
-      BookingStatus.APPROVED,
-      BookingStatus.IN_PROGRESS,
-      BookingStatus.COMPLETED,
-      BookingStatus.REJECTED,
-    ];
-    const approvedStatuses: BookingStatus[] = [
-      BookingStatus.APPROVED,
-      BookingStatus.IN_PROGRESS,
-      BookingStatus.COMPLETED,
-    ];
-    const completedBookingsCount = ownerBookings.filter(
-      (booking) => booking.status === BookingStatus.COMPLETED,
-    ).length;
-    const responseDelaysInHours = ownerBookings
-      .map((booking) => {
-        const ownerResponse = booking.statusHistory.find(
-          (event) =>
-            event.changedById === userId &&
-            ownerResponseStatuses.includes(event.toStatus),
-        );
-
-        if (!ownerResponse) {
-          return null;
-        }
-
-        return Number(
-          (
-            (ownerResponse.changedAt.getTime() - booking.createdAt.getTime()) /
-            (1000 * 60 * 60)
-          ).toFixed(1),
-        );
-      })
-      .filter((value): value is number => value !== null);
-    const responseRate = this.toPercentage(
-      responseDelaysInHours.length,
-      ownerBookings.length,
-    );
-    const decisionBookings = ownerBookings.filter((booking) =>
-      decisionStatuses.includes(booking.status),
-    );
-    const approvedDecisionCount = decisionBookings.filter((booking) =>
-      approvedStatuses.includes(booking.status),
-    ).length;
-    const approvalRate = this.toPercentage(
-      approvedDecisionCount,
-      decisionBookings.length,
-    );
-    const ownerCancelledCount = ownerBookings.filter((booking) =>
-      booking.statusHistory.some(
-        (event) =>
-          event.toStatus === BookingStatus.CANCELLED &&
-          event.changedById === userId,
-      ),
-    ).length;
-    const cancellationRate = this.toPercentage(
-      ownerCancelledCount,
-      ownerBookings.length,
-    );
-    const averageResponseHours = responseDelaysInHours.length
-      ? Number(
-          (
-            responseDelaysInHours.reduce((total, value) => total + value, 0) /
-            responseDelaysInHours.length
-          ).toFixed(1),
-        )
-      : null;
+    const ratingAverage = Number((reviewsAggregate._avg.rating ?? 0).toFixed(1));
 
     return {
       id: user.id,
@@ -200,15 +108,13 @@ export class ProfilesService {
       bio: user.profile?.bio ?? null,
       city: user.profile?.city ?? null,
       state: user.profile?.state ?? null,
-      ratingAverage: Number((reviewsAggregate._avg.rating ?? 0).toFixed(1)),
+      ratingAverage,
       reviewsCount: reviewsAggregate._count.rating,
       activeListingsCount: vehicles.length,
       trustMetrics: {
-        completedBookingsCount,
-        responseRate,
-        averageResponseHours,
-        approvalRate,
-        cancellationRate,
+        activeListingsCount: vehicles.length,
+        reviewsCount: reviewsAggregate._count.rating,
+        averageRating: ratingAverage,
       },
       reviews: reviews.map((review) => ({
         id: review.id,
@@ -241,23 +147,10 @@ export class ProfilesService {
         state: vehicle.state,
         vehicleType: vehicle.vehicleType,
         category: vehicle.category,
-        bookingApprovalMode: vehicle.bookingApprovalMode,
-        cancellationPolicy: vehicle.cancellationPolicy,
         seats: vehicle.seats,
         transmission: vehicle.transmission,
         fuelType: vehicle.fuelType,
         dailyRate: Number(vehicle.dailyRate),
-        addons: Array.isArray(vehicle.addons) ? vehicle.addons : [],
-        firstBookingDiscountPercent: vehicle.firstBookingDiscountPercent ?? 0,
-        weeklyDiscountPercent: vehicle.weeklyDiscountPercent ?? 0,
-        couponCode: vehicle.couponCode ?? null,
-        couponDiscountPercent: vehicle.couponDiscountPercent ?? 0,
-        weekendSurchargePercent: vehicle.weekendSurchargePercent ?? 0,
-        holidaySurchargePercent: vehicle.holidaySurchargePercent ?? 0,
-        highDemandSurchargePercent: vehicle.highDemandSurchargePercent ?? 0,
-        advanceBookingDiscountPercent:
-          vehicle.advanceBookingDiscountPercent ?? 0,
-        advanceBookingDaysThreshold: vehicle.advanceBookingDaysThreshold ?? 0,
         motorcycleStyle: vehicle.motorcycleStyle,
         engineCc: vehicle.engineCc,
         hasAbs: vehicle.hasAbs,
@@ -273,7 +166,7 @@ export class ProfilesService {
           avatarUrl: user.profile?.avatarUrl ?? null,
           city: user.profile?.city ?? null,
           state: user.profile?.state ?? null,
-          ratingAverage: Number((reviewsAggregate._avg.rating ?? 0).toFixed(1)),
+          ratingAverage,
           reviewsCount: reviewsAggregate._count.rating,
         },
       })),
@@ -423,14 +316,6 @@ export class ProfilesService {
     }
 
     return VerificationStatus.NOT_SUBMITTED;
-  }
-
-  private toPercentage(part: number, total: number) {
-    if (!total) {
-      return 0;
-    }
-
-    return Math.round((part / total) * 100);
   }
 
   private async uploadVerificationDocument(
