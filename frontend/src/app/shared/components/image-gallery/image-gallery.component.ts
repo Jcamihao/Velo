@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, HostListener, Input, signal } from '@angular/core';
+import { Component, HostListener, Input, OnDestroy, signal } from '@angular/core';
 
 @Component({
   selector: 'app-image-gallery',
@@ -8,7 +8,7 @@ import { Component, HostListener, Input, signal } from '@angular/core';
   templateUrl: './image-gallery.component.html',
   styleUrls: ['./image-gallery.component.scss'],
 })
-export class ImageGalleryComponent {
+export class ImageGalleryComponent implements OnDestroy {
   @Input() images: Array<{ url: string }> = [];
 
   protected readonly activeIndex = signal(0);
@@ -46,10 +46,16 @@ export class ImageGalleryComponent {
 
     this.activeIndex.set(index);
     this.previewOpen.set(true);
+    document.body.classList.add('gallery-preview-open');
   }
 
   protected closePreview() {
     this.previewOpen.set(false);
+    document.body.classList.remove('gallery-preview-open');
+  }
+
+  ngOnDestroy() {
+    document.body.classList.remove('gallery-preview-open');
   }
 
   @HostListener('document:keydown', ['$event'])

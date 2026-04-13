@@ -1,6 +1,6 @@
 {
   "name": "frontend",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "scripts": {
     "ng": "ng",
     "prestart": "FRONTEND_API_BASE_URL=${FRONTEND_API_BASE_URL:-http://localhost:3000/api/v1} FRONTEND_WS_BASE_URL=${FRONTEND_WS_BASE_URL:-http://localhost:3000} node ./scripts/generate-runtime-config.mjs",
@@ -31,8 +31,6 @@
     "@capacitor/cli": "^5.7.8",
     "@capacitor/core": "^5.7.8",
     "@capacitor/ios": "^5.7.8",
-    "@types/leaflet": "^1.9.21",
-    "leaflet": "^1.9.4",
     "rxjs": "~7.8.0",
     "socket.io-client": "^4.8.3",
     "tslib": "^2.3.0",

@@ -20,6 +20,13 @@
   --detail-stage-card-ink-soft: var(--text-secondary);
 }
 
+.detail-visual-column {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  min-width: 0;
+}
+
 .detail-stage {
   position: relative;
   display: grid;
@@ -29,7 +36,6 @@
   background: var(--white);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-xs);
-  overflow: hidden;
 }
 
 .detail-stage__toolbar {
@@ -251,7 +257,7 @@ p {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
+  width: fit-content;
   min-height: 40px;
   padding: 0 14px;
   border-radius: var(--radius-full);
@@ -260,6 +266,37 @@ p {
   color: var(--primary);
   font-weight: 700;
   text-decoration: none;
+}
+
+.detail-location-card {
+  gap: 14px;
+}
+
+.detail-location-card .detail-info-card__head > .material-icons {
+  display: inline-grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-md);
+  background: var(--mint-50);
+  color: var(--primary);
+}
+
+.detail-location-card__map {
+  position: relative;
+  min-height: 240px;
+  border-radius: 18px;
+  border: 1px solid var(--detail-card-border-soft);
+  background: var(--gray-100);
+  overflow: hidden;
+}
+
+.detail-location-card__map iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+  border: 0;
 }
 
 .detail-info-card__head {
@@ -581,10 +618,6 @@ p {
     padding: var(--space-5) var(--page-gutter) 220px;
   }
 
-  .detail-map-link {
-    width: fit-content;
-  }
-
   .detail-facts {
     gap: 14px;
   }
@@ -623,9 +656,11 @@ p {
     padding: var(--space-6) var(--page-gutter) 176px;
   }
 
+  .detail-visual-column {
+    gap: var(--space-5);
+  }
+
   .detail-stage {
-    position: sticky;
-    top: 24px;
     padding: 22px 20px 24px;
     border-radius: var(--radius-2xl);
   }

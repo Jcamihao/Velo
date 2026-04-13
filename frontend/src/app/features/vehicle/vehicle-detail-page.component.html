@@ -1,76 +1,108 @@
 <main class="page vehicle-detail-page" *ngIf="vehicle">
-  <section class="detail-stage">
-    <div class="detail-stage__toolbar">
-      <button
-        class="icon-chip"
-        type="button"
-        (click)="router.navigate(['/search'])"
-        aria-label="Voltar para busca"
-      >
-        <span class="material-icons" aria-hidden="true">arrow_back</span>
-      </button>
-      <span>{{ vehicle.title }}</span>
-      <button
-        class="icon-chip icon-chip--ghost"
-        type="button"
-        [class.icon-chip--active]="isCompared"
-        [disabled]="compareDisabled"
-        [attr.aria-label]="
-          isCompared ? 'Remover da comparação' : 'Adicionar à comparação'
-        "
-        (click)="toggleCompare()"
-      >
-        <span class="material-icons" aria-hidden="true">compare_arrows</span>
-      </button>
-      <button
-        class="icon-chip icon-chip--ghost"
-        type="button"
-        [class.icon-chip--active]="isFavorite"
-        [disabled]="isFavoritePending"
-        [attr.aria-label]="
-          isFavorite ? 'Remover dos favoritos' : 'Salvar nos favoritos'
-        "
-        (click)="toggleFavorite()"
-      >
-        <span class="material-icons" aria-hidden="true">{{
-          isFavorite ? 'favorite' : 'favorite_border'
-        }}</span>
-      </button>
-    </div>
-
-    <section class="detail-stage__pickup-card">
-      <span class="material-icons" aria-hidden="true">location_on</span>
-      <div>
-        <strong>{{ pickupTitle }}</strong>
-        <p>{{ pickupSubtitle }}</p>
-      </div>
-    </section>
-
-    <section class="detail-stage__meta">
-      <div class="detail-stage__meta-strip">
-        <span>
-          <span class="material-icons" aria-hidden="true">tune</span>
-          {{ transmissionLabel(vehicle.transmission) }}
-        </span>
-        <span>
-          <span class="material-icons" aria-hidden="true"
-            >local_gas_station</span
-          >
-          {{ fuelTypeLabel(vehicle.fuelType) }}
-        </span>
-        <span>
-          <span class="material-icons" aria-hidden="true">event_seat</span>
-          {{ vehicle.seats }} lugares
-        </span>
+  <div class="detail-visual-column">
+    <section class="detail-stage">
+      <div class="detail-stage__toolbar">
+        <button
+          class="icon-chip"
+          type="button"
+          (click)="router.navigate(['/search'])"
+          aria-label="Voltar para busca"
+        >
+          <span class="material-icons" aria-hidden="true">arrow_back</span>
+        </button>
+        <span>{{ vehicle.title }}</span>
+        <button
+          class="icon-chip icon-chip--ghost"
+          type="button"
+          [class.icon-chip--active]="isCompared"
+          [disabled]="compareDisabled"
+          [attr.aria-label]="
+            isCompared ? 'Remover da comparação' : 'Adicionar à comparação'
+          "
+          (click)="toggleCompare()"
+        >
+          <span class="material-icons" aria-hidden="true">compare_arrows</span>
+        </button>
+        <button
+          class="icon-chip icon-chip--ghost"
+          type="button"
+          [class.icon-chip--active]="isFavorite"
+          [disabled]="isFavoritePending"
+          [attr.aria-label]="
+            isFavorite ? 'Remover dos favoritos' : 'Salvar nos favoritos'
+          "
+          (click)="toggleFavorite()"
+        >
+          <span class="material-icons" aria-hidden="true">{{
+            isFavorite ? 'favorite' : 'favorite_border'
+          }}</span>
+        </button>
       </div>
 
-      <strong class="detail-stage__price price-text">
-        {{ vehicle.dailyRate | currency: 'BRL' : 'symbol' : '1.0-0' }}
-      </strong>
+      <section class="detail-stage__pickup-card">
+        <span class="material-icons" aria-hidden="true">location_on</span>
+        <div>
+          <strong>{{ pickupTitle }}</strong>
+          <p>{{ pickupSubtitle }}</p>
+        </div>
+      </section>
+
+      <section class="detail-stage__meta">
+        <div class="detail-stage__meta-strip">
+          <span>
+            <span class="material-icons" aria-hidden="true">tune</span>
+            {{ transmissionLabel(vehicle.transmission) }}
+          </span>
+          <span>
+            <span class="material-icons" aria-hidden="true"
+              >local_gas_station</span
+            >
+            {{ fuelTypeLabel(vehicle.fuelType) }}
+          </span>
+          <span>
+            <span class="material-icons" aria-hidden="true">event_seat</span>
+            {{ vehicle.seats }} lugares
+          </span>
+        </div>
+
+        <strong class="detail-stage__price price-text">
+          {{ vehicle.dailyRate | currency: 'BRL' : 'symbol' : '1.0-0' }}
+        </strong>
+      </section>
+
+      <app-image-gallery [images]="vehicle.images"></app-image-gallery>
     </section>
 
-    <app-image-gallery [images]="vehicle.images"></app-image-gallery>
-  </section>
+    <section class="detail-info-card detail-location-card" *ngIf="hasPreciseLocation">
+      <div class="detail-info-card__head">
+        <div>
+          <span class="detail-info-card__eyebrow">Localização</span>
+          <h3>{{ vehicle.city }}, {{ vehicle.state }}</h3>
+        </div>
+        <span class="material-icons" aria-hidden="true">pin_drop</span>
+      </div>
+
+      <p>Veja onde o veículo foi anunciado antes de falar com o anunciante.</p>
+
+      <div class="detail-location-card__map" *ngIf="mapEmbedUrl as embedUrl">
+        <iframe
+          title="Localização do veículo anunciado"
+          [src]="embedUrl"
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+        ></iframe>
+      </div>
+
+      <a
+        class="detail-map-link"
+        [href]="mapLink"
+        target="_blank"
+        rel="noreferrer"
+      >
+        Abrir mapa maior
+      </a>
+    </section>
+  </div>
 
   <section class="detail-panels">
     <header class="detail-panels__header">
@@ -110,22 +142,6 @@
     <section class="detail-info-card">
       <span class="detail-info-card__eyebrow">Descrição</span>
       <p>{{ vehicle.description }}</p>
-    </section>
-
-    <section
-      class="detail-info-card"
-      *ngIf="vehicle.latitude && vehicle.longitude"
-    >
-      <span class="detail-info-card__eyebrow">Mapa</span>
-      <p>Confira o ponto aproximado de retirada antes de falar com o anunciante.</p>
-      <a
-        class="detail-map-link"
-        [href]="mapLink"
-        target="_blank"
-        rel="noreferrer"
-      >
-        Abrir no mapa
-      </a>
     </section>
 
     <section class="detail-info-card">

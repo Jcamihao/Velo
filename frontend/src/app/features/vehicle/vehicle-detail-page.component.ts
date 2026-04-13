@@ -1,5 +1,6 @@
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import { Component, DestroyRef, inject } from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AnalyticsTrackingService } from '../../core/services/analytics-tracking.service';
@@ -47,6 +48,7 @@ export class VehicleDetailPageComponent {
     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Crect width='160' height='160' rx='40' fill='%23f3eeee'/%3E%3Ccircle cx='80' cy='60' r='24' fill='%23b7aaac'/%3E%3Cpath d='M40 128c7-22 24-34 40-34s33 12 40 34' fill='%23b7aaac'/%3E%3C/svg%3E";
   private readonly route = inject(ActivatedRoute);
   private readonly vehiclesApiService = inject(VehiclesApiService);
+  private readonly sanitizer = inject(DomSanitizer);
   private readonly authService = inject(AuthService);
   private readonly chatApiService = inject(ChatApiService);
   private readonly chatInboxService = inject(ChatInboxService);
@@ -75,6 +77,8 @@ export class VehicleDetailPageComponent {
   private visibleDetailItemsCacheShowAll = false;
   private visibleDetailItemsCache: DetailFactItem[] = [];
   private reviewAnalyticsCacheVehicle?: VehicleDetail;
+  private mapEmbedCacheKey = '';
+  private mapEmbedCacheUrl: SafeResourceUrl | null = null;
   private reviewAnalyticsCache = {
     totalReviewCount: 0,
     displayRating: 0,
@@ -357,12 +361,55 @@ export class VehicleDetailPageComponent {
     return labels[style] || style;
   }
 
+  protected get hasPreciseLocation() {
+    return this.vehicleLatitude !== null && this.vehicleLongitude !== null;
+  }
+
+  protected get mapEmbedUrl(): SafeResourceUrl | null {
+    const latitude = this.vehicleLatitude;
+    const longitude = this.vehicleLongitude;
+
+    if (latitude === null || longitude === null) {
+      return null;
+    }
+
+    const cacheKey = `${latitude},${longitude}`;
+
+    if (this.mapEmbedCacheKey === cacheKey) {
+      return this.mapEmbedCacheUrl;
+    }
+
+    const latitudeDelta = 0.012;
+    const longitudeDelta = 0.018;
+    const url = new URL('https://www.openstreetmap.org/export/embed.html');
+
+    url.searchParams.set(
+      'bbox',
+      [
+        longitude - longitudeDelta,
+        latitude - latitudeDelta,
+        longitude + longitudeDelta,
+        latitude + latitudeDelta,
+      ].join(','),
+    );
+    url.searchParams.set('layer', 'mapnik');
+    url.searchParams.set('marker', `${latitude},${longitude}`);
+
+    this.mapEmbedCacheKey = cacheKey;
+    this.mapEmbedCacheUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url.toString());
+
+    return this.mapEmbedCacheUrl;
+  }
+
   protected get mapLink() {
-    if (!this.vehicle?.latitude || !this.vehicle?.longitude) {
+    const latitude = this.vehicleLatitude;
+    const longitude = this.vehicleLongitude;
+
+    if (latitude === null || longitude === null) {
       return 'https://www.openstreetmap.org';
     }
 
-    return `https://www.openstreetmap.org/?mlat=${this.vehicle.latitude}&mlon=${this.vehicle.longitude}#map=15/${this.vehicle.latitude}/${this.vehicle.longitude}`;
+    return `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=16/${latitude}/${longitude}`;
   }
 
   protected categoryLabel(category: string) {
@@ -418,6 +465,26 @@ export class VehicleDetailPageComponent {
 
       return 'star_border';
     });
+  }
+
+  private get vehicleLatitude() {
+    return this.parseCoordinate(this.vehicle?.latitude, -90, 90);
+  }
+
+  private get vehicleLongitude() {
+    return this.parseCoordinate(this.vehicle?.longitude, -180, 180);
+  }
+
+  private parseCoordinate(value: number | string | null | undefined, min: number, max: number) {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    const coordinate = Number(value);
+
+    return Number.isFinite(coordinate) && coordinate >= min && coordinate <= max
+      ? coordinate
+      : null;
   }
 
   protected handlePrimaryAction() {

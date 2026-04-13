@@ -4,7 +4,6 @@
    ═══════════════════════════════════════════ */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-@import 'leaflet/dist/leaflet.css';
 
 /* ═══════════════════════════════════════════
    1. DESIGN TOKENS
@@ -159,6 +158,10 @@ body {
   overscroll-behavior-y: none;
 }
 
+body.gallery-preview-open {
+  overflow: hidden;
+}
+
 app-root {
   display: block;
   min-height: 100vh;
@@ -256,6 +259,9 @@ small {
 .eyebrow {
   display: inline-flex;
   align-items: center;
+  justify-self: start;
+  width: fit-content;
+  max-width: 100%;
   gap: 6px;
   padding: 6px 14px;
   border-radius: var(--radius-full);
