@@ -22,47 +22,6 @@
     </button>
   </section>
 
-  <section class="search-page__alerts-card" *ngIf="authService.hasSession()">
-    <div class="search-page__section-head">
-      <h2>Alertas de busca</h2>
-      <div class="search-page__alerts-actions">
-        <span>{{ searchAlerts.length }} salvo(s)</span>
-        <button
-          type="button"
-          class="btn btn-primary"
-          [disabled]="alertSaving || !canSaveCurrentSearch || currentAlertSaved"
-          (click)="saveCurrentSearchAlert()"
-        >
-          {{ searchAlertActionLabel }}
-        </button>
-      </div>
-    </div>
-
-    <p class="loading" *ngIf="alertsLoading">Carregando alertas...</p>
-    <p class="loading" *ngIf="alertFeedback">{{ alertFeedback }}</p>
-    <p class="loading" *ngIf="!alertsLoading && !searchAlerts.length">
-      Salve a busca atual para ser avisado quando surgir um carro ou moto nessa faixa.
-    </p>
-
-    <div class="search-page__alert-list" *ngIf="searchAlerts.length">
-      <article class="search-page__alert-item" *ngFor="let alert of searchAlerts">
-        <div>
-          <strong>{{ alert.title || 'Busca salva' }}</strong>
-          <p>{{ alertSummary(alert) }}</p>
-        </div>
-
-        <button
-          type="button"
-          class="btn btn-ghost"
-          [disabled]="removingAlertId === alert.id"
-          (click)="removeAlert(alert.id)"
-        >
-          {{ removingAlertId === alert.id ? 'Removendo...' : 'Remover' }}
-        </button>
-      </article>
-    </div>
-  </section>
-
   <section class="search-page__section">
     <div class="search-page__section-head">
       <h2>Resultados</h2>

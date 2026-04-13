@@ -9,11 +9,9 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { AuthService } from '../../core/services/auth.service';
-import { SearchAlertsApiService } from '../../core/services/search-alerts-api.service';
 import { FilterModalComponent } from '../../shared/components/filter-modal/filter-modal.component';
 import { SearchHeaderComponent } from '../../shared/components/search-header/search-header.component';
-import { SearchAlert, VehicleCardItem, VehicleType } from '../../core/models/domain.models';
+import { VehicleCardItem, VehicleType } from '../../core/models/domain.models';
 import { VehiclesApiService } from '../../core/services/vehicles-api.service';
 import { VehicleCardComponent } from '../../shared/components/vehicle-card/vehicle-card.component';
 
@@ -47,8 +45,6 @@ type SearchQuery = {
 export class SearchPageComponent implements AfterViewInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  protected readonly authService = inject(AuthService);
-  private readonly searchAlertsApiService = inject(SearchAlertsApiService);
   private readonly vehiclesApiService = inject(VehiclesApiService);
 
   @ViewChild('sentinel') sentinelRef?: ElementRef<HTMLDivElement>;
@@ -58,11 +54,6 @@ export class SearchPageComponent implements AfterViewInit, OnDestroy {
   protected hasNextPage = false;
   protected totalItems = 0;
   protected filtersOpen = false;
-  protected searchAlerts: SearchAlert[] = [];
-  protected alertsLoading = false;
-  protected alertSaving = false;
-  protected alertFeedback = '';
-  protected removingAlertId: string | null = null;
   protected query: SearchQuery = {
     q: '',
     city: '',
@@ -82,10 +73,6 @@ export class SearchPageComponent implements AfterViewInit, OnDestroy {
   private observer?: IntersectionObserver;
 
   constructor() {
-    if (this.authService.hasSession()) {
-      this.loadAlerts();
-    }
-
     this.route.queryParamMap
       .pipe(takeUntilDestroyed())
       .subscribe((params) => {
@@ -107,30 +94,6 @@ export class SearchPageComponent implements AfterViewInit, OnDestroy {
         this.vehicles = [];
         this.fetchVehicles();
       });
-  }
-
-  protected get canSaveCurrentSearch() {
-    return Object.keys(this.buildAlertFilters()).length > 0;
-  }
-
-  protected get currentAlertSaved() {
-    const currentSignature = this.alertSignature(this.buildAlertFilters());
-
-    return !!currentSignature && this.searchAlerts.some(
-      (alert) => this.alertSignature(alert.filters) === currentSignature,
-    );
-  }
-
-  protected get searchAlertActionLabel() {
-    if (!this.canSaveCurrentSearch) {
-      return 'Aplique filtros para salvar';
-    }
-
-    if (this.currentAlertSaved) {
-      return 'Alerta salvo';
-    }
-
-    return this.alertSaving ? 'Salvando...' : 'Salvar alerta';
   }
 
   ngAfterViewInit() {
@@ -235,51 +198,6 @@ export class SearchPageComponent implements AfterViewInit, OnDestroy {
 
   protected goToPublish() {
     this.router.navigate(['/anunciar']);
-  }
-
-  protected saveCurrentSearchAlert() {
-    const filters = this.buildAlertFilters();
-
-    if (!Object.keys(filters).length) {
-      this.alertFeedback = 'Escolha pelo menos um filtro antes de salvar o alerta.';
-      return;
-    }
-
-    this.alertSaving = true;
-    this.alertFeedback = '';
-
-    this.searchAlertsApiService
-      .create({ filters })
-      .subscribe({
-        next: () => {
-          this.alertSaving = false;
-          this.alertFeedback = 'Alerta salvo. Vamos avisar quando surgir algo nessa faixa.';
-          this.loadAlerts();
-        },
-        error: (error) => {
-          this.alertSaving = false;
-          this.alertFeedback =
-            error?.error?.message || 'Não foi possível salvar esse alerta.';
-        },
-      });
-  }
-
-  protected removeAlert(alertId: string) {
-    this.removingAlertId = alertId;
-    this.alertFeedback = '';
-
-    this.searchAlertsApiService.remove(alertId).subscribe({
-      next: () => {
-        this.removingAlertId = null;
-        this.alertFeedback = 'Alerta removido.';
-        this.loadAlerts();
-      },
-      error: (error) => {
-        this.removingAlertId = null;
-        this.alertFeedback =
-          error?.error?.message || 'Não foi possível remover esse alerta.';
-      },
-    });
   }
 
   private fetchVehicles() {
@@ -412,65 +330,4 @@ export class SearchPageComponent implements AfterViewInit, OnDestroy {
       : 'Tente mudar a cidade, o tipo de veículo ou ampliar a faixa de preço.';
   }
 
-  protected alertSummary(alert: SearchAlert) {
-    const filters = alert.filters as Record<string, unknown>;
-    const city = filters['city'] ? String(filters['city']) : '';
-    const vehicleType = String(filters['vehicleType'] ?? '');
-    const minPrice = filters['minPrice'];
-    const maxPrice = filters['maxPrice'];
-    const parts = [
-      city,
-      vehicleType === 'CAR'
-        ? 'carros'
-        : vehicleType === 'MOTORCYCLE'
-          ? 'motos'
-          : 'veículos',
-      minPrice || maxPrice
-        ? `R$ ${minPrice || '0'}-${maxPrice || 'sem teto'}`
-        : '',
-    ].filter(Boolean);
-
-    return parts.join(' • ');
-  }
-
-  private loadAlerts() {
-    this.alertsLoading = true;
-
-    this.searchAlertsApiService.getMine().subscribe({
-      next: (alerts) => {
-        this.searchAlerts = alerts;
-        this.alertsLoading = false;
-      },
-      error: () => {
-        this.searchAlerts = [];
-        this.alertsLoading = false;
-      },
-    });
-  }
-
-  private buildAlertFilters() {
-    const numericKeys = new Set([
-      'minEngineCc',
-      'maxEngineCc',
-      'minPrice',
-      'maxPrice',
-      'latitude',
-      'longitude',
-      'radiusKm',
-    ]);
-
-    return Object.fromEntries(
-      Object.entries(this.query)
-        .filter(([, value]) => value !== '')
-        .map(([key, value]) => [key, numericKeys.has(key) ? Number(value) : value]),
-    );
-  }
-
-  private alertSignature(filters: Record<string, unknown>) {
-    return JSON.stringify(
-      Object.entries(filters)
-        .filter(([, value]) => value !== '' && value !== undefined && value !== null)
-        .sort(([left], [right]) => left.localeCompare(right)),
-    );
-  }
 }
