@@ -18,18 +18,27 @@
         </span>
       </div>
 
-      <p class="chat-sidebar__hint">
-        Abra uma conversa a partir da tela de um anúncio para falar direto com o anunciante.
-      </p>
+      <div class="chat-sidebar__intro">
+        <p class="chat-sidebar__hint">
+          Abra uma conversa a partir da tela de um anúncio para falar direto com o anunciante.
+        </p>
+      </div>
 
-      <div class="chat-sidebar__actions">
+      <div class="chat-sidebar__actions" *ngIf="isLoadingConversations || conversations.length">
         <a class="btn btn-secondary" routerLink="/search">Ver anúncios</a>
       </div>
 
       <div class="chat-empty" *ngIf="!isLoadingConversations && !conversations.length">
-        <span class="material-icons" aria-hidden="true">forum</span>
-        <strong>Nenhuma conversa ainda</strong>
-        <p>Quando você falar com um anunciante, a conversa aparece aqui.</p>
+        <div class="chat-empty__visual" aria-hidden="true">
+          <span class="material-icons">directions_car</span>
+          <span class="material-icons">chat_bubble_outline</span>
+        </div>
+
+        <div class="chat-empty__copy">
+          <strong>Comece por um anúncio</strong>
+          <p>Escolha um veículo, abra o anúncio e envie uma mensagem para combinar detalhes com o anunciante.</p>
+        </div>
+
         <div class="chat-empty__actions">
           <a class="btn btn-primary" routerLink="/search">Ver anúncios</a>
           <a class="btn btn-secondary" routerLink="/">Voltar para início</a>

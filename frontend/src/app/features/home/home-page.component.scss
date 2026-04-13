@@ -98,9 +98,10 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: var(--space-3);
+  flex-wrap: wrap;
 }
 
-.section-head--row > div {
+.section-head--row > div:not(.carousel-actions) {
   display: grid;
   gap: var(--space-2);
 }
@@ -288,7 +289,12 @@
   align-items: center;
   justify-content: flex-end;
   gap: var(--space-2);
-  flex-wrap: wrap;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+}
+
+.section-head--row > .carousel-actions {
+  display: inline-flex;
 }
 
 .carousel-btn {
@@ -543,7 +549,7 @@
   }
 
   .steps-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .vehicle-carousel__rail {
