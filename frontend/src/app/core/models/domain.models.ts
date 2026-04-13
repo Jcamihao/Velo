@@ -72,15 +72,6 @@ export interface Profile {
   driverLicenseVerification?: VerificationStatus;
 }
 
-export interface SearchAlert {
-  id: string;
-  title?: string | null;
-  filters: Record<string, unknown>;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface User {
   id: string;
   email: string;
@@ -189,6 +180,12 @@ export interface VehicleCardItem {
   engineCc?: number | null;
   hasAbs?: boolean | null;
   hasTopCase?: boolean | null;
+  hasInsurance?: boolean | null;
+  mechanicsCondition?: string | null;
+  hasDetranIssues?: boolean | null;
+  trunkSize?: number | null;
+  weeklyRate?: number | null;
+  kmPolicy?: 'FREE' | 'FIXED' | null;
   latitude?: number | null;
   longitude?: number | null;
   ratingAverage: number;
@@ -224,6 +221,12 @@ export interface OwnerVehicleItem {
   engineCc?: number | null;
   hasAbs?: boolean | null;
   hasTopCase?: boolean | null;
+  hasInsurance?: boolean | null;
+  mechanicsCondition?: string | null;
+  hasDetranIssues?: boolean | null;
+  trunkSize?: number | null;
+  weeklyRate?: number | null;
+  kmPolicy?: 'FREE' | 'FIXED' | null;
   latitude?: number | null;
   longitude?: number | null;
   description: string;
@@ -299,6 +302,12 @@ export interface CreateVehiclePayload {
   engineCc?: number | null;
   hasAbs?: boolean;
   hasTopCase?: boolean;
+  hasInsurance?: boolean;
+  mechanicsCondition?: string;
+  hasDetranIssues?: boolean;
+  trunkSize?: number;
+  weeklyRate?: number;
+  kmPolicy?: 'FREE' | 'FIXED';
   description: string;
   addressLine?: string;
   latitude?: number;

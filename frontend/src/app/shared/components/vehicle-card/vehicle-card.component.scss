@@ -84,6 +84,13 @@
   bottom: var(--space-3);
 }
 
+.vcard__media-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
 .vcard__badge {
   display: inline-flex;
   align-items: center;
@@ -311,22 +318,8 @@
   font-weight: 500;
 }
 
-.vcard__actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
 .vcard__compare-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--white);
-  color: var(--graphite-300);
   transition:
     color var(--duration-fast) ease,
     border-color var(--duration-fast) ease,
@@ -339,7 +332,7 @@
   background: var(--mint-50);
 }
 
-.vcard__compare-btn--active {
+.vcard__action-icon--active.vcard__compare-btn {
   border-color: var(--mint-400);
   color: var(--mint-600);
   background: var(--mint-50);
@@ -365,6 +358,7 @@
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.01em;
+  flex-shrink: 0;
   transition:
     background var(--duration-fast) ease,
     transform var(--duration-fast) var(--ease-out);
