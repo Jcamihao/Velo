@@ -7,7 +7,7 @@ Classificado mobile-first de veículos entre pessoas, com frontend Angular PWA, 
 - **Experiência mobile refinada**: navegação por swipe entre abas principais, CTA fixo acima da navbar e ajustes de responsividade em cards.
 - **Busca e alertas**: botão para salvar alertas de busca, filtros centralizados e remoção da visualização de mapa da listagem.
 - **Detalhe do veículo**: mapa de localização exibido apenas na página do anúncio, logo abaixo do card visual do veículo.
-- **Editor de anúncio**: upload de imagens sempre visível no criador, botão de voltar no padrão da autenticação e layout mais consistente no mobile.
+- **Editor de anúncio**: fluxo wizard de 3 etapas (Dados, Condições e Fotos/Precificação) com botão para livre navegação entre passos, alertas visuais (warning laranja) para campos pendentes ignorados, e limite de 7 imagens por publicação.
 - **CEP mais estável no backend**: consulta ViaCEP sem depender de `fetch` global, mantendo compatibilidade com o runtime atual.
 - **Sistema de Analytics**: Rastreamento de visualizações de veículos para identificar os mais populares.
 - **Carrossel de Anúncios**: Destaque dinâmico dos veículos mais visualizados na home page.
