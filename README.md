@@ -218,6 +218,8 @@ Guia alternativo para frontend no Vercel e backend no Railway em [docs/deploy-ve
 
 ## Releases
 
+- release notes 0.7.0: [docs/releases/v0.7.0.md](./docs/releases/v0.7.0.md)
+- release notes 0.6.0: [docs/releases/v0.6.0.md](./docs/releases/v0.6.0.md)
 - release notes 0.4.0: [docs/releases/v0.4.0.md](./docs/releases/v0.4.0.md)
 - release notes 0.3.0: [docs/releases/v0.3.0.md](./docs/releases/v0.3.0.md)
 - release notes 0.2.0: [docs/releases/v0.2.0.md](./docs/releases/v0.2.0.md)

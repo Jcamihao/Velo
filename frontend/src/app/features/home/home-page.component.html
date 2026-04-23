@@ -1,6 +1,7 @@
 <main class="home">
   <!-- Search Header -->
   <app-search-header
+    [sticky]="true"
     [minimal]="true"
     [showFiltersAction]="false"
     [showMeta]="false"
@@ -8,16 +9,43 @@
     (filters)="goToSearch({})"
   />
 
+  <!-- Categories -->
+  <section class="categories-section">
+    <div class="section-head section-head--row">
+      <div>
+        <span class="eyebrow">Categorias</span>
+        <h2>Escolha por categoria</h2>
+      </div>
+    </div>
+
+    <div class="categories-rail">
+      <button
+        *ngFor="let category of featuredCategories"
+        type="button"
+        class="category-chip"
+        (click)="goToSearch({ vehicleType: 'CAR', category: category.value })"
+      >
+        <span class="category-chip__icon" aria-hidden="true">
+          <span class="material-icons">{{ category.icon }}</span>
+        </span>
+        <span class="category-chip__label">{{ category.label }}</span>
+      </button>
+    </div>
+  </section>
+
   <!-- Hero Section -->
-  <section class="hero">
+  <!-- <section class="hero">
     <div class="hero__content">
       <span class="eyebrow">
-        <span class="material-icons eyebrow__icon" aria-hidden="true">bolt</span>
+        <span class="material-icons eyebrow__icon" aria-hidden="true"
+          >bolt</span
+        >
         Novo jeito de alugar
       </span>
       <h1>Alugue um carro <span class="hero__accent">sem burocracia</span></h1>
       <p>
-        Encontre carros e motos verificados perto de você. Fale direto com o dono, combine a retirada e pronto.
+        Encontre carros e motos verificados perto de você. Fale direto com o
+        dono, combine a retirada e pronto.
       </p>
       <div class="hero__ctas">
         <button
@@ -35,10 +63,10 @@
           Explorar motos
         </button>
       </div>
-    </div>
+    </div> -->
 
-    <!-- Trust Bar -->
-    <div class="trust-bar">
+  <!-- Trust Bar -->
+  <!--<div class="trust-bar">
       <div class="trust-item">
         <span class="material-icons" aria-hidden="true">directions_car</span>
         <div>
@@ -61,121 +89,18 @@
         </div>
       </div>
     </div>
-  </section>
-
-  <!-- How it Works -->
-  <section class="steps-section">
-    <div class="section-head">
-      <span class="eyebrow">Como funciona</span>
-      <h2>Simples em 2 passos</h2>
-    </div>
-
-    <div class="steps-grid">
-      <article class="step-card">
-        <div class="step-card__icon">
-          <span class="material-icons" aria-hidden="true">search</span>
-        </div>
-        <div class="step-card__number">1</div>
-        <h3>Encontre</h3>
-        <p>Busque por marca, cidade ou tipo. Use filtros para refinar os resultados.</p>
-      </article>
-
-      <article class="step-card">
-        <div class="step-card__icon">
-          <span class="material-icons" aria-hidden="true">chat_bubble_outline</span>
-        </div>
-        <div class="step-card__number">2</div>
-        <h3>Converse</h3>
-        <p>Fale direto com o dono pelo chat. Alinhe condições e local de retirada.</p>
-      </article>
-    </div>
-  </section>
-
-  <!-- Brands -->
-  <section class="brands-section">
-    <div class="section-head section-head--row">
-      <div>
-        <span class="eyebrow">Marcas</span>
-        <h2>Ir por marca</h2>
-      </div>
-    </div>
-
-    <div class="brands-rail">
-      <button
-        *ngFor="let brand of popularBrands"
-        type="button"
-        class="brand-chip"
-        (click)="goToSearch({ q: brand.query })"
-      >
-        <span class="brand-chip__icon" aria-hidden="true">
-          <svg
-            [attr.viewBox]="brand.iconViewBox || '0 0 24 24'"
-            focusable="false"
-            [class.brand-chip__icon-svg--wide]="brand.iconWide"
-          >
-            <ng-container [ngSwitch]="brand.iconKind || 'path'">
-              <path
-                *ngSwitchCase="'path'"
-                [attr.d]="brand.iconPath"
-                fill="currentColor"
-              ></path>
-
-              <g
-                *ngSwitchCase="'volkswagen'"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.7"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <circle cx="12" cy="12" r="8.8"></circle>
-                <path
-                  d="M7.55 7.45 10.45 12.1 12 9.35 13.55 12.1 16.45 7.45"
-                ></path>
-                <path
-                  d="M6.7 8.45 9.9 16 12 12.35 14.1 16 17.3 8.45"
-                ></path>
-              </g>
-
-              <g *ngSwitchCase="'byd'">
-                <rect
-                  x="2.75"
-                  y="4.75"
-                  width="42.5"
-                  height="14.5"
-                  rx="7.25"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                ></rect>
-                <text
-                  x="24"
-                  y="15.2"
-                      text-anchor="middle"
-                      font-size="10.5"
-                      font-weight="800"
-                      letter-spacing="1.2"
-                      font-family="Inter, Arial, sans-serif"
-                      fill="currentColor"
-                >
-                  BYD
-                </text>
-              </g>
-            </ng-container>
-          </svg>
-        </span>
-        <span class="brand-chip__label">{{ brand.label }}</span>
-      </button>
-    </div>
-  </section>
+  </section> -->
 
   <!-- Ads Carousel -->
-  <section class="featured-section ads-carousel-section">
+  <!-- <section class="featured-section ads-carousel-section">
     <div class="section-head section-head--row">
       <div>
         <span class="eyebrow">Anúncios</span>
         <h2>Encontre seu próximo veículo</h2>
-        <p>Explore opções disponíveis perto de você e fale direto com quem anuncia.</p>
+        <p>
+          Explore opções disponíveis perto de você e fale direto com quem
+          anuncia.
+        </p>
       </div>
 
       <div class="carousel-actions">
@@ -202,11 +127,12 @@
       </div>
     </div>
 
-    <p class="carousel-state" *ngIf="carouselLoading">
-      Carregando anúncios...
-    </p>
+    <p class="carousel-state" *ngIf="carouselLoading">Carregando anúncios...</p>
 
-    <div class="vehicle-carousel" *ngIf="!carouselLoading && carouselAds.length">
+    <div
+      class="vehicle-carousel"
+      *ngIf="!carouselLoading && carouselAds.length"
+    >
       <div class="vehicle-carousel__rail" #adsRail>
         <article
           class="vehicle-carousel__item"
@@ -220,7 +146,7 @@
     <p class="carousel-state" *ngIf="!carouselLoading && !carouselAds.length">
       Nenhum anúncio disponível por enquanto.
     </p>
-  </section>
+  </section> -->
 
   <!-- Cars List -->
   <section class="cars-section">
@@ -237,15 +163,57 @@
       </a>
     </div>
 
-    <p class="carousel-state" *ngIf="carsLoading">
-      Carregando carros...
-    </p>
+    <p class="carousel-state" *ngIf="carsLoading">Carregando carros...</p>
 
     <div class="cars-grid" *ngIf="!carsLoading && carList.length">
       <app-vehicle-card
         *ngFor="let vehicle of carList; trackBy: trackByVehicleId"
         [vehicle]="vehicle"
       />
+    </div>
+
+    <div
+      #carsSentinel
+      class="cars-sentinel"
+      *ngIf="showCarsInfiniteLoader && carList.length"
+      aria-hidden="true"
+    ></div>
+
+    <p class="cars-loading-more" *ngIf="carsLoadingMore">
+      Carregando mais carros...
+    </p>
+
+    <div class="cars-pagination" *ngIf="showDesktopCarsPagination">
+      <button
+        type="button"
+        class="cars-pagination__nav"
+        [disabled]="carsCurrentPage === 1 || carsPageLoading"
+        (click)="changeCarsPage(carsCurrentPage - 1)"
+      >
+        Anterior
+      </button>
+
+      <div class="cars-pagination__pages">
+        <button
+          *ngFor="let page of desktopCarsPageNumbers"
+          type="button"
+          class="cars-pagination__page"
+          [class.cars-pagination__page--active]="page === carsCurrentPage"
+          [disabled]="carsPageLoading && page === carsCurrentPage"
+          (click)="changeCarsPage(page)"
+        >
+          {{ page }}
+        </button>
+      </div>
+
+      <button
+        type="button"
+        class="cars-pagination__nav"
+        [disabled]="carsCurrentPage === carsTotalPages || carsPageLoading"
+        (click)="changeCarsPage(carsCurrentPage + 1)"
+      >
+        Próxima
+      </button>
     </div>
 
     <p class="carousel-state" *ngIf="!carsLoading && !carList.length">
@@ -263,9 +231,14 @@
     <div class="testimonials-grid">
       <article class="testimonial">
         <div class="testimonial__stars">
-          <span class="material-icons" *ngFor="let s of [1,2,3,4,5]">star</span>
+          <span class="material-icons" *ngFor="let s of [1, 2, 3, 4, 5]"
+            >star</span
+          >
         </div>
-        <p>"Aluguei em 10 minutos. Sem contrato longo, sem fiador. Melhor experiência que já tive."</p>
+        <p>
+          "Aluguei em 10 minutos. Sem contrato longo, sem fiador. Melhor
+          experiência que já tive."
+        </p>
         <div class="testimonial__author">
           <strong>Lucas M.</strong>
           <span>São Paulo, SP</span>
@@ -274,9 +247,14 @@
 
       <article class="testimonial">
         <div class="testimonial__stars">
-          <span class="material-icons" *ngFor="let s of [1,2,3,4,5]">star</span>
+          <span class="material-icons" *ngFor="let s of [1, 2, 3, 4, 5]"
+            >star</span
+          >
         </div>
-        <p>"Uso a Triluga para alugar carro toda semana pra rodar no app. Preço justo e zero dor de cabeça."</p>
+        <p>
+          "Uso a Triluga para alugar carro toda semana pra rodar no app. Preço
+          justo e zero dor de cabeça."
+        </p>
         <div class="testimonial__author">
           <strong>Fernanda R.</strong>
           <span>Belo Horizonte, MG</span>
@@ -285,9 +263,14 @@
 
       <article class="testimonial">
         <div class="testimonial__stars">
-          <span class="material-icons" *ngFor="let s of [1,2,3,4,5]">star</span>
+          <span class="material-icons" *ngFor="let s of [1, 2, 3, 4, 5]"
+            >star</span
+          >
         </div>
-        <p>"Anunciei meu carro parado e já aluguei 3 vezes. A Triluga é prática e transparente."</p>
+        <p>
+          "Anunciei meu carro parado e já aluguei 3 vezes. A Triluga é prática e
+          transparente."
+        </p>
         <div class="testimonial__author">
           <strong>Rafael S.</strong>
           <span>Rio de Janeiro, RJ</span>
@@ -300,8 +283,11 @@
   <section class="host-cta">
     <div class="host-cta__content">
       <span class="eyebrow">Para donos de veículo</span>
-      <h2>Tem um carro parado?<br>Faça ele render.</h2>
-      <p>Anuncie grátis na Triluga e comece a ganhar com o seu carro ou moto. Sem mensalidade, sem complicação.</p>
+      <h2>Tem um carro parado?<br />Faça ele render.</h2>
+      <p>
+        Anuncie grátis na Triluga e comece a ganhar com o seu carro ou moto. Sem
+        mensalidade, sem complicação.
+      </p>
       <button
         type="button"
         class="btn btn-primary btn-lg btn-pill"
@@ -316,8 +302,15 @@
   <footer class="site-footer">
     <div class="footer__top">
       <div class="footer__brand">
-        <img src="assets/branding/triluga-mark.svg" alt="Triluga" class="footer__logo" />
-        <p>Classificados de veículos entre pessoas. Simples, direto e sem burocracia.</p>
+        <img
+          src="assets/branding/triluga-mark.svg"
+          alt="Triluga"
+          class="footer__logo"
+        />
+        <p>
+          Classificados de veículos entre pessoas. Simples, direto e sem
+          burocracia.
+        </p>
       </div>
 
       <nav class="footer__nav">
@@ -339,7 +332,9 @@
       <span>© 2024 Triluga. Todos os direitos reservados.</span>
       <div class="footer__badges">
         <span class="badge badge-muted">
-          <span class="material-icons badge__icon" aria-hidden="true">shield</span>
+          <span class="material-icons badge__icon" aria-hidden="true"
+            >shield</span
+          >
           LGPD
         </span>
       </div>

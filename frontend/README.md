@@ -19,8 +19,8 @@ npm start
 
 Por padrão, o app usa:
 
-- `FRONTEND_API_BASE_URL=http://localhost:3000/api/v1`
-- `FRONTEND_WS_BASE_URL=http://localhost:3000`
+- `FRONTEND_API_BASE_URL=http://localhost:3002/api/v1`
+- `FRONTEND_WS_BASE_URL=http://localhost:3002`
 
 ## Build
 

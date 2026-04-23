@@ -96,10 +96,12 @@ export interface PublicUserProfile {
   ratingAverage: number;
   reviewsCount: number;
   activeListingsCount: number;
+  responseTimeLabel?: string | null;
   trustMetrics: {
     activeListingsCount: number;
     reviewsCount: number;
     averageRating: number;
+    completedRentalsCount: number;
   };
   reviews: UserReviewItem[];
   verification: {

@@ -47,7 +47,17 @@ export class SearchPageComponent implements AfterViewInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly vehiclesApiService = inject(VehiclesApiService);
 
-  @ViewChild('sentinel') sentinelRef?: ElementRef<HTMLDivElement>;
+  private sentinelRef?: ElementRef<HTMLDivElement>;
+  private sentinelObservationQueued = false;
+
+  @ViewChild('sentinel')
+  set sentinelElementRef(value: ElementRef<HTMLDivElement> | undefined) {
+    this.sentinelRef = value;
+
+    if (value) {
+      this.observeSentinel();
+    }
+  }
 
   protected vehicles: VehicleCardItem[] = [];
   protected loading = false;
@@ -225,8 +235,15 @@ export class SearchPageComponent implements AfterViewInit, OnDestroy {
 
   private observeSentinel() {
     if (this.sentinelRef?.nativeElement) {
+      this.sentinelObservationQueued = false;
       this.observer?.disconnect();
       this.observer?.observe(this.sentinelRef.nativeElement);
+      return;
+    }
+
+    if (!this.sentinelObservationQueued) {
+      this.sentinelObservationQueued = true;
+      queueMicrotask(() => this.observeSentinel());
     }
   }
 

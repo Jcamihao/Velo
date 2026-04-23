@@ -92,6 +92,41 @@ h2 {
   color: var(--text-secondary);
 }
 
+/* ── Response time badge ── */
+
+.user-profile-hero__response-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  padding: 5px 14px;
+  border-radius: var(--radius-full);
+  background: var(--mint-50);
+  border: 1px solid var(--mint-100);
+  color: var(--mint-700);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.user-profile-hero__response-badge .material-icons {
+  font-size: 16px;
+  color: var(--mint-500);
+}
+
+/* ── Action buttons ── */
+
+.user-profile-hero__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.user-profile-hero__actions .btn .material-icons {
+  font-size: 18px;
+}
+
+/* ── Stats ── */
+
 .user-profile-stats {
   display: grid;
   grid-template-columns: 1fr;
@@ -173,6 +208,8 @@ h2 {
   line-height: 1.5;
 }
 
+/* ── Verification ── */
+
 .verification-pill {
   display: inline-flex;
   align-items: center;
@@ -241,6 +278,8 @@ h2 {
   display: block;
   margin-bottom: 4px;
 }
+
+/* ── Reviews ── */
 
 .user-profile-review-summary {
   display: flex;
@@ -316,10 +355,14 @@ h2 {
   background: var(--surface-muted);
 }
 
+/* ── Listings ── */
+
 .user-profile-listings {
   display: grid;
   gap: 10px;
 }
+
+/* ── Empty State ── */
 
 .user-profile-empty {
   display: grid;
@@ -338,6 +381,57 @@ h2 {
   background: var(--surface-muted);
   color: var(--primary);
 }
+
+/* ═══════════════════════════════════════════
+   SKELETON LOADING
+   ═══════════════════════════════════════════ */
+
+.user-profile-skeleton__avatar {
+  width: 88px;
+  height: 88px;
+  border-radius: var(--radius-2xl);
+  flex-shrink: 0;
+}
+
+.user-profile-skeleton__eyebrow {
+  width: 80px;
+  height: 28px;
+  border-radius: var(--radius-full);
+}
+
+.user-profile-skeleton__name {
+  width: min(260px, 70%);
+  height: 32px;
+  border-radius: var(--radius-sm);
+}
+
+.user-profile-skeleton__since {
+  width: min(200px, 55%);
+  height: 18px;
+  border-radius: var(--radius-sm);
+}
+
+.user-profile-skeleton__bio {
+  width: 100%;
+  height: 48px;
+  border-radius: var(--radius-sm);
+}
+
+.user-profile-skeleton__stat-value {
+  width: 48px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+}
+
+.user-profile-skeleton__stat-label {
+  width: 96px;
+  height: 14px;
+  border-radius: var(--radius-sm);
+}
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════ */
 
 @media (min-width: 641px) {
   .user-profile-page {
@@ -380,13 +474,14 @@ h2 {
   }
 
   .user-profile-hero__top,
-  .user-profile-hero__bio {
+  .user-profile-hero__bio,
+  .user-profile-hero__actions {
     grid-column: 1;
   }
 
   .user-profile-stats {
     grid-column: 2;
-    grid-row: 1 / span 2;
+    grid-row: 1 / span 3;
     grid-template-columns: 1fr;
   }
 
@@ -395,7 +490,7 @@ h2 {
   }
 
   .user-profile-trust-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .user-profile-listings {

@@ -11,6 +11,10 @@ import { AuthService } from '../../../core/services/auth.service';
   imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './search-header.component.html',
   styleUrls: ['./search-header.component.scss'],
+  host: {
+    '[class.sh-host--sticky]': 'sticky',
+    '[class.sh-host--sticky-actions]': 'stickyActions',
+  },
 })
 export class SearchHeaderComponent {
   protected readonly authService = inject(AuthService);
@@ -22,8 +26,12 @@ export class SearchHeaderComponent {
     'Pesquise por cidade, modelo e faixa de preço.';
   @Input() query = '';
   @Input() showFiltersAction = true;
+  @Input() showNotifications = true;
   @Input() showMeta = true;
   @Input() minimal = false;
+  @Input() sticky = false;
+  @Input() stickyActions = false;
+  @Input() inlineFilters = false;
 
   @Output() search = new EventEmitter<{
     q: string;

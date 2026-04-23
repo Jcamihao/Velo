@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, inject } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { switchMap } from 'rxjs/operators';
 import {
@@ -19,6 +19,7 @@ import { VehicleCardComponent } from '../../shared/components/vehicle-card/vehic
 })
 export class UserProfilePageComponent {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly profileApiService = inject(ProfileApiService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -29,6 +30,7 @@ export class UserProfilePageComponent {
   protected profile: PublicUserProfile | null = null;
   protected isLoading = true;
   protected errorMessage = '';
+  protected linkCopied = false;
 
   constructor() {
     this.route.paramMap
@@ -54,6 +56,27 @@ export class UserProfilePageComponent {
             error?.error?.message || 'Não foi possível carregar esse perfil.';
         },
       });
+  }
+
+  protected copyProfileLink() {
+    const url = window.location.href;
+
+    navigator.clipboard.writeText(url).then(() => {
+      this.linkCopied = true;
+      setTimeout(() => (this.linkCopied = false), 2500);
+    });
+  }
+
+  protected contactUser() {
+    if (!this.profile) {
+      return;
+    }
+
+    const firstVehicle = this.profile.vehicles[0];
+
+    if (firstVehicle) {
+      this.router.navigate(['/vehicles', firstVehicle.id]);
+    }
   }
 
   protected memberSinceLabel(value: string) {

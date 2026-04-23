@@ -98,6 +98,8 @@ export class ProfilesService {
       VerificationStatus.NOT_SUBMITTED;
     const ratingAverage = Number((reviewsAggregate._avg.rating ?? 0).toFixed(1));
 
+    const responseTimeLabel = this.resolveResponseTimeLabel(user.lastLoginAt);
+
     return {
       id: user.id,
       role: user.role,
@@ -111,10 +113,12 @@ export class ProfilesService {
       ratingAverage,
       reviewsCount: reviewsAggregate._count.rating,
       activeListingsCount: vehicles.length,
+      responseTimeLabel,
       trustMetrics: {
         activeListingsCount: vehicles.length,
         reviewsCount: reviewsAggregate._count.rating,
         averageRating: ratingAverage,
+        completedRentalsCount: 0,
       },
       reviews: reviews.map((review) => ({
         id: review.id,
@@ -288,6 +292,29 @@ export class ProfilesService {
       url,
       generatedAt: new Date().toISOString(),
     };
+  }
+
+  private resolveResponseTimeLabel(lastLoginAt: Date | null): string | null {
+    if (!lastLoginAt) {
+      return null;
+    }
+
+    const diffMs = Date.now() - lastLoginAt.getTime();
+    const diffDays = diffMs / (1000 * 60 * 60 * 24);
+
+    if (diffDays <= 1) {
+      return 'Responde rápido';
+    }
+
+    if (diffDays <= 7) {
+      return 'Ativo recentemente';
+    }
+
+    if (diffDays <= 30) {
+      return 'Ativo este mês';
+    }
+
+    return null;
   }
 
   private resolveProfileVerificationStatus(

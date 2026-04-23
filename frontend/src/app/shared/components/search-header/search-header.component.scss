@@ -1,5 +1,27 @@
+:host {
+  display: block;
+}
+
+:host(.sh-host--sticky-actions) {
+  display: contents;
+}
+
+:host(.sh-host--sticky) {
+  display: block;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(247, 250, 249, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
 .sh {
   display: block;
+}
+
+.sh--sticky-actions {
+  display: contents;
 }
 
 .sh__shell {
@@ -9,11 +31,36 @@
   padding: calc(var(--space-4) + env(safe-area-inset-top, 0px)) 0 var(--space-4);
 }
 
+.sh--sticky-actions .sh__shell {
+  display: contents;
+}
+
 .sh__nav {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-3);
+}
+
+.sh__sticky {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.sh--sticky-actions .sh__sticky {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  padding-top: calc(var(--space-5) + env(safe-area-inset-top, 0px));
+  padding-bottom: var(--space-3);
+  background: rgba(247, 250, 249, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(204, 214, 210, 0.68);
+}
+
+:host(.sh-host--sticky) .sh__shell {
+  border-bottom: 1px solid rgba(204, 214, 210, 0.68);
 }
 
 /* ── Brand ── */
@@ -198,6 +245,13 @@
   text-align: center;
 }
 
+.sh__nav-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-self: end;
+  gap: var(--space-3);
+}
+
 /* ── Minimal mode ── */
 
 .sh--minimal .sh__shell {
@@ -219,9 +273,14 @@
 .sh__copy-top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: var(--space-3);
   flex-wrap: wrap;
+}
+
+.sh__sticky-tools {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .sh__filters-btn {
@@ -237,6 +296,7 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  white-space: nowrap;
   transition:
     border-color var(--duration-fast) ease,
     background var(--duration-fast) ease,
@@ -251,6 +311,10 @@
 
 .sh__filters-btn .material-icons {
   font-size: 16px;
+}
+
+.sh__filters-btn--inline {
+  flex-shrink: 0;
 }
 
 h1 {

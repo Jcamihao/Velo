@@ -1,9 +1,9 @@
 {
   "name": "frontend",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "scripts": {
     "ng": "ng",
-    "prestart": "FRONTEND_API_BASE_URL=${FRONTEND_API_BASE_URL:-http://localhost:3000/api/v1} FRONTEND_WS_BASE_URL=${FRONTEND_WS_BASE_URL:-http://localhost:3000} node ./scripts/generate-runtime-config.mjs",
+    "prestart": "FRONTEND_API_BASE_URL=${FRONTEND_API_BASE_URL:-http://localhost:3002/api/v1} FRONTEND_WS_BASE_URL=${FRONTEND_WS_BASE_URL:-http://localhost:3002} node ./scripts/generate-runtime-config.mjs",
     "start": "ng serve",
     "prebuild": "node ./scripts/generate-runtime-config.mjs",
     "build": "ng build",

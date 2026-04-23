@@ -1,6 +1,6 @@
 {
   "name": "backend",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Triluga backend API",
   "author": "codeStage Soluções",
   "private": true,
@@ -29,7 +29,8 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "prisma:status": "prisma migrate status",
-    "prisma:seed": "node prisma/seed.js"
+    "prisma:seed": "node prisma/seed.js",
+    "db:add:cars": "node scripts/add-random-cars.js"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

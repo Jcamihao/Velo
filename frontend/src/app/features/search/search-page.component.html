@@ -1,5 +1,7 @@
 <main class="page search-page">
   <app-search-header
+    [stickyActions]="true"
+    [inlineFilters]="true"
     [title]="searchTitle"
     [subtitle]="searchSubtitle"
     [query]="query.q"
@@ -7,7 +9,7 @@
     (filters)="filtersOpen = true"
   />
 
-  <section class="search-page__journey">
+  <!-- <section class="search-page__journey">
     <button type="button" class="search-page__journey-chip" (click)="showAllAds()">
       Ver todos os anúncios
     </button>
@@ -20,7 +22,7 @@
     <button type="button" class="search-page__journey-chip" (click)="goToPublish()">
       Publicar anúncio
     </button>
-  </section>
+  </section> -->
 
   <section class="search-page__section">
     <div class="search-page__section-head">
@@ -29,10 +31,7 @@
     </div>
 
     <section class="search-page__budget-grid" *ngIf="vehicles.length">
-      <app-vehicle-card
-        *ngFor="let vehicle of vehicles"
-        [vehicle]="vehicle"
-      />
+      <app-vehicle-card *ngFor="let vehicle of vehicles" [vehicle]="vehicle" />
     </section>
 
     <p class="loading" *ngIf="loading">Carregando resultados...</p>

@@ -1,69 +1,116 @@
-<section class="sh" [class.sh--minimal]="minimal">
+<section
+  class="sh"
+  [class.sh--minimal]="minimal"
+  [class.sh--sticky-actions]="stickyActions"
+>
   <div class="sh__shell">
-    <header class="sh__nav">
-      <a
-        class="sh__brand"
-        routerLink="/"
-        aria-label="Ir para a Home da Triluga"
-      >
-        <img src="assets/branding/triluga-mark.svg" alt="Triluga" class="sh__brand-img" />
-      </a>
+    <div class="sh__sticky">
+      <header class="sh__nav">
+        <a
+          class="sh__brand"
+          routerLink="/"
+          aria-label="Ir para a Home da Triluga"
+        >
+          <img
+            src="assets/branding/triluga-mark.svg"
+            alt="Triluga"
+            class="sh__brand-img"
+          />
+        </a>
 
-      <form class="sh__search" (ngSubmit)="submit()">
-        <span class="material-icons sh__search-icon" aria-hidden="true">search</span>
-        <input
-          name="query"
-          [(ngModel)]="query"
-          placeholder="Buscar marca, modelo ou cidade"
-          class="sh__search-input"
-          (focus)="onSearchFocus()"
-          (blur)="onSearchBlur()"
-          autocomplete="off"
-        />
-        <button *ngIf="!minimal" type="submit" class="sh__search-btn">
-          Buscar
-        </button>
+        <form class="sh__search" (ngSubmit)="submit()">
+          <span class="material-icons sh__search-icon" aria-hidden="true"
+            >search</span
+          >
+          <input
+            name="query"
+            [(ngModel)]="query"
+            placeholder="Buscar marca, modelo ou cidade"
+            class="sh__search-input"
+            (focus)="onSearchFocus()"
+            (blur)="onSearchBlur()"
+            autocomplete="off"
+          />
+          <button *ngIf="!minimal" type="submit" class="sh__search-btn">
+            Buscar
+          </button>
 
-        <div class="sh__recent" *ngIf="showRecentSearches && recentSearches.length > 0">
-          <span class="eyebrow sh__recent-eyebrow">Buscas recentes</span>
-          <ul class="sh__recent-list">
-            <li *ngFor="let search of recentSearches" class="sh__recent-item" (click)="selectRecentSearch(search)">
-              <span class="material-icons sh__recent-icon" aria-hidden="true">history</span>
-              <span class="sh__recent-text">{{ search }}</span>
-              <button type="button" class="sh__recent-remove" (click)="removeRecentSearch($event, search)" aria-label="Remover busca">
-                <span class="material-icons" aria-hidden="true">close</span>
-              </button>
-            </li>
-          </ul>
+          <div
+            class="sh__recent"
+            *ngIf="showRecentSearches && recentSearches.length > 0"
+          >
+            <span class="eyebrow sh__recent-eyebrow">Buscas recentes</span>
+            <ul class="sh__recent-list">
+              <li
+                *ngFor="let search of recentSearches"
+                class="sh__recent-item"
+                (click)="selectRecentSearch(search)"
+              >
+                <span class="material-icons sh__recent-icon" aria-hidden="true"
+                  >history</span
+                >
+                <span class="sh__recent-text">{{ search }}</span>
+                <button
+                  type="button"
+                  class="sh__recent-remove"
+                  (click)="removeRecentSearch($event, search)"
+                  aria-label="Remover busca"
+                >
+                  <span class="material-icons" aria-hidden="true">close</span>
+                </button>
+              </li>
+            </ul>
+          </div>
+        </form>
+
+        <div
+          class="sh__nav-actions"
+          *ngIf="(showFiltersAction && inlineFilters) || showNotifications"
+        >
+          <button
+            *ngIf="showNotifications"
+            type="button"
+            class="sh__notif-btn"
+            aria-label="Abrir notificações"
+            (click)="toggleNotifications()"
+          >
+            <span class="material-icons" aria-hidden="true"
+              >notifications_none</span
+            >
+            <span
+              class="sh__notif-badge"
+              *ngIf="notificationsService.unreadCount()"
+            >
+              {{ unreadBadge }}
+            </span>
+          </button>
+
+          <button
+            *ngIf="showFiltersAction && inlineFilters"
+            type="button"
+            class="sh__filters-btn sh__filters-btn--inline"
+            (click)="filters.emit()"
+          >
+            <span class="material-icons" aria-hidden="true">tune</span>
+            Filtros
+          </button>
         </div>
-      </form>
+      </header>
 
-      <button
-        type="button"
-        class="sh__notif-btn"
-        aria-label="Abrir notificações"
-        (click)="toggleNotifications()"
+      <div
+        class="sh__sticky-tools"
+        *ngIf="showFiltersAction && !minimal && !inlineFilters"
       >
-        <span class="material-icons" aria-hidden="true">notifications_none</span>
-        <span class="sh__notif-badge" *ngIf="notificationsService.unreadCount()">
-          {{ unreadBadge }}
-        </span>
-      </button>
-    </header>
+        <button type="button" class="sh__filters-btn" (click)="filters.emit()">
+          <span class="material-icons" aria-hidden="true">tune</span>
+          Filtros
+        </button>
+      </div>
+    </div>
 
     <div class="sh__copy" *ngIf="!minimal && (title || subtitle)">
       <div class="sh__copy-top">
         <span class="eyebrow">Classificados</span>
-
-        <button
-          *ngIf="showFiltersAction"
-          type="button"
-          class="sh__filters-btn"
-          (click)="filters.emit()"
-        >
-          <span class="material-icons" aria-hidden="true">tune</span>
-          Filtros
-        </button>
       </div>
 
       <h1>{{ title }}</h1>
@@ -105,13 +152,20 @@
       </p>
 
       <section class="notif-drawer__empty" *ngIf="!authService.hasSession()">
-        <span class="material-icons notif-drawer__empty-icon" aria-hidden="true">notifications_none</span>
+        <span class="material-icons notif-drawer__empty-icon" aria-hidden="true"
+          >notifications_none</span
+        >
         <strong>Entre para ver notificações</strong>
         <p>Atualizações de chat, anúncios e conta aparecem aqui.</p>
-        <button type="button" class="btn btn-primary" (click)="goToLogin()">Entrar</button>
+        <button type="button" class="btn btn-primary" (click)="goToLogin()">
+          Entrar
+        </button>
       </section>
 
-      <p class="notif-drawer__state" *ngIf="authService.hasSession() && notificationsService.loading()">
+      <p
+        class="notif-drawer__state"
+        *ngIf="authService.hasSession() && notificationsService.loading()"
+      >
         Carregando...
       </p>
 
@@ -142,7 +196,7 @@
           <div>
             <strong>{{ notification.title }}</strong>
             <p>{{ notification.message }}</p>
-            <small>{{ notification.createdAt | date: 'dd/MM HH:mm' }}</small>
+            <small>{{ notification.createdAt | date: "dd/MM HH:mm" }}</small>
           </div>
 
           <button

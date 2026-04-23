@@ -1,10 +1,27 @@
 <main class="page user-profile-page">
-  <section class="user-profile-shell surface-card" *ngIf="isLoading">
-    <span class="eyebrow">Perfil</span>
-    <h1>Carregando usuário</h1>
-    <p>Estamos buscando o histórico público e os anúncios desse perfil.</p>
+  <!-- ── Skeleton Loading ── -->
+  <section class="user-profile-hero surface-card" *ngIf="isLoading">
+    <div class="user-profile-hero__top">
+      <div class="skeleton user-profile-skeleton__avatar"></div>
+
+      <div class="user-profile-hero__copy">
+        <div class="skeleton user-profile-skeleton__eyebrow"></div>
+        <div class="skeleton user-profile-skeleton__name"></div>
+        <div class="skeleton user-profile-skeleton__since"></div>
+      </div>
+    </div>
+
+    <div class="skeleton user-profile-skeleton__bio"></div>
+
+    <div class="user-profile-stats">
+      <article *ngFor="let i of [1, 2, 3]">
+        <div class="skeleton user-profile-skeleton__stat-value"></div>
+        <div class="skeleton user-profile-skeleton__stat-label"></div>
+      </article>
+    </div>
   </section>
 
+  <!-- ── Error ── -->
   <section
     class="user-profile-shell surface-card"
     *ngIf="!isLoading && errorMessage"
@@ -16,6 +33,7 @@
   </section>
 
   <ng-container *ngIf="!isLoading && profile">
+    <!-- ── Hero ── -->
     <section class="user-profile-hero surface-card">
       <div class="user-profile-hero__top">
         <img
@@ -31,12 +49,41 @@
             Na Triluga desde {{ memberSinceLabel(profile.memberSince) }}
           </p>
           <p *ngIf="locationLabel(profile)">{{ locationLabel(profile) }}</p>
+
+          <p
+            class="user-profile-hero__response-badge"
+            *ngIf="profile.responseTimeLabel"
+          >
+            <span class="material-icons" aria-hidden="true">bolt</span>
+            {{ profile.responseTimeLabel }}
+          </p>
         </div>
       </div>
 
       <p class="user-profile-hero__bio" *ngIf="profile.bio">
         {{ profile.bio }}
       </p>
+
+      <div class="user-profile-hero__actions">
+        <button
+          class="btn btn-primary btn-sm btn-pill"
+          (click)="contactUser()"
+          *ngIf="profile.vehicles.length"
+        >
+          <span class="material-icons" aria-hidden="true">chat_bubble</span>
+          Contatar
+        </button>
+
+        <button
+          class="btn btn-secondary btn-sm btn-pill"
+          (click)="copyProfileLink()"
+        >
+          <span class="material-icons" aria-hidden="true">
+            {{ linkCopied ? 'check' : 'share' }}
+          </span>
+          {{ linkCopied ? 'Link copiado!' : 'Compartilhar' }}
+        </button>
+      </div>
 
       <div class="user-profile-stats">
         <article>
@@ -54,6 +101,7 @@
       </div>
     </section>
 
+    <!-- ── Basic Info ── -->
     <section class="user-profile-section surface-card">
       <div class="user-profile-section__header">
         <div>
@@ -78,6 +126,7 @@
       </div>
     </section>
 
+    <!-- ── Trust Metrics ── -->
     <section class="user-profile-section surface-card">
       <div class="user-profile-section__header">
         <div>
@@ -104,9 +153,16 @@
           <span>nota média</span>
           <small>Baseada nas avaliações públicas disponíveis.</small>
         </article>
+
+        <article class="user-profile-trust-card">
+          <strong>{{ profile.trustMetrics.completedRentalsCount }}</strong>
+          <span>aluguéis concluídos</span>
+          <small>Total de locações finalizadas com sucesso.</small>
+        </article>
       </div>
     </section>
 
+    <!-- ── Reviews ── -->
     <section class="user-profile-section surface-card">
       <div class="user-profile-section__header">
         <div>
@@ -203,6 +259,7 @@
       </ng-template>
     </section>
 
+    <!-- ── Verifications ── -->
     <section class="user-profile-section surface-card">
       <div class="user-profile-section__header">
         <div>
@@ -297,6 +354,7 @@
       </div>
     </section>
 
+    <!-- ── Vehicle Listings ── -->
     <section class="user-profile-section surface-card">
       <div class="user-profile-section__header">
         <div>
