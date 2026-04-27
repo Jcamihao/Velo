@@ -7,13 +7,11 @@ import {
   ViewChild,
   inject,
 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FilterModalComponent } from '../../shared/components/filter-modal/filter-modal.component';
-import { SearchHeaderComponent } from '../../shared/components/search-header/search-header.component';
 import { VehicleCardItem, VehicleType } from '../../core/models/domain.models';
 import { VehiclesApiService } from '../../core/services/vehicles-api.service';
-import { VehicleCardComponent } from '../../shared/components/vehicle-card/vehicle-card.component';
 
 type SearchQuery = {
   q: string;
@@ -35,9 +33,8 @@ type SearchQuery = {
   standalone: true,
   imports: [
     CommonModule,
-    SearchHeaderComponent,
+    RouterLink,
     FilterModalComponent,
-    VehicleCardComponent,
   ],
   templateUrl: './search-page.component.html',
   styleUrls: ['./search-page.component.scss'],
@@ -207,7 +204,7 @@ export class SearchPageComponent implements AfterViewInit, OnDestroy {
   }
 
   protected goToPublish() {
-    this.router.navigate(['/anunciar']);
+    this.router.navigate(['/anunciar-carro']);
   }
 
   private fetchVehicles() {
@@ -252,33 +249,47 @@ export class SearchPageComponent implements AfterViewInit, OnDestroy {
   }
 
   protected get activeSearchPills() {
-    const pills: string[] = [];
+    const pills: { key: string; label: string }[] = [];
 
     if (this.query.q) {
-      pills.push(`Termo: ${this.query.q}`);
+      pills.push({ key: 'q', label: `Termo: ${this.query.q}` });
     }
 
     if (this.query.city) {
-      pills.push(`Cidade: ${this.query.city}`);
+      pills.push({ key: 'city', label: this.query.city });
     }
 
     if (this.query.vehicleType === 'CAR') {
-      pills.push('Categoria: carros');
+      pills.push({ key: 'vehicleType', label: 'Carros' });
     }
 
     if (this.query.vehicleType === 'MOTORCYCLE') {
-      pills.push('Categoria: motos');
+      pills.push({ key: 'vehicleType', label: 'Motos' });
     }
 
     if (this.query.maxPrice) {
-      pills.push(`Até R$ ${this.query.maxPrice}`);
+      pills.push({ key: 'maxPrice', label: `Até R$ ${this.query.maxPrice}` });
     }
 
     if (this.hasLocationFilter) {
-      pills.push(`Raio de ${this.query.radiusKm || '20'} km`);
+      pills.push({ key: 'location', label: `Raio de ${this.query.radiusKm || '20'} km` });
     }
 
     return pills;
+  }
+
+  protected removeFilter(key: string) {
+    if (key === 'location') {
+      this.clearLocationFilter();
+      return;
+    }
+
+    this.router.navigate(['/search'], {
+      queryParams: {
+        ...this.query,
+        [key]: '',
+      },
+    });
   }
 
   protected get searchOverviewTitle() {
