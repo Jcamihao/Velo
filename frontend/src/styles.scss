@@ -1,9 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* ═══════════════════════════════════════════
    TRILUGA DESIGN SYSTEM — v2.0
    Classificados de veículos
    ═══════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 /* ═══════════════════════════════════════════
    1. DESIGN TOKENS
@@ -249,8 +253,8 @@ small {
 
 /* ── Utility classes ── */
 
-.text-primary { color: var(--text-primary); }
-.text-secondary { color: var(--text-secondary); }
+/* .text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); } */
 .text-mint { color: var(--mint-600); }
 .text-center { text-align: center; }
 .font-semibold { font-weight: 600; }
@@ -775,4 +779,9 @@ label > span:first-child {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ── Bottom Nav Toggle ── */
+body.hide-bottom-nav app-bottom-nav {
+  display: none !important;
 }
