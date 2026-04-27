@@ -1,343 +1,323 @@
-<main class="home">
-  <!-- Search Header -->
-  <app-search-header
-    [sticky]="true"
-    [minimal]="true"
-    [showFiltersAction]="false"
-    [showMeta]="false"
-    (search)="goToSearch($event)"
-    (filters)="goToSearch({})"
-  />
-
-  <!-- Categories -->
-  <section class="categories-section">
-    <div class="section-head section-head--row">
-      <div>
-        <span class="eyebrow">Categorias</span>
-        <h2>Escolha por categoria</h2>
-      </div>
-    </div>
-
-    <div class="categories-rail">
-      <button
-        *ngFor="let category of featuredCategories"
-        type="button"
-        class="category-chip"
-        (click)="goToSearch({ vehicleType: 'CAR', category: category.value })"
+<main
+  class="bg-surface text-on-surface font-body max-w-[390px] mx-auto min-h-screen relative overflow-x-hidden pb-24 md:max-w-full"
+>
+  <!-- TopAppBar -->
+  <header
+    class="sticky top-0 z-40 bg-surface/90 backdrop-blur-md flex justify-between items-center w-full px-6 py-4"
+  >
+    <div class="flex items-center gap-3">
+      <span
+        class="material-symbols-outlined text-primary scale-110 active:scale-95 transition-transform cursor-pointer"
+        >menu</span
       >
-        <span class="category-chip__icon" aria-hidden="true">
-          <span class="material-icons">{{ category.icon }}</span>
-        </span>
-        <span class="category-chip__label">{{ category.label }}</span>
-      </button>
+      <h1
+        class="!text-2xl !font-black italic tracking-tighter text-primary !leading-none !m-0"
+      >
+        Triluga
+      </h1>
     </div>
-  </section>
+    <div class="flex items-center gap-4">
+      <span
+        class="material-symbols-outlined text-on-surface-variant scale-110 active:scale-95 transition-transform cursor-pointer"
+        >notifications</span
+      >
+    </div>
+  </header>
 
-  <!-- Hero Section -->
-  <!-- <section class="hero">
-    <div class="hero__content">
-      <span class="eyebrow">
-        <span class="material-icons eyebrow__icon" aria-hidden="true"
-          >bolt</span
+  <main class="space-y-8 pt-2">
+    <!-- Search Section -->
+    <section class="px-6">
+      <div
+        class="bg-surface-container-low p-5 rounded-2xl shadow-sm border border-surface-container"
+      >
+        <h2
+          class="!text-[22px] !font-bold tracking-tight text-on-surface mb-4 !leading-tight"
         >
-        Novo jeito de alugar
-      </span>
-      <h1>Alugue um carro <span class="hero__accent">sem burocracia</span></h1>
-      <p>
-        Encontre carros e motos verificados perto de você. Fale direto com o
-        dono, combine a retirada e pronto.
-      </p>
-      <div class="hero__ctas">
-        <button
-          type="button"
-          class="btn btn-primary btn-lg btn-pill"
-          (click)="goToSearch({ vehicleType: 'CAR' })"
+          Onde vamos hoje?
+        </h2>
+        <div
+          class="relative flex items-center search-focus transition-all duration-300 rounded-full"
         >
-          Encontrar meu carro
-        </button>
-        <button
-          type="button"
-          class="btn btn-secondary btn-lg btn-pill"
-          (click)="goToSearch({ vehicleType: 'MOTORCYCLE' })"
-        >
-          Explorar motos
-        </button>
-      </div>
-    </div> -->
-
-  <!-- Trust Bar -->
-  <!--<div class="trust-bar">
-      <div class="trust-item">
-        <span class="material-icons" aria-hidden="true">directions_car</span>
-        <div>
-          <strong>2.500+</strong>
-          <span>veículos</span>
+          <span
+            class="material-symbols-outlined absolute left-4 text-primary font-bold"
+            >search</span
+          >
+          <input
+            class="w-full pl-12 pr-4 py-4 bg-surface-container-lowest rounded-full border border-outline-variant/30 focus:border-primary focus:ring-0 text-base text-on-surface placeholder:text-outline/60 shadow-sm"
+            placeholder="Cidade, modelo ou marca..."
+            type="text"
+            (keydown.enter)="goToSearch({ query: $any($event.target).value })"
+          />
         </div>
       </div>
-      <div class="trust-item">
-        <span class="material-icons" aria-hidden="true">verified</span>
-        <div>
-          <strong>100%</strong>
-          <span>verificados</span>
+    </section>
+
+    <!-- Quick Shortcuts -->
+    <section class="px-6 overflow-x-auto hide-scrollbar">
+      <div class="flex gap-5 min-w-max pb-2">
+        <button
+          *ngFor="let shortcut of quickShortcuts"
+          type="button"
+          class="flex flex-col items-center gap-2 group"
+          (click)="goToSearch({ vehicleType: shortcut.filterValue })"
+        >
+          <div
+            class="w-16 h-16 rounded-2xl bg-white shadow-sm border border-surface-container-high flex items-center justify-center group-hover:border-primary/50 group-hover:bg-primary/5 transition-all duration-300"
+          >
+            <span
+              class="material-symbols-outlined text-primary text-[28px]"
+              style="font-variation-settings: &quot;FILL&quot; 1"
+              >{{ shortcut.icon }}</span
+            >
+          </div>
+          <span class="text-[12px] font-semibold text-on-surface-variant">{{
+            shortcut.label
+          }}</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Mais Vistos Carousel -->
+    <!-- <section class="space-y-4">
+      <div class="flex justify-between items-center px-6">
+        <h3 class="!text-xl !font-bold tracking-tight">Mais Vistos</h3>
+        <span
+          class="text-sm font-bold text-primary active:opacity-60 transition-opacity cursor-pointer"
+          (click)="goToSearch({})"
+        >Ver todos</span>
+      </div>
+
+      <div class="flex gap-4 overflow-x-auto hide-scrollbar px-6 snap-x" *ngIf="carouselLoading">
+        <div *ngFor="let s of [1,2]" class="min-w-[300px] bg-white rounded-2xl shadow-md overflow-hidden border border-surface-container animate-pulse">
+          <div class="h-44 bg-gray-200"></div>
+          <div class="p-4 space-y-3">
+            <div class="h-5 bg-gray-200 rounded w-3/4"></div>
+            <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+          </div>
         </div>
       </div>
-      <div class="trust-item">
-        <span class="material-icons" aria-hidden="true">star</span>
-        <div>
-          <strong>4.8★</strong>
-          <span>avaliação</span>
-        </div>
-      </div>
-    </div>
-  </section> -->
 
-  <!-- Ads Carousel -->
-  <!-- <section class="featured-section ads-carousel-section">
-    <div class="section-head section-head--row">
-      <div>
-        <span class="eyebrow">Anúncios</span>
-        <h2>Encontre seu próximo veículo</h2>
-        <p>
-          Explore opções disponíveis perto de você e fale direto com quem
-          anuncia.
-        </p>
-      </div>
-
-      <div class="carousel-actions">
-        <button
-          type="button"
-          class="carousel-btn"
-          (click)="scrollAds(-1)"
-          aria-label="Ver anúncios anteriores"
-        >
-          <span class="material-icons" aria-hidden="true">chevron_left</span>
-        </button>
-        <button
-          type="button"
-          class="carousel-btn"
-          (click)="scrollAds(1)"
-          aria-label="Ver próximos anúncios"
-        >
-          <span class="material-icons" aria-hidden="true">chevron_right</span>
-        </button>
-        <a class="section-link" (click)="goToSearch({})">
-          Ver todos
-          <span class="material-icons" aria-hidden="true">arrow_forward</span>
-        </a>
-      </div>
-    </div>
-
-    <p class="carousel-state" *ngIf="carouselLoading">Carregando anúncios...</p>
-
-    <div
-      class="vehicle-carousel"
-      *ngIf="!carouselLoading && carouselAds.length"
-    >
-      <div class="vehicle-carousel__rail" #adsRail>
-        <article
-          class="vehicle-carousel__item"
+      <div class="flex gap-4 overflow-x-auto hide-scrollbar px-6 snap-x" *ngIf="!carouselLoading && carouselAds.length">
+        <div
           *ngFor="let vehicle of carouselAds; trackBy: trackByVehicleId"
+          class="min-w-[300px] bg-white rounded-2xl p-0 snap-center shadow-md overflow-hidden border border-surface-container cursor-pointer"
+          [routerLink]="['/vehicles', vehicle.id]"
         >
-          <app-vehicle-card [vehicle]="vehicle" />
-        </article>
+          <div class="relative h-44 overflow-hidden">
+            <img
+              [alt]="vehicle.title"
+              class="w-full h-full object-cover"
+              [src]="vehicle.coverImage || 'assets/placeholder-car.jpg'"
+              loading="lazy"
+            />
+            <div class="absolute top-3 right-3 bg-white/95 backdrop-blur px-2.5 py-1 rounded-full flex items-center gap-1 shadow-md" *ngIf="vehicle.owner?.ratingAverage">
+              <span class="material-symbols-outlined text-sm text-yellow-500" style="font-variation-settings: 'FILL' 1;">star</span>
+              <span class="text-xs font-bold text-on-surface">{{ vehicle.owner?.ratingAverage | number:'1.1-1' }}</span>
+            </div>
+          </div>
+          <div class="p-4 space-y-3">
+            <div class="flex justify-between items-start">
+              <div class="space-y-0.5">
+                <h4 class="!font-bold !text-lg text-on-surface !leading-tight">{{ vehicle.title }}</h4>
+                <div class="flex items-center gap-1 text-on-surface-variant/80 text-xs">
+                  <span class="material-symbols-outlined text-sm">location_on</span>
+                  <span>{{ vehicle.city }}, {{ vehicle.state }}</span>
+                </div>
+              </div>
+              <div class="text-right flex flex-col items-end">
+                <div class="flex items-baseline gap-0.5">
+                  <span class="text-xs font-bold text-primary">R$</span>
+                  <span class="text-xl font-black text-primary">{{ vehicle.dailyRate | number:'1.0-0' }}</span>
+                </div>
+                <span class="text-[10px] text-outline font-bold uppercase tracking-wider">por dia</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
 
-    <p class="carousel-state" *ngIf="!carouselLoading && !carouselAds.length">
-      Nenhum anúncio disponível por enquanto.
-    </p>
-  </section> -->
 
-  <!-- Cars List -->
-  <section class="cars-section">
-    <div class="section-head section-head--row">
-      <div>
-        <span class="eyebrow">Carros</span>
-        <h2>Carros prontos para sua rotina</h2>
-        <p>{{ carListSummary }}</p>
+      <p class="px-6 text-sm text-outline" *ngIf="!carouselLoading && !carouselAds.length">
+        Nenhum anúncio disponível por enquanto.
+      </p>
+    </section> -->
+
+    <section class="px-6 space-y-4">
+      <h3 class="!text-xl !font-bold tracking-tight">Categorias em Destaque</h3>
+      <div class="grid grid-cols-2 gap-4">
+        <div
+          *ngFor="let cat of featuredCategoryCards"
+          class="relative h-36 rounded-2xl overflow-hidden group shadow-sm cursor-pointer"
+          (click)="goToSearch({ category: cat.value })"
+        >
+          <img
+            [alt]="cat.label"
+            class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+            [src]="cat.image"
+            loading="lazy"
+          />
+          <div
+            class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-4"
+          >
+            <span class="text-white font-bold text-sm tracking-wide">{{
+              cat.label
+            }}</span>
+          </div>
+        </div>
       </div>
+    </section>
 
-      <a class="section-link" (click)="goToSearch({ vehicleType: 'CAR' })">
-        Ver carros
-        <span class="material-icons" aria-hidden="true">arrow_forward</span>
-      </a>
-    </div>
-
-    <p class="carousel-state" *ngIf="carsLoading">Carregando carros...</p>
-
-    <div class="cars-grid" *ngIf="!carsLoading && carList.length">
-      <app-vehicle-card
-        *ngFor="let vehicle of carList; trackBy: trackByVehicleId"
-        [vehicle]="vehicle"
-      />
-    </div>
-
-    <div
-      #carsSentinel
-      class="cars-sentinel"
-      *ngIf="showCarsInfiniteLoader && carList.length"
-      aria-hidden="true"
-    ></div>
-
-    <p class="cars-loading-more" *ngIf="carsLoadingMore">
-      Carregando mais carros...
-    </p>
-
-    <div class="cars-pagination" *ngIf="showDesktopCarsPagination">
-      <button
-        type="button"
-        class="cars-pagination__nav"
-        [disabled]="carsCurrentPage === 1 || carsPageLoading"
-        (click)="changeCarsPage(carsCurrentPage - 1)"
+    <!-- Confiança Section -->
+    <section class="px-6 pb-6 border-b border-outline-variant/30">
+      <div
+        class="bg-primary/5 p-6 rounded-2xl border border-primary/10 flex items-center gap-4"
       >
-        Anterior
-      </button>
+        <div class="bg-primary/10 p-4 rounded-xl">
+          <span
+            class="material-symbols-outlined text-primary text-3xl"
+            style="font-variation-settings: &quot;FILL&quot; 1"
+            >verified_user</span
+          >
+        </div>
+        <div>
+          <h4 class="!font-bold text-on-surface !text-base">
+            Alugue com confiança
+          </h4>
+          <p class="text-[13px] text-on-surface-variant leading-snug mt-1">
+            Seguro completo incluso e usuários verificados.
+          </p>
+        </div>
+      </div>
+    </section>
 
-      <div class="cars-pagination__pages">
+    <!-- Carros Anunciados / Explore Section -->
+    <section class="px-6 space-y-4">
+      <h3 class="!text-xl !font-bold tracking-tight">Explore Veículos</h3>
+
+      <!-- Loading State -->
+      <div
+        *ngIf="carsLoading && carList.length === 0"
+        class="flex flex-col gap-5"
+      >
+        <div
+          *ngFor="let s of [1, 2, 3]"
+          class="h-64 bg-surface-container rounded-2xl animate-pulse"
+        ></div>
+      </div>
+
+      <!-- Cars Grid -->
+      <div class="flex flex-col gap-5">
+        <app-vehicle-card
+          *ngFor="let vehicle of carList; trackBy: trackByVehicleId"
+          [vehicle]="vehicle"
+        ></app-vehicle-card>
+      </div>
+
+      <!-- Load More Button -->
+      <div class="pt-4 pb-2" *ngIf="hasMoreCars">
         <button
-          *ngFor="let page of desktopCarsPageNumbers"
-          type="button"
-          class="cars-pagination__page"
-          [class.cars-pagination__page--active]="page === carsCurrentPage"
-          [disabled]="carsPageLoading && page === carsCurrentPage"
-          (click)="changeCarsPage(page)"
+          class="w-full py-4 rounded-xl bg-surface-container-high text-on-surface font-bold active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
+          (click)="loadMoreCars()"
+          [disabled]="carsLoading"
         >
-          {{ page }}
+          <span *ngIf="!carsLoading">Carregar mais</span>
+          <span
+            *ngIf="carsLoading"
+            class="material-symbols-outlined animate-spin text-outline"
+            >progress_activity</span
+          >
         </button>
       </div>
 
-      <button
-        type="button"
-        class="cars-pagination__nav"
-        [disabled]="carsCurrentPage === carsTotalPages || carsPageLoading"
-        (click)="changeCarsPage(carsCurrentPage + 1)"
+      <!-- End of List -->
+      <p
+        class="text-center text-sm font-semibold text-outline py-4"
+        *ngIf="!hasMoreCars && carList.length > 0"
       >
-        Próxima
-      </button>
-    </div>
-
-    <p class="carousel-state" *ngIf="!carsLoading && !carList.length">
-      Nenhum carro disponível por enquanto.
-    </p>
-  </section>
-
-  <!-- Social Proof -->
-  <section class="social-proof">
-    <div class="section-head">
-      <span class="eyebrow">Confiança</span>
-      <h2>Quem usa, recomenda</h2>
-    </div>
-
-    <div class="testimonials-grid">
-      <article class="testimonial">
-        <div class="testimonial__stars">
-          <span class="material-icons" *ngFor="let s of [1, 2, 3, 4, 5]"
-            >star</span
-          >
-        </div>
-        <p>
-          "Aluguei em 10 minutos. Sem contrato longo, sem fiador. Melhor
-          experiência que já tive."
-        </p>
-        <div class="testimonial__author">
-          <strong>Lucas M.</strong>
-          <span>São Paulo, SP</span>
-        </div>
-      </article>
-
-      <article class="testimonial">
-        <div class="testimonial__stars">
-          <span class="material-icons" *ngFor="let s of [1, 2, 3, 4, 5]"
-            >star</span
-          >
-        </div>
-        <p>
-          "Uso a Triluga para alugar carro toda semana pra rodar no app. Preço
-          justo e zero dor de cabeça."
-        </p>
-        <div class="testimonial__author">
-          <strong>Fernanda R.</strong>
-          <span>Belo Horizonte, MG</span>
-        </div>
-      </article>
-
-      <article class="testimonial">
-        <div class="testimonial__stars">
-          <span class="material-icons" *ngFor="let s of [1, 2, 3, 4, 5]"
-            >star</span
-          >
-        </div>
-        <p>
-          "Anunciei meu carro parado e já aluguei 3 vezes. A Triluga é prática e
-          transparente."
-        </p>
-        <div class="testimonial__author">
-          <strong>Rafael S.</strong>
-          <span>Rio de Janeiro, RJ</span>
-        </div>
-      </article>
-    </div>
-  </section>
-
-  <!-- CTA Anunciante -->
-  <section class="host-cta">
-    <div class="host-cta__content">
-      <span class="eyebrow">Para donos de veículo</span>
-      <h2>Tem um carro parado?<br />Faça ele render.</h2>
-      <p>
-        Anuncie grátis na Triluga e comece a ganhar com o seu carro ou moto. Sem
-        mensalidade, sem complicação.
+        Você chegou ao fim da lista!
       </p>
-      <button
-        type="button"
-        class="btn btn-primary btn-lg btn-pill"
-        (click)="goToHost()"
-      >
-        Anunciar meu veículo
-      </button>
-    </div>
-  </section>
+    </section>
+  </main>
 
   <!-- Footer -->
-  <footer class="site-footer">
-    <div class="footer__top">
-      <div class="footer__brand">
-        <img
-          src="assets/branding/triluga-mark.svg"
-          alt="Triluga"
-          class="footer__logo"
-        />
-        <p>
-          Classificados de veículos entre pessoas. Simples, direto e sem
-          burocracia.
-        </p>
-      </div>
-
-      <nav class="footer__nav">
-        <div>
-          <strong>Explorar</strong>
-          <a (click)="goToSearch({ vehicleType: 'CAR' })">Carros</a>
-          <a (click)="goToSearch({ vehicleType: 'MOTORCYCLE' })">Motos</a>
-          <a (click)="goToSearch({})">Todos os anúncios</a>
-        </div>
-        <div>
-          <strong>Institucional</strong>
-          <a routerLink="/privacy">Privacidade</a>
-          <a routerLink="/anunciar">Anunciar</a>
-        </div>
-      </nav>
+  <footer
+    class="bg-surface-container-lowest border-t border-outline-variant/30 mt-6 px-6 pt-8 pb-10 space-y-6"
+  >
+    <div class="space-y-2">
+      <h2 class="text-xl font-black italic tracking-tighter text-primary">
+        Triluga
+      </h2>
+      <p class="text-sm text-on-surface-variant leading-relaxed">
+        O maior marketplace de aluguel de carros peer-to-peer do Brasil. Alugue
+        de forma simples, rápida e sem burocracia.
+      </p>
     </div>
 
-    <div class="footer__bottom">
-      <span>© 2024 Triluga. Todos os direitos reservados.</span>
-      <div class="footer__badges">
-        <span class="badge badge-muted">
-          <span class="material-icons badge__icon" aria-hidden="true"
-            >shield</span
-          >
-          LGPD
-        </span>
+    <div class="grid grid-cols-2 gap-4">
+      <div class="space-y-3">
+        <h4 class="font-bold text-sm text-on-surface uppercase tracking-wider">
+          Empresa
+        </h4>
+        <ul class="space-y-2">
+          <li>
+            <a
+              href="#"
+              class="text-sm text-on-surface-variant hover:text-primary transition-colors"
+              >Sobre nós</a
+            >
+          </li>
+          <li>
+            <a
+              href="#"
+              class="text-sm text-on-surface-variant hover:text-primary transition-colors"
+              >Como funciona</a
+            >
+          </li>
+          <li>
+            <a
+              href="#"
+              class="text-sm text-on-surface-variant hover:text-primary transition-colors"
+              >Carreiras</a
+            >
+          </li>
+        </ul>
       </div>
+      <div class="space-y-3">
+        <h4 class="font-bold text-sm text-on-surface uppercase tracking-wider">
+          Ajuda
+        </h4>
+        <ul class="space-y-2">
+          <li>
+            <a
+              href="#"
+              class="text-sm text-on-surface-variant hover:text-primary transition-colors"
+              >Central de Ajuda</a
+            >
+          </li>
+          <li>
+            <a
+              routerLink="/privacy"
+              class="text-sm text-on-surface-variant hover:text-primary transition-colors"
+              >Privacidade</a
+            >
+          </li>
+          <li>
+            <a
+              href="#"
+              class="text-sm text-on-surface-variant hover:text-primary transition-colors"
+              >Termos de Uso</a
+            >
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div
+      class="pt-6 border-t border-outline-variant/20 flex flex-col items-center justify-center gap-3"
+    >
+      <p class="text-xs text-on-surface-variant font-medium">
+        © 2026 Triluga. Todos os direitos reservados.
+      </p>
     </div>
   </footer>
 </main>
