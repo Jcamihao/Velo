@@ -22,7 +22,7 @@ export class RegisterPageComponent implements OnDestroy {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
-  protected fullName = 'Novo Usuário';
+  protected fullName = '';
   protected phone = '';
   protected zipCode = '';
   protected addressLine = '';
@@ -34,10 +34,13 @@ export class RegisterPageComponent implements OnDestroy {
   protected confirmPassword = '';
   protected showPassword = false;
   protected showConfirmPassword = false;
+  protected emailTouched = false;
+  protected passwordTouched = false;
   protected loading = false;
   protected feedback = '';
   protected zipCodeHint = '';
   protected zipCodeError = '';
+  protected acceptedTerms = false;
   protected pendingAvatarFile: File | null = null;
   private avatarPreviewUrl: string | null = null;
   private lastRequestedZipCode = '';
@@ -58,6 +61,91 @@ export class RegisterPageComponent implements OnDestroy {
       .slice(0, 2)
       .map((part) => part.charAt(0).toUpperCase())
       .join('');
+  }
+
+  protected get passwordStrengthChecklist() {
+    return [
+      {
+        label: 'Mínimo de 6 caracteres',
+        valid: this.password.length >= 6,
+      },
+      {
+        label: 'Letra maiúscula',
+        valid: /[A-ZÀ-Ý]/.test(this.password),
+      },
+      {
+        label: 'Número',
+        valid: /\d/.test(this.password),
+      },
+      {
+        label: 'Caractere especial',
+        valid: /[^A-Za-zÀ-ÿ0-9]/.test(this.password),
+      },
+    ];
+  }
+
+  protected get passwordStrengthCount() {
+    return this.passwordStrengthChecklist.filter((item) => item.valid).length;
+  }
+
+  protected get passwordStrengthPercent() {
+    return `${Math.round((this.passwordStrengthCount / 4) * 100)}%`;
+  }
+
+  protected get passwordStrengthLabel() {
+    if (!this.password) {
+      return 'Informe uma senha';
+    }
+
+    if (this.passwordStrengthCount === 4) {
+      return 'Senha forte';
+    }
+
+    if (this.passwordStrengthCount >= 2) {
+      return 'Senha média';
+    }
+
+    return 'Senha fraca';
+  }
+
+  protected get passwordStrengthBarClass() {
+    if (this.passwordStrengthCount === 4) {
+      return 'bg-gradient-to-r from-primary to-primary-container';
+    }
+
+    if (this.passwordStrengthCount >= 2) {
+      return 'bg-[#f59e0b]';
+    }
+
+    return 'bg-error';
+  }
+
+  protected get passwordStrengthTextClass() {
+    if (this.passwordStrengthCount === 4) {
+      return 'text-primary';
+    }
+
+    if (this.passwordStrengthCount >= 2) {
+      return 'text-[#f59e0b]';
+    }
+
+    return 'text-error';
+  }
+
+  protected get confirmPasswordTouched() {
+    return !!this.confirmPassword;
+  }
+
+  protected get emailIsValid() {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(this.email.trim());
+  }
+
+  protected get shouldShowEmailValidation() {
+    return this.emailTouched && !!this.email.trim();
+  }
+
+  protected get passwordsMatch() {
+    return !!this.confirmPassword && this.password === this.confirmPassword;
   }
 
   protected onZipCodeChange(value: string) {
@@ -156,7 +244,10 @@ export class RegisterPageComponent implements OnDestroy {
   }
 
   protected formatState(value: string) {
-    return value.replace(/[^A-Za-z]/g, '').toUpperCase().slice(0, 2);
+    return value
+      .replace(/[^A-Za-z]/g, '')
+      .toUpperCase()
+      .slice(0, 2);
   }
 
   protected register() {
@@ -179,8 +270,32 @@ export class RegisterPageComponent implements OnDestroy {
       return;
     }
 
+    if (!this.pendingAvatarFile && !this.resolvedAvatarUrl) {
+      this.feedback = 'Adicione uma foto de perfil para criar sua conta.';
+      return;
+    }
+
+    if (!this.emailIsValid) {
+      this.feedback = 'Digite um e-mail válido.';
+      this.emailTouched = true;
+      return;
+    }
+
     if (this.password !== this.confirmPassword) {
-      this.feedback = 'A confirmação de senha precisa ser igual à senha digitada.';
+      this.feedback =
+        'A confirmação de senha precisa ser igual à senha digitada.';
+      return;
+    }
+
+    if (this.passwordStrengthCount < 4) {
+      this.feedback =
+        'A senha precisa ter no mínimo 6 caracteres, letra maiúscula, número e caractere especial.';
+      return;
+    }
+
+    if (!this.acceptedTerms) {
+      this.feedback =
+        'Aceite os termos de uso e a política LGPD para continuar.';
       return;
     }
 
@@ -224,7 +339,8 @@ export class RegisterPageComponent implements OnDestroy {
         },
         error: (error) => {
           this.loading = false;
-          this.feedback = error?.error?.message || 'Não foi possível criar a conta.';
+          this.feedback =
+            error?.error?.message || 'Não foi possível criar a conta.';
         },
       });
   }

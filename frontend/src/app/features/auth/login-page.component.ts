@@ -19,21 +19,23 @@ export class LoginPageComponent {
   protected password = '';
   protected loading = false;
   protected feedback = '';
+  protected showPassword = false;
 
   protected login() {
     this.loading = true;
     this.feedback = '';
 
-    this.authService.login({ email: this.email, password: this.password }).subscribe({
-      next: (response) => {
-        this.loading = false;
-        const destination = response.user.role === 'ADMIN' ? '/admin' : '/';
-        this.router.navigate([destination]);
-      },
-      error: (error) => {
-        this.loading = false;
-        this.feedback = error?.error?.message || 'Falha ao autenticar.';
-      },
-    });
+    this.authService
+      .login({ email: this.email, password: this.password })
+      .subscribe({
+        next: () => {
+          this.loading = false;
+          this.router.navigate(['/']);
+        },
+        error: (error) => {
+          this.loading = false;
+          this.feedback = error?.error?.message || 'Falha ao autenticar.';
+        },
+      });
   }
 }

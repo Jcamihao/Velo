@@ -1,148 +1,441 @@
-<main class="auth-page">
-  <section class="auth-card">
-    <a class="auth-back" routerLink="/">
-      <span class="material-icons" aria-hidden="true">arrow_back</span>
-      Voltar
-    </a>
+<div
+  class="signup-stitch bg-background text-on-background font-body min-h-screen"
+>
+  <!-- TopAppBar (Task Specific: Register Intent) -->
+  <header
+    class="fixed top-0 z-50 w-full bg-surface/80 backdrop-blur-xl flex items-center justify-between px-6 py-4 tonal-transition bg-surface-container-low"
+  >
+    <div class="flex items-center gap-4">
+      <button
+        class="hover:opacity-80 transition-opacity scale-95 active:transition-all"
+        type="button"
+        routerLink="/auth/login"
+      >
+        <span
+          class="material-symbols-outlined text-primary"
+          data-icon="arrow_back"
+          >arrow_back</span
+        >
+      </button>
+      <h1 class="font-inter font-bold tracking-tight text-lg text-primary">
+        Cadastro
+      </h1>
+    </div>
+    <div class="text-2xl font-black italic text-primary tracking-tighter">
+      Triluga
+    </div>
+  </header>
 
-    <div class="auth-hero">
-      <img class="auth-logo" src="assets/branding/triluga-logo.png" alt="Triluga" />
-      <span class="eyebrow">Cadastro</span>
-      <h1>Crie sua conta na Triluga</h1>
-      <p>Sua conta já nasce pronta para anunciar, alugar, conversar e usar toda a Triluga.</p>
+  <main
+    class="pt-24 pb-12 px-6 max-w-[390px] mx-auto min-h-screen flex flex-col"
+  >
+    <!-- Hero Identity Section -->
+    <div class="mb-6">
+      <h2 class="text-3xl font-black tracking-tight text-on-surface mb-2">
+        Crie sua conta
+      </h2>
+      <p class="text-on-surface-variant leading-relaxed">
+        Faça parte da maior rede P2P automotiva do Brasil.
+      </p>
     </div>
 
-    <label>
-      <span>Nome completo</span>
-      <input [(ngModel)]="fullName" placeholder="Ex.: Maria Oliveira" />
-    </label>
-
-    <section class="avatar-section">
-      <div class="avatar-preview" [class.avatar-preview--filled]="resolvedAvatarUrl">
-        <img *ngIf="resolvedAvatarUrl; else registerAvatarInitials" [src]="resolvedAvatarUrl" alt="Prévia da foto de perfil" />
-
-        <ng-template #registerAvatarInitials>
-          <span>{{ avatarInitials }}</span>
-        </ng-template>
-      </div>
-
-      <div class="avatar-section__content">
-        <strong>Foto de perfil</strong>
-        <p>Opcional, mas recomendada para deixar seu perfil mais confiável.</p>
-
-        <label class="upload-trigger">
-          <input type="file" accept="image/*" (change)="onAvatarSelected($event)" />
-          <span class="material-icons" aria-hidden="true">add_a_photo</span>
-          <span>{{ pendingAvatarFile ? 'Trocar foto' : 'Adicionar foto' }}</span>
-        </label>
-
-        <small *ngIf="pendingAvatarFile">{{ pendingAvatarFile.name }}</small>
-      </div>
-    </section>
-
-    <label>
-      <span>Telefone</span>
-      <input
-        [ngModel]="phone"
-        (ngModelChange)="phone = formatPhone($event)"
-        inputmode="tel"
-        maxlength="19"
-        placeholder="+55 (11) 99999-9999"
-      />
-    </label>
-
-    <label>
-      <span>CEP</span>
-      <input
-        [ngModel]="zipCode"
-        (ngModelChange)="onZipCodeChange($event)"
-        inputmode="numeric"
-        maxlength="9"
-        placeholder="13010-111"
-      />
-    </label>
-
-    <p class="field-hint" *ngIf="zipCodeHint && !zipCodeError">{{ zipCodeHint }}</p>
-    <p class="field-hint field-hint--error" *ngIf="zipCodeError">{{ zipCodeError }}</p>
-
-    <label>
-      <span>Endereço</span>
-      <input [(ngModel)]="addressLine" placeholder="Rua, avenida ou praça" />
-    </label>
-
-    <label>
-      <span>Complemento</span>
-      <input [(ngModel)]="addressComplement" placeholder="Apto, bloco, casa, referência" />
-    </label>
-
-    <div class="grid">
-      <label>
-        <span>Cidade</span>
-        <input [(ngModel)]="city" />
-      </label>
-      <label>
-        <span>UF</span>
-        <input
-          [ngModel]="state"
-          (ngModelChange)="state = formatState($event)"
-          maxlength="2"
-          placeholder="SP"
-        />
-      </label>
-    </div>
-
-    <label>
-      <span>E-mail</span>
-      <input [(ngModel)]="email" type="email" placeholder="voce@email.com" />
-    </label>
-
-    <div class="password-grid">
-      <label>
-        <span>Senha</span>
-        <div class="password-field">
-          <input
-            [(ngModel)]="password"
-            [type]="showPassword ? 'text' : 'password'"
-            placeholder="Crie uma senha forte"
+    <!-- Registration Form -->
+    <form class="space-y-6 flex-grow" (ngSubmit)="register()">
+      <!-- Profile Photo -->
+      <section
+        class="bg-surface-container-low rounded-2xl p-4 flex items-center gap-4"
+      >
+        <div
+          class="w-20 h-20 rounded-2xl overflow-hidden bg-surface-container-highest flex-shrink-0 flex items-center justify-center text-primary font-black text-2xl ring-4 ring-primary/10"
+        >
+          <img
+            *ngIf="resolvedAvatarUrl; else avatarInitialsTemplate"
+            class="w-full h-full object-cover"
+            [src]="resolvedAvatarUrl"
+            alt="Foto de perfil"
           />
-          <button type="button" class="password-field__toggle" (click)="showPassword = !showPassword">
-            {{ showPassword ? 'Ocultar' : 'Mostrar' }}
-          </button>
+          <ng-template #avatarInitialsTemplate>
+            <span>{{ avatarInitials }}</span>
+          </ng-template>
         </div>
-      </label>
 
-      <label>
-        <span>Confirmar senha</span>
-        <div class="password-field">
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-3 mb-2">
+            <label
+              class="text-xs font-bold uppercase tracking-widest text-on-surface-variant"
+              >Foto de perfil</label
+            >
+          </div>
+          <p class="text-xs text-on-surface-variant leading-snug mb-3">
+            Adicione uma foto para criar sua conta.
+          </p>
+
+          <label
+            class="inline-flex items-center gap-2 bg-surface-container-lowest text-primary font-bold text-xs px-4 py-2.5 rounded-full shadow-sm active:scale-95 transition-all cursor-pointer"
+          >
+            <input
+              class="sr-only"
+              type="file"
+              accept="image/*"
+              (change)="onAvatarSelected($event)"
+            />
+            <span class="material-symbols-outlined text-[18px]">
+              add_a_photo
+            </span>
+            <span>{{
+              pendingAvatarFile ? 'Trocar foto' : 'Adicionar foto'
+            }}</span>
+          </label>
+
+          <p
+            class="text-[11px] text-on-surface-variant truncate mt-2"
+            *ngIf="pendingAvatarFile"
+          >
+            {{ pendingAvatarFile.name }}
+          </p>
+        </div>
+      </section>
+
+      <!-- Full Name -->
+      <div class="space-y-2">
+        <label
+          class="text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1"
+          >Nome Completo</label
+        >
+        <div class="relative">
           <input
-            [(ngModel)]="confirmPassword"
-            [type]="showConfirmPassword ? 'text' : 'password'"
-            placeholder="Repita a senha"
+            class="w-full bg-surface-container-low border-none rounded-xl py-4 px-5 focus:ring-2 focus:ring-primary-container transition-all placeholder:text-on-surface/30"
+            placeholder="Ex: João Silva"
+            type="text"
+            name="fullName"
+            [(ngModel)]="fullName"
+          />
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div class="space-y-2">
+        <label
+          class="text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1"
+          >Email</label
+        >
+        <div class="relative">
+          <input
+            class="w-full bg-surface-container-low border-none rounded-xl py-4 pl-5 pr-12 focus:ring-2 transition-all placeholder:text-on-surface/30"
+            [ngClass]="
+              !shouldShowEmailValidation
+                ? 'focus:ring-primary-container'
+                : emailIsValid
+                  ? 'focus:ring-primary-container ring-2 ring-primary/20'
+                  : 'focus:ring-error/20 ring-2 ring-error/20'
+            "
+            placeholder="nome@exemplo.com"
+            type="email"
+            name="email"
+            [(ngModel)]="email"
+            (focus)="emailTouched = true"
+            (blur)="emailTouched = true"
+          />
+          <span
+            class="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-xl email-validation-status"
+            *ngIf="shouldShowEmailValidation"
+            [ngClass]="emailIsValid ? 'text-primary' : 'text-error'"
+            [style.font-variation-settings]="'\'FILL\' 1'"
+          >
+            {{ emailIsValid ? 'check_circle' : 'cancel' }}
+          </span>
+        </div>
+        <p
+          class="text-[11px] font-medium email-validation-message"
+          *ngIf="shouldShowEmailValidation"
+          [ngClass]="emailIsValid ? 'text-primary' : 'text-error'"
+        >
+          {{ emailIsValid ? 'E-mail válido' : 'Digite um e-mail válido' }}
+        </p>
+      </div>
+
+      <!-- Phone Number (Optional) -->
+      <div class="space-y-2">
+        <div class="flex justify-between items-center ml-1">
+          <label
+            class="text-xs font-bold uppercase tracking-widest text-on-surface-variant"
+            >Telefone</label
+          >
+          <span class="text-[10px] text-on-surface/40 font-medium"
+            >OPCIONAL</span
+          >
+        </div>
+        <div class="relative">
+          <input
+            class="w-full bg-surface-container-low border-none rounded-xl py-4 px-5 focus:ring-2 focus:ring-primary-container transition-all placeholder:text-on-surface/30"
+            placeholder="(11) 99999-9999"
+            type="tel"
+            name="phone"
+            [ngModel]="phone"
+            (ngModelChange)="phone = formatPhone($event)"
+            inputmode="tel"
+            maxlength="19"
+          />
+        </div>
+      </div>
+
+      <!-- Password with Strength Indicator -->
+      <div class="space-y-2">
+        <label
+          class="text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1"
+          >Senha</label
+        >
+        <div class="relative">
+          <input
+            class="w-full bg-surface-container-low border-none rounded-xl py-4 px-5 focus:ring-2 focus:ring-primary-container transition-all placeholder:text-on-surface/30"
+            placeholder="••••••••"
+            [type]="showPassword ? 'text' : 'password'"
+            name="password"
+            [(ngModel)]="password"
+            (focus)="passwordTouched = true"
+            (blur)="passwordTouched = true"
           />
           <button
+            class="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant"
             type="button"
-            class="password-field__toggle"
-            (click)="showConfirmPassword = !showConfirmPassword"
+            (click)="showPassword = !showPassword"
           >
-            {{ showConfirmPassword ? 'Ocultar' : 'Mostrar' }}
+            <span
+              class="material-symbols-outlined text-xl"
+              data-icon="visibility"
+            >
+              {{ showPassword ? 'visibility_off' : 'visibility' }}
+            </span>
           </button>
         </div>
-      </label>
+
+        <!-- Strength Indicator -->
+        <div class="password-strength-panel px-1 pt-1" *ngIf="passwordTouched">
+          <div
+            class="h-1 w-full bg-surface-container-highest rounded-full overflow-hidden"
+          >
+            <div
+              class="h-full rounded-full transition-all duration-300"
+              [ngClass]="passwordStrengthBarClass"
+              [style.width]="passwordStrengthPercent"
+            ></div>
+          </div>
+
+          <p
+            class="text-[11px] mt-2 font-medium"
+            [ngClass]="
+              password ? passwordStrengthTextClass : 'text-on-surface-variant'
+            "
+          >
+            {{ passwordStrengthLabel }}
+          </p>
+
+          <div class="grid gap-1.5 pt-2">
+            <div
+              class="flex items-center gap-2 text-[11px] font-bold"
+              *ngFor="let item of passwordStrengthChecklist"
+              [ngClass]="
+                item.valid
+                  ? 'text-primary password-rule-complete'
+                  : 'text-on-surface/40'
+              "
+            >
+              <span
+                class="material-symbols-outlined text-[14px]"
+                [style.font-variation-settings]="
+                  item.valid ? '\'FILL\' 1' : '\'FILL\' 0'
+                "
+              >
+                {{ item.valid ? 'check_circle' : 'radio_button_unchecked' }}
+              </span>
+              <span>{{ item.label }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Confirm Password -->
+      <div class="space-y-2">
+        <label
+          class="text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1"
+          >Confirmar Senha</label
+        >
+        <div class="relative">
+          <input
+            class="w-full bg-surface-container-low border-none rounded-xl py-4 pl-5 pr-20 focus:ring-2 transition-all placeholder:text-on-surface/30"
+            [ngClass]="
+              !confirmPasswordTouched
+                ? 'focus:ring-primary-container'
+                : passwordsMatch
+                  ? 'focus:ring-primary-container ring-2 ring-primary/20'
+                  : 'focus:ring-error/20 ring-2 ring-error/20'
+            "
+            placeholder="••••••••"
+            [type]="showConfirmPassword ? 'text' : 'password'"
+            name="confirmPassword"
+            [(ngModel)]="confirmPassword"
+          />
+          <div
+            class="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-3"
+          >
+            <span
+              class="material-symbols-outlined text-xl confirm-password-status"
+              *ngIf="confirmPasswordTouched"
+              [ngClass]="passwordsMatch ? 'text-primary' : 'text-error'"
+              [style.font-variation-settings]="'\'FILL\' 1'"
+            >
+              {{ passwordsMatch ? 'check_circle' : 'cancel' }}
+            </span>
+            <button
+              class="text-on-surface-variant leading-none"
+              type="button"
+              (click)="showConfirmPassword = !showConfirmPassword"
+            >
+              <span
+                class="material-symbols-outlined text-xl"
+                data-icon="visibility"
+              >
+                {{ showConfirmPassword ? 'visibility_off' : 'visibility' }}
+              </span>
+            </button>
+          </div>
+        </div>
+        <p
+          class="text-[11px] font-medium confirm-password-message"
+          *ngIf="confirmPasswordTouched"
+          [ngClass]="passwordsMatch ? 'text-primary' : 'text-error'"
+        >
+          {{ passwordsMatch ? 'As senhas conferem' : 'As senhas não conferem' }}
+        </p>
+      </div>
+
+      <!-- Address data kept for existing signup flow -->
+      <div class="grid grid-cols-2 gap-4">
+        <div class="space-y-2">
+          <label
+            class="text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1"
+            >CEP</label
+          >
+          <input
+            class="w-full bg-surface-container-low border-none rounded-xl py-4 px-5 focus:ring-2 focus:ring-primary-container transition-all placeholder:text-on-surface/30"
+            placeholder="13010-111"
+            name="zipCode"
+            [ngModel]="zipCode"
+            (ngModelChange)="onZipCodeChange($event)"
+            inputmode="numeric"
+            maxlength="9"
+          />
+        </div>
+
+        <div class="space-y-2">
+          <label
+            class="text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1"
+            >UF</label
+          >
+          <input
+            class="w-full bg-surface-container-low border-none rounded-xl py-4 px-5 focus:ring-2 focus:ring-primary-container transition-all placeholder:text-on-surface/30"
+            placeholder="SP"
+            name="state"
+            [ngModel]="state"
+            (ngModelChange)="state = formatState($event)"
+            maxlength="2"
+          />
+        </div>
+      </div>
+
+      <p
+        class="text-[11px] font-medium text-primary"
+        *ngIf="zipCodeHint && !zipCodeError"
+      >
+        {{ zipCodeHint }}
+      </p>
+      <p class="text-[11px] font-medium text-error" *ngIf="zipCodeError">
+        {{ zipCodeError }}
+      </p>
+
+      <div class="space-y-2">
+        <label
+          class="text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1"
+          >Endereço</label
+        >
+        <input
+          class="w-full bg-surface-container-low border-none rounded-xl py-4 px-5 focus:ring-2 focus:ring-primary-container transition-all placeholder:text-on-surface/30"
+          placeholder="Rua, avenida ou praça"
+          name="addressLine"
+          [(ngModel)]="addressLine"
+        />
+      </div>
+
+      <div class="space-y-2">
+        <label
+          class="text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1"
+          >Cidade</label
+        >
+        <input
+          class="w-full bg-surface-container-low border-none rounded-xl py-4 px-5 focus:ring-2 focus:ring-primary-container transition-all placeholder:text-on-surface/30"
+          name="city"
+          [(ngModel)]="city"
+        />
+      </div>
+
+      <!-- Consent & Privacy -->
+      <div class="pt-4 space-y-4">
+        <label class="flex items-start gap-3 group cursor-pointer">
+          <div class="relative flex items-center">
+            <input
+              class="peer h-5 w-5 rounded border-none bg-surface-container-highest text-primary focus:ring-primary transition-all"
+              type="checkbox"
+              name="acceptedTerms"
+              [(ngModel)]="acceptedTerms"
+            />
+            <span
+              class="material-symbols-outlined absolute opacity-0 peer-checked:opacity-100 text-white text-[16px] left-0.5 pointer-events-none"
+              data-icon="check"
+              style="font-variation-settings: 'FILL' 1"
+              >check</span
+            >
+          </div>
+          <span class="text-sm leading-snug text-on-surface-variant">
+            Concordo com os
+            <a class="text-primary font-bold hover:underline" href="#"
+              >Termos de Uso</a
+            >
+            e autorizo o tratamento de dados conforme a
+            <a
+              class="text-primary font-bold hover:underline"
+              routerLink="/privacy"
+              >LGPD</a
+            >.
+          </span>
+        </label>
+      </div>
+
+      <p class="text-sm font-medium text-error" *ngIf="feedback">
+        {{ feedback }}
+      </p>
+
+      <!-- Primary Action -->
+      <div class="pt-6">
+        <button
+          class="w-full bg-gradient-to-br from-primary to-primary-container text-white font-bold py-5 rounded-full shadow-[0_16px_24px_rgba(46,204,113,0.15)] active:scale-95 transition-all text-center disabled:opacity-60 disabled:grayscale"
+          type="submit"
+          [disabled]="loading"
+        >
+          {{ loading ? 'Criando conta...' : 'Criar Conta' }}
+        </button>
+      </div>
+    </form>
+
+    <!-- Footer Links -->
+    <div class="mt-8 text-center">
+      <p class="text-on-surface-variant text-sm">
+        Já tem uma conta?
+        <a
+          class="text-primary font-bold ml-1 hover:underline"
+          routerLink="/auth/login"
+          >Entrar</a
+        >
+      </p>
     </div>
-
-    <button type="button" class="btn btn-primary" (click)="register()" [disabled]="loading">
-      {{ loading ? 'Criando conta...' : 'Criar conta' }}
-    </button>
-
-    <p class="feedback" *ngIf="feedback">{{ feedback }}</p>
-
-    <div class="helper-links">
-      <span>Já tem conta?</span>
-      <a routerLink="/auth/login">Entrar</a>
-    </div>
-
-    <div class="helper-links helper-links--secondary">
-      <a routerLink="/privacy">Privacidade</a>
-    </div>
-  </section>
-</main>
+  </main>
+</div>

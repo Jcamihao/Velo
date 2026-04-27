@@ -1,149 +1,129 @@
-.auth-page {
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
-  padding:
-    calc(var(--space-6) + env(safe-area-inset-top, 0px))
-    var(--page-gutter)
-    calc(var(--space-6) + env(safe-area-inset-bottom, 0px));
-  background: var(--background);
+:host {
+  display: block;
+  min-height: 100dvh;
 }
 
-.auth-card {
-  width: min(100%, 440px);
-  display: grid;
-  gap: var(--space-6);
+.login-stitch {
+  min-height: max(884px, 100dvh);
+  font-family: 'Inter', sans-serif;
+  background: #f7f9ff !important;
+  color: #091d2e !important;
 }
 
-.auth-back {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--graphite-400);
-  font-size: 14px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: color var(--duration-fast) ease;
+.login-stitch .material-symbols-outlined {
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
 }
 
-.auth-back:hover {
-  color: var(--mint-600);
+.login-stitch h1,
+.login-stitch h2,
+.login-stitch p {
+  margin: 0;
 }
 
-.auth-back .material-icons {
-  font-size: 18px;
+.login-stitch h1.text-lg {
+  font-size: 1.125rem !important;
+  line-height: 1.75rem !important;
+  font-weight: 700 !important;
 }
 
-.auth-hero {
-  display: grid;
-  gap: var(--space-3);
+.login-stitch h2.text-3xl {
+  font-size: 1.875rem !important;
+  line-height: 2.25rem !important;
+  font-weight: 800 !important;
 }
 
-.auth-logo {
-  width: min(180px, 60%);
-  height: auto;
-  margin-bottom: var(--space-2);
+.login-stitch .bg-surface {
+  background-color: #f7f9ff !important;
 }
 
-.auth-hero h1 {
-  font-size: 32px !important;
-  max-width: 14ch;
+.login-stitch .bg-surface\/80 {
+  background-color: rgba(247, 249, 255, 0.8) !important;
 }
 
-.auth-hero p {
-  font-size: 15px;
-  line-height: 1.5;
-  max-width: 38ch;
+.login-stitch .bg-surface-container-low {
+  background-color: #edf4ff !important;
 }
 
-.auth-form {
-  display: grid;
-  gap: var(--space-4);
+.login-stitch .bg-surface-container-lowest {
+  background-color: #ffffff !important;
 }
 
-.auth-feedback {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #991b1b;
-  font-size: 14px;
-  font-weight: 500;
+.login-stitch .bg-primary {
+  background-color: #006d37 !important;
 }
 
-.auth-feedback .material-icons {
-  font-size: 18px;
-  flex-shrink: 0;
+.login-stitch .bg-primary-container {
+  background-color: #2ecc71 !important;
 }
 
-.auth-links {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  text-align: center;
-  color: var(--text-secondary);
-  font-size: 14px;
+.login-stitch .bg-error-container {
+  background-color: #ffdad6 !important;
 }
 
-.auth-links a {
-  color: var(--mint-600);
-  font-weight: 700;
-  text-decoration: none;
+.login-stitch .text-on-surface {
+  color: #091d2e !important;
 }
 
-.auth-links a:hover {
-  color: var(--mint-700);
+.login-stitch .text-on_surface {
+  color: #091d2e !important;
 }
 
-.auth-links--muted {
-  margin-top: calc(var(--space-2) * -1);
+.login-stitch .text-on-surface\/30 {
+  color: rgba(9, 29, 46, 0.3) !important;
 }
 
-.auth-links--muted a {
-  color: var(--graphite-300);
-  font-weight: 500;
+.login-stitch .text-on-surface\/40 {
+  color: rgba(9, 29, 46, 0.4) !important;
 }
 
-@media (min-width: 768px) {
-  .auth-hero h1 {
-    font-size: 38px !important;
-  }
+.login-stitch .text-on-surface-variant {
+  color: #3d4a3e !important;
 }
 
-/* ── Home style alignment ── */
-.auth-page {
-  background: var(--background);
-  font-family: var(--font-body);
+.login-stitch .text-primary {
+  color: #006d37 !important;
 }
 
-.auth-card {
-  padding: var(--space-6);
-  border-radius: var(--radius-2xl);
-  background:
-    radial-gradient(ellipse at 85% 0%, rgba(43, 184, 138, 0.08) 0%, transparent 58%),
-    var(--white);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-xs);
+.login-stitch .text-primary-container {
+  color: #2ecc71 !important;
 }
 
-.auth-hero h1 {
-  max-width: 14ch;
+.login-stitch .text-error {
+  color: #ba1a1a !important;
 }
 
-.auth-logo {
-  width: min(180px, 60%);
+.login-stitch .text-on-error-container {
+  color: #93000a !important;
 }
 
-.auth-form {
-  gap: var(--space-4);
+.login-stitch .text-white {
+  color: #ffffff !important;
 }
 
-@media (min-width: 768px) {
-  .auth-card {
-    padding: var(--space-8);
-  }
+.login-stitch .border-error\/10 {
+  border-color: rgba(186, 26, 26, 0.1) !important;
+}
+
+.login-stitch .border-outline-variant\/15 {
+  border-color: rgba(187, 203, 187, 0.15) !important;
+}
+
+.login-stitch .from-primary {
+  --tw-gradient-from: #006d37 var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgba(0, 109, 55, 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops:
+    var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+.login-stitch .to-primary-container {
+  --tw-gradient-to: #2ecc71 var(--tw-gradient-to-position) !important;
+}
+
+.login-stitch button,
+.login-stitch a {
+  -webkit-tap-highlight-color: transparent;
 }

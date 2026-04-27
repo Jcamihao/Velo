@@ -1,57 +1,153 @@
-<main class="auth-page">
-  <section class="auth-card">
-    <a class="auth-back" routerLink="/">
-      <span class="material-icons" aria-hidden="true">arrow_back</span>
-      Voltar
-    </a>
+<div
+  class="login-stitch bg-surface text-on-surface min-h-screen flex flex-col items-center overflow-x-hidden"
+>
+  <!-- TopAppBar -->
+  <header
+    class="bg-surface/80 backdrop-blur-xl fixed top-0 z-50 w-full flex items-center justify-between px-6 py-4 no-line tonal-transition bg-surface-container-low"
+  >
+    <div class="flex items-center gap-4">
+      <button
+        class="hover:opacity-80 transition-opacity scale-95 active:transition-all"
+        type="button"
+        routerLink="/"
+      >
+        <span
+          class="material-symbols-outlined text-primary"
+          data-icon="arrow_back"
+          >arrow_back</span
+        >
+      </button>
+      <h1 class="font-inter font-bold tracking-tight text-lg text-primary">
+        Entrar
+      </h1>
+    </div>
+    <div class="text-2xl font-black italic text-primary tracking-tighter">
+      Triluga
+    </div>
+  </header>
 
-    <div class="auth-hero">
-      <img class="auth-logo" src="assets/branding/triluga-logo.png" alt="Triluga" />
-      <h1>Entre na sua conta</h1>
-      <p>Acesse seu painel, converse com anunciantes e gerencie seus anúncios.</p>
+  <main class="w-full max-w-[390px] px-6 pt-24 pb-12 flex flex-col flex-grow">
+    <!-- Brand / Identity Section -->
+    <div class="mb-10 text-center">
+      <div
+        class="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-primary to-primary-container rounded-3xl flex items-center justify-center shadow-lg"
+      >
+        <span
+          class="material-symbols-outlined text-white text-4xl"
+          style="font-variation-settings: 'FILL' 1"
+          >directions_car</span
+        >
+      </div>
+      <h2 class="text-3xl font-extrabold tracking-tighter text-on-surface mb-2">
+        Bem-vindo de volta
+      </h2>
+      <p class="text-on-surface-variant font-medium">
+        Acesse sua conta para gerenciar seus veículos e reservas.
+      </p>
     </div>
 
-    <form class="auth-form" (ngSubmit)="login()">
-      <label>
-        <span>E-mail</span>
-        <input
-          [(ngModel)]="email"
-          name="email"
-          type="email"
-          placeholder="seu@email.com"
-          autocomplete="email"
-        />
-      </label>
+    <!-- Login Form Content -->
+    <form class="flex flex-col gap-6" (ngSubmit)="login()">
+      <!-- Error State Message -->
+      <div
+        class="bg-error-container text-on-error-container px-4 py-3 rounded-lg flex items-center gap-3 border border-error/10"
+        *ngIf="feedback"
+        role="alert"
+      >
+        <span class="material-symbols-outlined text-error" data-icon="error"
+          >error</span
+        >
+        <span class="text-sm font-medium">{{ feedback }}</span>
+      </div>
 
-      <label>
-        <span>Senha</span>
-        <input
-          [(ngModel)]="password"
-          name="password"
-          type="password"
-          placeholder="••••••••"
-          autocomplete="current-password"
-        />
-      </label>
+      <div class="space-y-4">
+        <!-- Email Field -->
+        <div class="flex flex-col gap-2">
+          <label
+            class="text-sm font-bold text-on-surface tracking-wide uppercase ml-1"
+            for="email"
+            >E-mail</label
+          >
+          <div class="relative group">
+            <span
+              class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface/40 group-focus-within:text-primary transition-colors"
+              >mail</span
+            >
+            <input
+              class="w-full pl-12 pr-4 py-4 bg-surface-container-lowest border-none rounded-lg focus:ring-2 focus:ring-primary/20 text-on-surface placeholder:text-on-surface/30 font-medium transition-all shadow-sm"
+              id="email"
+              name="email"
+              [(ngModel)]="email"
+              placeholder="seu@email.com"
+              type="email"
+              autocomplete="email"
+              [disabled]="loading"
+            />
+          </div>
+        </div>
 
-      <button type="submit" class="btn btn-primary btn-block btn-lg" [disabled]="loading">
+        <!-- Password Field -->
+        <div class="flex flex-col gap-2">
+          <label
+            class="text-sm font-bold text-on-surface tracking-wide uppercase ml-1"
+            for="password"
+            >Senha</label
+          >
+          <div class="relative group">
+            <span
+              class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface/40 group-focus-within:text-primary transition-colors"
+              >lock</span
+            >
+            <input
+              class="w-full pl-12 pr-12 py-4 bg-surface-container-lowest border-none rounded-lg focus:ring-2 focus:ring-primary/20 text-on-surface placeholder:text-on-surface/30 font-medium transition-all shadow-sm"
+              id="password"
+              name="password"
+              [(ngModel)]="password"
+              placeholder="••••••••"
+              [type]="showPassword ? 'text' : 'password'"
+              autocomplete="current-password"
+              [disabled]="loading"
+            />
+            <button
+              class="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface/40"
+              type="button"
+              (click)="showPassword = !showPassword"
+            >
+              <span class="material-symbols-outlined">{{
+                showPassword ? 'visibility' : 'visibility_off'
+              }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Recovery Link -->
+        <div class="flex justify-end">
+          <a
+            class="text-sm font-bold text-primary hover:text-primary-container transition-colors tracking-tight"
+            href="#"
+            >Esqueceu a senha?</a
+          >
+        </div>
+      </div>
+
+      <!-- Primary Action -->
+      <button
+        class="w-full bg-gradient-to-br from-primary to-primary-container text-white py-4 rounded-full font-bold text-lg shadow-lg active:scale-95 transition-all mt-4 disabled:opacity-60 disabled:grayscale"
+        type="submit"
+        [disabled]="loading"
+      >
         {{ loading ? 'Entrando...' : 'Entrar' }}
       </button>
 
-      <div class="auth-feedback" *ngIf="feedback" role="alert">
-        <span class="material-icons" aria-hidden="true">error_outline</span>
-        {{ feedback }}
-      </div>
-
+      <!-- Registration Link -->
+      <p class="text-on-surface-variant font-medium text-center">
+        Não tem conta?
+        <a
+          class="text-primary font-bold ml-1 hover:underline"
+          routerLink="/auth/register"
+          >Cadastre-se</a
+        >
+      </p>
     </form>
-
-    <div class="auth-links">
-      <span>Não tem conta?</span>
-      <a routerLink="/auth/register">Crie agora</a>
-    </div>
-
-    <div class="auth-links auth-links--muted">
-      <a routerLink="/privacy">Política de privacidade</a>
-    </div>
-  </section>
-</main>
+  </main>
+</div>
