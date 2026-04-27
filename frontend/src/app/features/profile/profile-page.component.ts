@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { forkJoin, of, switchMap } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
+import { UiStateService } from '../../core/services/ui-state.service';
 import { ProfileApiService } from '../../core/services/profile-api.service';
 import { Profile } from '../../core/models/domain.models';
 
@@ -17,6 +18,8 @@ import { Profile } from '../../core/models/domain.models';
 export class ProfilePageComponent implements OnDestroy {
   protected readonly authService = inject(AuthService);
   private readonly profileApiService = inject(ProfileApiService);
+  private readonly uiStateService = inject(UiStateService);
+  private readonly router = inject(Router);
   protected profile: Profile = {
     fullName: '',
     phone: '',
@@ -44,6 +47,15 @@ export class ProfilePageComponent implements OnDestroy {
 
   ngOnDestroy() {
     this.revokeAvatarPreview();
+  }
+
+  protected toggleMenu() {
+    this.uiStateService.toggleMenu();
+  }
+
+  protected logout() {
+    this.authService.logout();
+    this.router.navigate(['/']);
   }
 
   protected get resolvedAvatarUrl() {

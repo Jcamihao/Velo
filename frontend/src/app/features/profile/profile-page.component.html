@@ -1,192 +1,261 @@
-<main class="page profile-page">
-  <section class="profile-card">
-    <div class="profile-card__hero">
-      <div
-        class="avatar-preview avatar-preview--large"
-        [class.avatar-preview--filled]="resolvedAvatarUrl"
+<main class="bg-surface text-on-surface pb-24 font-body antialiased">
+  <!-- TopAppBar -->
+  <header class="sticky top-0 z-40 bg-surface/90 backdrop-blur-md flex justify-between items-center w-full px-6 py-4">
+    <div class="flex items-center gap-3">
+      <span
+        class="material-symbols-outlined text-primary scale-110 active:scale-95 transition-transform cursor-pointer"
+        (click)="toggleMenu()"
+        >menu</span
       >
-        <img
-          *ngIf="resolvedAvatarUrl; else profileInitialsAvatar"
-          [src]="resolvedAvatarUrl"
-          alt="Foto de perfil"
-        />
+      <h1 class="!text-2xl !font-black italic tracking-tighter text-primary !leading-none !m-0">
+        Triluga
+      </h1>
+    </div>
+    <div class="flex items-center gap-4">
+      <span
+        class="material-symbols-outlined text-on-surface-variant scale-110 active:scale-95 transition-transform cursor-pointer"
+        >notifications</span
+      >
+    </div>
+  </header>
 
-        <ng-template #profileInitialsAvatar>
-          <span>{{ avatarInitials }}</span>
-        </ng-template>
+  <div class="px-6 space-y-8 max-w-2xl mx-auto pt-2">
+    <!-- Profile Header Section -->
+    <section class="flex flex-col items-center text-center space-y-4">
+      <div class="relative group">
+        <div class="w-28 h-28 rounded-full overflow-hidden border-4 border-surface-container-low shadow-xl">
+          <img
+            *ngIf="resolvedAvatarUrl; else profileInitialsAvatar"
+            [src]="resolvedAvatarUrl"
+            alt="Foto de perfil"
+            class="w-full h-full object-cover"
+          />
+          <ng-template #profileInitialsAvatar>
+            <div class="w-full h-full bg-primary-container/30 flex items-center justify-center">
+              <span class="text-3xl font-bold text-primary">{{ avatarInitials }}</span>
+            </div>
+          </ng-template>
+        </div>
+        <div class="absolute bottom-1 right-1 bg-primary text-on-primary w-7 h-7 rounded-full flex items-center justify-center border-2 border-surface shadow-md">
+          <span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">verified</span>
+        </div>
       </div>
-
-      <div>
-        <span class="eyebrow">Perfil</span>
-        <h1 class="profile-name-text">
+      <div class="space-y-1">
+        <h2 class="text-2xl font-extrabold tracking-tight text-on-surface">
           {{ authService.currentUser()?.profile?.fullName || 'Meu perfil' }}
-        </h1>
-        <p>{{ authService.currentUser()?.email }}</p>
+        </h2>
+        <p class="text-on-surface-variant text-sm">{{ authService.currentUser()?.email }}</p>
         <a
-          class="profile-public-link"
           *ngIf="authService.currentUser()?.id"
           [routerLink]="['/users', authService.currentUser()?.id]"
+          class="inline-flex items-center gap-1 text-primary text-xs font-bold mt-2 hover:underline"
         >
+          <span class="material-symbols-outlined text-sm">open_in_new</span>
           Ver meu perfil público
         </a>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="loading-card" *ngIf="loading">
-    <strong>Carregando seu perfil...</strong>
-    <p>Estamos buscando seus dados da conta.</p>
-  </section>
+    <!-- Loading State -->
+    <section class="flex flex-col items-center justify-center py-16 text-center" *ngIf="loading">
+      <div class="w-16 h-16 bg-surface-container-low rounded-full flex items-center justify-center mb-4 animate-pulse">
+        <span class="material-symbols-outlined text-3xl text-on-surface-variant/30">person</span>
+      </div>
+      <strong class="text-lg font-bold text-on-surface">Carregando seu perfil...</strong>
+      <p class="text-on-surface-variant/60 text-sm mt-1">Estamos buscando seus dados da conta.</p>
+    </section>
 
-  <section class="profile-form" *ngIf="!loading">
-    <div class="avatar-section">
-      <div>
-        <strong>Foto de perfil</strong>
-        <p>
-          Ela aparece no chat e ajuda a deixar sua conta mais confiável.
-        </p>
+    <!-- Profile Form -->
+    <section class="space-y-6" *ngIf="!loading">
+      <!-- Photo Upload -->
+      <div class="flex items-center gap-4 p-4 bg-surface-container-low rounded-xl">
+        <div class="shrink-0">
+          <div class="w-14 h-14 rounded-full overflow-hidden bg-primary-container/20">
+            <img *ngIf="resolvedAvatarUrl" [src]="resolvedAvatarUrl" class="w-full h-full object-cover" alt="Preview" />
+            <div *ngIf="!resolvedAvatarUrl" class="w-full h-full flex items-center justify-center">
+              <span class="material-symbols-outlined text-primary text-2xl">photo_camera</span>
+            </div>
+          </div>
+        </div>
+        <div class="flex-grow">
+          <strong class="text-sm font-bold text-on-surface">Foto de perfil</strong>
+          <p class="text-xs text-on-surface-variant/60">Aparece no chat e aumenta a confiança.</p>
+        </div>
+        <label class="shrink-0 bg-primary/10 text-primary px-4 py-2 rounded-full text-xs font-bold cursor-pointer active:scale-95 transition-all hover:bg-primary/20">
+          <input type="file" accept="image/*" class="hidden" (change)="onAvatarSelected($event)" />
+          {{ pendingAvatarFile ? 'Trocar' : 'Adicionar' }}
+        </label>
+      </div>
+      <p class="text-xs text-primary font-semibold px-2" *ngIf="pendingAvatarFile">
+        <span class="material-symbols-outlined text-sm align-text-bottom">check_circle</span>
+        Nova foto: {{ pendingAvatarFile.name }}
+      </p>
+
+      <!-- Form Fields -->
+      <div class="space-y-4">
+        <label class="block">
+          <span class="text-[11px] uppercase tracking-wider font-bold text-on-surface-variant/50 mb-1.5 block">Nome completo</span>
+          <input [(ngModel)]="profile.fullName" class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-xl px-4 py-3 text-on-surface font-medium focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all" />
+        </label>
+        <label class="block">
+          <span class="text-[11px] uppercase tracking-wider font-bold text-on-surface-variant/50 mb-1.5 block">Telefone</span>
+          <input [(ngModel)]="profile.phone" class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-xl px-4 py-3 text-on-surface font-medium focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all" />
+        </label>
+        <div class="grid grid-cols-3 gap-3">
+          <label class="block col-span-2">
+            <span class="text-[11px] uppercase tracking-wider font-bold text-on-surface-variant/50 mb-1.5 block">Cidade</span>
+            <input [(ngModel)]="profile.city" class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-xl px-4 py-3 text-on-surface font-medium focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all" />
+          </label>
+          <label class="block">
+            <span class="text-[11px] uppercase tracking-wider font-bold text-on-surface-variant/50 mb-1.5 block">UF</span>
+            <input
+              [ngModel]="profile.state"
+              (ngModelChange)="profile.state = formatState($event)"
+              maxlength="2"
+              placeholder="SP"
+              class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-xl px-4 py-3 text-on-surface font-medium focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all text-center uppercase"
+            />
+          </label>
+        </div>
+        <label class="block">
+          <span class="text-[11px] uppercase tracking-wider font-bold text-on-surface-variant/50 mb-1.5 block">Número do documento</span>
+          <input [(ngModel)]="profile.documentNumber" class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-xl px-4 py-3 text-on-surface font-medium focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all" />
+        </label>
+        <label class="block">
+          <span class="text-[11px] uppercase tracking-wider font-bold text-on-surface-variant/50 mb-1.5 block">Número da CNH</span>
+          <input [(ngModel)]="profile.driverLicenseNumber" class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-xl px-4 py-3 text-on-surface font-medium focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all" />
+        </label>
+        <label class="block">
+          <span class="text-[11px] uppercase tracking-wider font-bold text-on-surface-variant/50 mb-1.5 block">Bio</span>
+          <textarea [(ngModel)]="profile.bio" rows="4" class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-xl px-4 py-3 text-on-surface font-medium focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all resize-none"></textarea>
+        </label>
       </div>
 
-      <label class="upload-trigger">
-        <input
-          type="file"
-          accept="image/*"
-          (change)="onAvatarSelected($event)"
-        />
-        <span class="material-icons" aria-hidden="true">photo_camera</span>
-        <span>{{
-          pendingAvatarFile ? 'Trocar foto' : 'Adicionar foto'
-        }}</span>
-      </label>
-    </div>
-
-    <p class="file-hint" *ngIf="pendingAvatarFile">
-      Nova foto selecionada: {{ pendingAvatarFile.name }}
-    </p>
-
-    <label
-      ><span>Nome completo</span><input [(ngModel)]="profile.fullName"
-    /></label>
-    <label
-      ><span>Telefone</span><input [(ngModel)]="profile.phone"
-    /></label>
-    <div class="profile-grid">
-      <label><span>Cidade</span><input [(ngModel)]="profile.city" /></label>
-      <label>
-        <span>UF</span>
-        <input
-          [ngModel]="profile.state"
-          (ngModelChange)="profile.state = formatState($event)"
-          maxlength="2"
-          placeholder="SP"
-        />
-      </label>
-    </div>
-    <label
-      ><span>Número do documento</span
-      ><input [(ngModel)]="profile.documentNumber"
-    /></label>
-    <label
-      ><span>Número da CNH</span
-      ><input [(ngModel)]="profile.driverLicenseNumber"
-    /></label>
-    <label
-      ><span>Bio</span
-      ><textarea [(ngModel)]="profile.bio" rows="4"></textarea>
-    </label>
-
-    <a class="privacy-link" routerLink="/privacy-center">
-      Gerenciar preferências, exportação e solicitações na central de
-      privacidade
-    </a>
-
-    <div class="verification-grid">
-      <article class="verification-card">
-        <div class="verification-card__head">
-          <div>
-            <strong>Documento</strong>
-            <p>
-              {{
-                verificationStatusLabel(profile.documentVerificationStatus)
-              }}
-            </p>
+      <!-- Verification Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Document Card -->
+        <div class="p-4 bg-surface-container-lowest rounded-xl border border-outline-variant/10 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <strong class="text-sm font-bold text-on-surface">Documento</strong>
+              <p class="text-xs text-on-surface-variant/60 mt-0.5">{{ verificationStatusLabel(profile.documentVerificationStatus) }}</p>
+            </div>
+            <label class="bg-primary/10 text-primary px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer active:scale-95 transition-all hover:bg-primary/20">
+              <input type="file" accept="image/*" class="hidden" (change)="onDocumentSelected($event)" />
+              {{ pendingDocumentFile ? 'Trocar' : 'Enviar' }}
+            </label>
           </div>
-
-          <label class="upload-trigger">
-            <input
-              type="file"
-              accept="image/*"
-              (change)="onDocumentSelected($event)"
-            />
-            <span>{{
-              pendingDocumentFile ? 'Trocar arquivo' : 'Enviar'
-            }}</span>
-          </label>
+          <p class="text-xs text-primary font-semibold" *ngIf="pendingDocumentFile">
+            <span class="material-symbols-outlined text-sm align-text-bottom">attach_file</span>
+            {{ pendingDocumentFile.name }}
+          </p>
+          <button
+            *ngIf="profile.hasDocumentImage"
+            type="button"
+            class="text-xs text-primary font-bold hover:underline flex items-center gap-1"
+            [disabled]="openingDocument"
+            (click)="openVerificationFile('document')"
+          >
+            <span class="material-symbols-outlined text-sm">visibility</span>
+            {{ openingDocument ? 'Abrindo...' : 'Ver documento enviado' }}
+          </button>
         </div>
 
-        <p class="file-hint" *ngIf="pendingDocumentFile">
-          Novo arquivo: {{ pendingDocumentFile.name }}
-        </p>
-        <button
-          *ngIf="profile.hasDocumentImage"
-          type="button"
-          class="doc-link"
-          [disabled]="openingDocument"
-          (click)="openVerificationFile('document')"
-        >
-          {{ openingDocument ? 'Abrindo...' : 'Ver documento enviado' }}
-        </button>
-      </article>
-
-      <article class="verification-card">
-        <div class="verification-card__head">
-          <div>
-            <strong>CNH</strong>
-            <p>
-              {{
-                verificationStatusLabel(profile.driverLicenseVerification)
-              }}
-            </p>
+        <!-- CNH Card -->
+        <div class="p-4 bg-surface-container-lowest rounded-xl border border-outline-variant/10 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <strong class="text-sm font-bold text-on-surface">CNH</strong>
+              <p class="text-xs text-on-surface-variant/60 mt-0.5">{{ verificationStatusLabel(profile.driverLicenseVerification) }}</p>
+            </div>
+            <label class="bg-primary/10 text-primary px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer active:scale-95 transition-all hover:bg-primary/20">
+              <input type="file" accept="image/*" class="hidden" (change)="onDriverLicenseSelected($event)" />
+              {{ pendingDriverLicenseFile ? 'Trocar' : 'Enviar' }}
+            </label>
           </div>
-
-          <label class="upload-trigger">
-            <input
-              type="file"
-              accept="image/*"
-              (change)="onDriverLicenseSelected($event)"
-            />
-            <span>{{
-              pendingDriverLicenseFile ? 'Trocar arquivo' : 'Enviar'
-            }}</span>
-          </label>
+          <p class="text-xs text-primary font-semibold" *ngIf="pendingDriverLicenseFile">
+            <span class="material-symbols-outlined text-sm align-text-bottom">attach_file</span>
+            {{ pendingDriverLicenseFile.name }}
+          </p>
+          <button
+            *ngIf="profile.hasDriverLicenseImage"
+            type="button"
+            class="text-xs text-primary font-bold hover:underline flex items-center gap-1"
+            [disabled]="openingDriverLicense"
+            (click)="openVerificationFile('driverLicense')"
+          >
+            <span class="material-symbols-outlined text-sm">visibility</span>
+            {{ openingDriverLicense ? 'Abrindo...' : 'Ver CNH enviada' }}
+          </button>
         </div>
+      </div>
 
-        <p class="file-hint" *ngIf="pendingDriverLicenseFile">
-          Novo arquivo: {{ pendingDriverLicenseFile.name }}
-        </p>
+      <!-- Shortcut Menu -->
+      <section class="space-y-2 pt-4">
+        <h4 class="text-[11px] font-black uppercase tracking-[0.2em] text-on-surface/40 px-2 mb-4">Gerenciamento</h4>
+        <div class="space-y-1">
+          <a routerLink="/favorites" class="w-full flex items-center justify-between p-4 rounded-xl hover:bg-surface-container-low transition-colors group">
+            <div class="flex items-center gap-4">
+              <span class="material-symbols-outlined text-on-surface/60 group-hover:text-primary transition-colors">favorite</span>
+              <span class="font-semibold text-on-surface">Favoritos</span>
+            </div>
+            <span class="material-symbols-outlined text-on-surface/30 group-hover:text-on-surface/80 transition-colors text-lg">arrow_forward_ios</span>
+          </a>
+          <a routerLink="/chat" class="w-full flex items-center justify-between p-4 rounded-xl hover:bg-surface-container-low transition-colors group">
+            <div class="flex items-center gap-4">
+              <span class="material-symbols-outlined text-on-surface/60 group-hover:text-primary transition-colors">chat_bubble</span>
+              <span class="font-semibold text-on-surface">Meu Chat</span>
+            </div>
+            <span class="material-symbols-outlined text-on-surface/30 group-hover:text-on-surface/80 transition-colors text-lg">arrow_forward_ios</span>
+          </a>
+          <a routerLink="/privacy-center" class="w-full flex items-center justify-between p-4 rounded-xl hover:bg-surface-container-low transition-colors group">
+            <div class="flex items-center gap-4">
+              <span class="material-symbols-outlined text-on-surface/60 group-hover:text-primary transition-colors">privacy_tip</span>
+              <span class="font-semibold text-on-surface">Central de Privacidade</span>
+            </div>
+            <span class="material-symbols-outlined text-on-surface/30 group-hover:text-on-surface/80 transition-colors text-lg">arrow_forward_ios</span>
+          </a>
+          <a routerLink="/anunciar-carro" class="w-full flex items-center justify-between p-4 rounded-xl hover:bg-surface-container-low transition-colors group">
+            <div class="flex items-center gap-4">
+              <span class="material-symbols-outlined text-on-surface/60 group-hover:text-primary transition-colors">directions_car</span>
+              <span class="font-semibold text-on-surface">Meus Anúncios</span>
+            </div>
+            <span class="material-symbols-outlined text-on-surface/30 group-hover:text-on-surface/80 transition-colors text-lg">arrow_forward_ios</span>
+          </a>
+        </div>
+      </section>
+
+      <!-- Save Button -->
+      <button
+        type="button"
+        class="w-full bg-gradient-to-br from-primary to-primary-container text-white py-4 rounded-full font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-md shadow-primary/20 disabled:opacity-50"
+        (click)="save()"
+        [disabled]="saving"
+      >
+        <span class="material-symbols-outlined text-lg">save</span>
+        {{ saving ? 'Salvando...' : 'Salvar perfil' }}
+      </button>
+
+      <!-- Feedback Messages -->
+      <p class="text-center text-sm font-bold text-primary" *ngIf="feedback">
+        <span class="material-symbols-outlined text-sm align-text-bottom">check_circle</span>
+        {{ feedback }}
+      </p>
+      <p class="text-center text-sm font-bold text-error" *ngIf="errorMessage">
+        <span class="material-symbols-outlined text-sm align-text-bottom">error</span>
+        {{ errorMessage }}
+      </p>
+
+      <!-- Logout -->
+      <div class="pt-2 border-t border-surface-container">
         <button
-          *ngIf="profile.hasDriverLicenseImage"
-          type="button"
-          class="doc-link"
-          [disabled]="openingDriverLicense"
-          (click)="openVerificationFile('driverLicense')"
+          class="w-full flex items-center gap-4 p-4 rounded-xl hover:bg-error-container/20 transition-colors text-error"
+          (click)="logout()"
         >
-          {{ openingDriverLicense ? 'Abrindo...' : 'Ver CNH enviada' }}
+          <span class="material-symbols-outlined">logout</span>
+          <span class="font-bold">Sair</span>
         </button>
-      </article>
-    </div>
-
-    <button
-      type="button"
-      class="btn btn-primary"
-      (click)="save()"
-      [disabled]="saving"
-    >
-      {{ saving ? 'Salvando...' : 'Salvar perfil' }}
-    </button>
-    <p class="feedback" *ngIf="feedback">{{ feedback }}</p>
-    <p class="feedback feedback--error" *ngIf="errorMessage">
-      {{ errorMessage }}
-    </p>
-  </section>
+      </div>
+    </section>
+  </div>
 </main>
