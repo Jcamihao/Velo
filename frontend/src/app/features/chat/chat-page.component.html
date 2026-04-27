@@ -1,245 +1,509 @@
 <main
-  class="page chat-page"
-  [class.chat-page--conversation]="isConversationRoute"
+  class="chat-stitch w-full bg-surface text-on-background min-h-[100dvh] flex flex-col relative isolate"
 >
-  <section
-    class="chat-shell"
-    [class.chat-shell--conversation]="isConversationRoute"
-    *ngIf="authService.isAuthenticated(); else guestState"
-  >
-    <aside class="chat-sidebar" *ngIf="!isConversationRoute; else conversationView">
-      <div class="chat-sidebar__header">
-        <div>
-          <span class="eyebrow">Chat</span>
-          <h1>Conversas</h1>
-        </div>
-        <span class="connection-pill" [class.connection-pill--active]="socketService.isConfirmedOnline()">
-          {{ connectionStatusLabel }}
-        </span>
-      </div>
-
-      <div class="chat-sidebar__intro">
-        <p class="chat-sidebar__hint">
-          Abra uma conversa a partir da tela de um anúncio para falar direto com o anunciante.
-        </p>
-      </div>
-
-      <div class="chat-sidebar__actions" *ngIf="isLoadingConversations || conversations.length">
-        <a class="btn btn-secondary" routerLink="/search">Ver anúncios</a>
-      </div>
-
-      <div class="chat-empty" *ngIf="!isLoadingConversations && !conversations.length">
-        <div class="chat-empty__visual" aria-hidden="true">
-          <span class="material-icons">directions_car</span>
-          <span class="material-icons">chat_bubble_outline</span>
-        </div>
-
-        <div class="chat-empty__copy">
-          <strong>Comece por um anúncio</strong>
-          <p>Escolha um veículo, abra o anúncio e envie uma mensagem para combinar detalhes com o anunciante.</p>
-        </div>
-
-        <div class="chat-empty__actions">
-          <a class="btn btn-primary" routerLink="/search">Ver anúncios</a>
-          <a class="btn btn-secondary" routerLink="/">Voltar para início</a>
-        </div>
-      </div>
-
-      <div class="conversation-list" *ngIf="conversations.length">
-        <button
-          class="conversation-card"
-          type="button"
-          *ngFor="let conversation of conversations"
-          (click)="openConversation(conversation.id)"
-        >
-          <img
-            class="conversation-card__image"
-            [src]="conversation.otherParticipant.avatarUrl || fallbackAvatarImage"
-            [alt]="conversation.otherParticipant.fullName || conversation.otherParticipant.email"
-          />
-
-          <div class="conversation-card__content">
-            <div class="conversation-card__top">
-              <strong class="profile-name-text">{{ conversation.otherParticipant.fullName || conversation.otherParticipant.email }}</strong>
-              <span>{{ (conversation.lastMessageAt || conversation.updatedAt) | date: 'HH:mm' }}</span>
-            </div>
-
-            <span class="conversation-card__vehicle">{{ conversation.vehicle.title }}</span>
-            <p>{{ conversation.lastMessage?.content || 'Conversa iniciada. Envie sua primeira mensagem.' }}</p>
-          </div>
-
-          <span class="conversation-card__badge" *ngIf="conversation.unreadCount">
-            {{ conversation.unreadCount }}
-          </span>
-        </button>
-      </div>
-    </aside>
-
-    <ng-template #conversationView>
-      <section class="chat-thread" *ngIf="selectedConversation; else conversationFallback">
-        <header class="chat-thread__header chat-thread__header--single">
-          <div class="chat-thread__topbar">
-            <button
-              class="chat-thread__back"
-              type="button"
-              routerLink="/chat"
-              aria-label="Voltar para conversas"
-            >
-              <span class="material-icons" aria-hidden="true">arrow_back</span>
-            </button>
-
-            <a
-              class="chat-thread__identity"
-              [routerLink]="['/users', selectedConversation.otherParticipant.id]"
-              aria-label="Abrir perfil do anunciante"
-            >
-              <img
-                class="chat-thread__avatar"
-                [src]="selectedConversation.otherParticipant.avatarUrl || fallbackAvatarImage"
-                [alt]="selectedConversation.otherParticipant.fullName || selectedConversation.otherParticipant.email"
-              />
-
-              <div class="chat-thread__summary">
-                <h2 class="profile-name-text">{{ selectedConversation.otherParticipant.fullName || selectedConversation.otherParticipant.email }}</h2>
-                <p>
-                  <span
-                    class="chat-thread__presence"
-                    [class.chat-thread__presence--online]="selectedConversation.otherParticipant.isOnline"
-                  >
-                    {{ selectedConversation.otherParticipant.isOnline ? 'Online' : 'Offline' }}
-                  </span>
-                  <span aria-hidden="true">•</span>
-                  <span>{{ selectedConversation.vehicle.title }}</span>
-                </p>
-              </div>
-            </a>
-
-            <div class="chat-thread__actions">
-              <a
-                class="chat-thread__action"
-                [routerLink]="['/vehicles', selectedConversation.vehicle.id]"
-                aria-label="Abrir anúncio"
-              >
-                <span class="material-icons" aria-hidden="true">directions_car</span>
-              </a>
-
-              <div class="chat-thread__menu">
-                <button
-                  class="chat-thread__action"
-                  type="button"
-                  aria-label="Mais opções"
-                  (click)="toggleHeaderMenu()"
-                >
-                      <span class="material-icons" aria-hidden="true">more_vert</span>
-                </button>
-
-                <div class="chat-thread__menu-panel" *ngIf="headerMenuOpen">
-                  <a
-                    [routerLink]="['/users', selectedConversation.otherParticipant.id]"
-                    (click)="closeHeaderMenu()"
-                  >
-                    Ver perfil
-                  </a>
-                  <a
-                    [routerLink]="['/vehicles', selectedConversation.vehicle.id]"
-                    (click)="closeHeaderMenu()"
-                  >
-                    Abrir anúncio
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </header>
-
-        <div
-          #messagesContainer
-          class="chat-thread__messages"
-          *ngIf="messages.length; else noMessages"
-        >
-          <article
-            class="message"
-            *ngFor="let message of messages"
-            [class.message--mine]="message.sender.id === currentUserId"
+  <ng-container *ngIf="authService.isAuthenticated(); else guestState">
+    <ng-container *ngIf="!isConversationRoute; else conversationView">
+      <header
+        class="sticky top-0 z-40 bg-surface/90 backdrop-blur-md flex justify-between items-center w-full px-6 py-4"
+      >
+        <div class="flex items-center gap-3">
+          <span
+            class="material-symbols-outlined text-primary scale-110 active:scale-95 transition-transform cursor-pointer"
+            >menu</span
           >
-            <div class="message__bubble">
-              <strong class="profile-name-text" *ngIf="message.sender.id !== currentUserId">
-                {{ message.sender.fullName || message.sender.email }}
-              </strong>
-              <p>{{ message.content }}</p>
-              <span>{{ message.createdAt | date: 'dd/MM HH:mm' }}</span>
+          <h1
+            class="!text-2xl !font-black italic tracking-tighter text-primary !leading-none !m-0"
+          >
+            Triluga
+          </h1>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <span
+            class="material-symbols-outlined text-on-surface-variant scale-110 active:scale-95 transition-transform cursor-pointer"
+            >notifications</span
+          >
+        </div>
+      </header>
+
+      <section class="pt-4 pb-32 px-6 max-w-2xl mx-auto min-h-screen w-full">
+        <div class="mb-8 relative group">
+          <span
+            class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/60"
+          >
+            search
+          </span>
+          <input
+            class="w-full bg-surface-container-low border-none rounded-xl py-4 pl-12 pr-4 text-on-surface focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-on-surface-variant/40"
+            placeholder="Pesquisar mensagens ou veículos..."
+            type="text"
+            name="conversationSearchTerm"
+            [(ngModel)]="conversationSearchTerm"
+          />
+        </div>
+
+        <section class="space-y-4">
+          <div
+            class="flex flex-col items-center justify-center py-20 text-center opacity-40"
+            *ngIf="!filteredConversations.length"
+          >
+            <span
+              class="material-symbols-outlined text-4xl mb-4"
+              [class.animate-spin]="isLoadingConversations"
+            >
+              {{ isLoadingConversations ? 'refresh' : 'question_answer' }}
+            </span>
+            <p class="text-[11px] font-bold uppercase tracking-widest">
+              {{
+                isLoadingConversations
+                  ? 'Carregando...'
+                  : 'Caixa de entrada vazia'
+              }}
+            </p>
+            <p
+              class="text-[12px] font-medium lowercase tracking-wide mt-2"
+              *ngIf="!isLoadingConversations"
+            >
+              Nenhuma conversa encontrada.
+            </p>
+          </div>
+
+          <article
+            *ngFor="
+              let conversation of filteredConversations;
+              trackBy: trackByConversationId
+            "
+            class="p-4 rounded-xl flex items-center gap-4 hover:bg-surface-container-low transition-colors cursor-pointer group relative overflow-hidden"
+            [ngClass]="conversationItemClasses(conversation)"
+            (click)="openConversation(conversation.id)"
+          >
+            <div
+              class="absolute left-0 top-0 bottom-0 w-1 bg-primary transform transition-transform duration-300"
+              [ngClass]="
+                conversation.unreadCount
+                  ? 'scale-y-100'
+                  : 'scale-y-0 group-hover:scale-y-100'
+              "
+            ></div>
+
+            <div class="relative flex-shrink-0">
+              <div class="w-14 h-14 rounded-full overflow-hidden">
+                <img
+                  class="w-full h-full object-cover"
+                  [alt]="conversationParticipantName(conversation)"
+                  [src]="
+                    conversation.otherParticipant.avatarUrl ||
+                    fallbackAvatarImage
+                  "
+                />
+              </div>
+              <div
+                class="absolute bottom-0 right-0 w-4 h-4 bg-primary-container border-2 rounded-full"
+                [ngClass]="
+                  conversation.unreadCount
+                    ? 'border-surface-container-lowest'
+                    : 'border-surface'
+                "
+                *ngIf="conversation.otherParticipant.isOnline"
+              ></div>
+            </div>
+
+            <div class="flex-grow min-w-0">
+              <div class="flex justify-between items-baseline">
+                <h3 class="text-on-surface font-bold truncate">
+                  {{ conversationParticipantName(conversation) }}
+                </h3>
+                <span
+                  class="text-[11px] font-medium uppercase tracking-widest"
+                  [ngClass]="conversationTimeClasses(conversation)"
+                >
+                  {{ conversationTimeLabel(conversation) }}
+                </span>
+              </div>
+              <p class="text-[12px] font-semibold text-secondary mb-1 truncate">
+                {{ conversation.vehicle.title }}
+              </p>
+              <p
+                class="text-sm truncate"
+                [ngClass]="conversationPreviewClasses(conversation)"
+              >
+                {{
+                  conversation.lastMessage?.content ||
+                    'Conversa iniciada. Envie sua primeira mensagem.'
+                }}
+              </p>
             </div>
           </article>
+        </section>
+
+        <div class="mt-12 text-center opacity-40" *ngIf="conversations.length">
+          <span class="material-symbols-outlined text-4xl mb-2">lock</span>
+          <p class="text-xs font-medium uppercase tracking-widest">
+            End-to-end encrypted
+          </p>
         </div>
-
-        <ng-template #noMessages>
-          <div class="chat-empty chat-empty--thread">
-            <span class="material-icons" aria-hidden="true">mark_chat_read</span>
-            <strong>Conversa pronta</strong>
-            <p>Envie a primeira mensagem para alinhar retirada, entrega ou tirar dúvidas.</p>
-          </div>
-        </ng-template>
-
-        <form class="chat-composer" (ngSubmit)="sendMessage()">
-          <textarea
-            name="draftMessage"
-            [(ngModel)]="draftMessage"
-            rows="3"
-            maxlength="2000"
-            placeholder="Escreva sua mensagem"
-            [disabled]="isSending || isLoadingMessages"
-          ></textarea>
-
-          <button class="btn btn-primary" type="submit" [disabled]="!canSendMessage">
-            {{ isSending ? 'Enviando...' : 'Enviar' }}
-          </button>
-        </form>
       </section>
+    </ng-container>
+
+    <ng-template #conversationView>
+      <ng-container *ngIf="selectedConversation; else conversationFallback">
+        <!-- TopAppBar -->
+        <header
+          class="flex justify-between items-center w-full px-6 py-4 fixed top-0 z-50 bg-[#f7f9ff]/80 backdrop-blur-lg dark:bg-[#091d2e]/80 shadow-[0_8px_32px_0_rgba(9,29,46,0.06)]"
+        >
+          <div class="flex items-center gap-4">
+            <button
+              class="text-on-background active:scale-95 duration-200"
+              routerLink="/chat"
+              type="button"
+            >
+              <span class="material-symbols-outlined">arrow_back</span>
+            </button>
+            <div
+              class="flex flex-col"
+              [routerLink]="[
+                '/users',
+                selectedConversation.otherParticipant.id,
+              ]"
+            >
+              <span
+                class="font-['Inter'] font-bold tracking-tight text-[#091d2e] dark:text-[#f7f9ff] truncate"
+              >
+                {{
+                  selectedConversation.otherParticipant.fullName ||
+                    selectedConversation.otherParticipant.email
+                }}
+              </span>
+              <span
+                class="text-xs text-primary flex items-center gap-1"
+                [ngClass]="
+                  selectedConversation.otherParticipant.isOnline
+                    ? 'text-primary'
+                    : 'text-on-surface-variant/50'
+                "
+              >
+                <span
+                  class="w-1.5 h-1.5 rounded-full"
+                  [ngClass]="
+                    selectedConversation.otherParticipant.isOnline
+                      ? 'bg-primary-container'
+                      : 'bg-on-surface-variant/30'
+                  "
+                ></span>
+                {{
+                  selectedConversation.otherParticipant.isOnline
+                    ? 'Online'
+                    : 'Offline'
+                }}
+              </span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <div
+              class="w-10 h-10 rounded-full bg-surface-container overflow-hidden cursor-pointer flex-shrink-0"
+              [routerLink]="[
+                '/users',
+                selectedConversation.otherParticipant.id,
+              ]"
+            >
+              <img
+                class="w-full h-full object-cover"
+                [src]="
+                  selectedConversation.otherParticipant.avatarUrl ||
+                  fallbackAvatarImage
+                "
+              />
+            </div>
+          </div>
+        </header>
+
+        <main
+          class="flex-1 pt-20 pb-24 px-4 flex flex-col gap-6"
+          #messagesContainer
+        >
+          <!-- Context Card (Sticky-style) -->
+          <div class="sticky top-20 z-40">
+            <div
+              class="bg-surface-container-lowest rounded-xl p-3 flex items-center gap-4 shadow-[0_4px_20px_rgba(9,29,46,0.04)] border border-outline-variant/10"
+            >
+              <div class="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                <img
+                  class="w-full h-full object-cover"
+                  [src]="
+                    selectedConversation.vehicle.coverImage ||
+                    vehicleFallbackImage
+                  "
+                />
+              </div>
+              <div class="flex-1 min-w-0">
+                <h3 class="text-on-background font-bold truncate text-sm">
+                  {{ selectedConversation.vehicle.title }}
+                </h3>
+                <p class="text-primary font-bold text-base">
+                  R$
+                  {{ selectedConversation.vehicle.dailyRate | number: '1.0-0' }}
+                </p>
+              </div>
+              <button
+                class="bg-surface-container-low text-on-background px-3 py-2 rounded-full text-xs font-bold hover:bg-surface-container-high transition-colors"
+                type="button"
+                [routerLink]="['/vehicles', selectedConversation.vehicle.id]"
+              >
+                Ver detalhes
+              </button>
+            </div>
+          </div>
+
+          <!-- Chat Timeline -->
+          <div class="flex flex-col gap-6">
+            <!-- Date Separator -->
+            <div class="flex justify-center">
+              <span
+                class="text-[10px] uppercase tracking-[0.2em] font-bold text-on-background/40 bg-surface-container-low px-3 py-1 rounded-full"
+              >
+                Hoje
+              </span>
+            </div>
+
+            <ng-container *ngFor="let message of messages">
+              <!-- Receiver Message -->
+              <div
+                class="flex flex-col items-start max-w-[85%] group"
+                *ngIf="message.sender.id !== currentUserId"
+              >
+                <div
+                  class="bg-surface-container text-on-background px-4 py-3 rounded-2xl rounded-tl-none shadow-sm"
+                >
+                  <p class="text-sm leading-relaxed whitespace-pre-wrap">
+                    {{ message.content }}
+                  </p>
+                </div>
+                <span
+                  class="text-[10px] mt-1.5 ml-1 text-on-background/40 font-medium"
+                >
+                  {{ message.createdAt | date: 'HH:mm' }}
+                </span>
+              </div>
+
+              <!-- Sender Message -->
+              <div
+                class="flex flex-col items-end self-end max-w-[85%] group"
+                *ngIf="message.sender.id === currentUserId"
+              >
+                <div
+                  class="bg-gradient-to-br from-primary to-primary-container text-white px-4 py-3 rounded-2xl rounded-tr-none shadow-md shadow-primary/10"
+                >
+                  <p class="text-sm leading-relaxed whitespace-pre-wrap">
+                    {{ message.content }}
+                  </p>
+                </div>
+                <div class="flex items-center gap-1 mt-1.5 mr-1">
+                  <span class="text-[10px] text-on-background/40 font-medium">
+                    {{ message.createdAt | date: 'HH:mm' }}
+                  </span>
+                  <span
+                    class="material-symbols-outlined text-[14px] text-primary"
+                    style="font-variation-settings: 'FILL' 1"
+                  >
+                    done_all
+                  </span>
+                </div>
+              </div>
+            </ng-container>
+          </div>
+        </main>
+
+        <!-- Fixed Input Area -->
+        <footer
+          class="fixed bottom-0 left-0 w-full z-50 px-4 pb-6 pt-3 glass-panel bg-surface/90"
+        >
+          <input
+            #photoInput
+            class="hidden"
+            type="file"
+            accept="image/*"
+            (change)="handleAttachmentSelected($event, 'library')"
+          />
+          <input
+            #cameraInput
+            class="hidden"
+            type="file"
+            accept="image/*"
+            capture="environment"
+            (change)="handleAttachmentSelected($event, 'camera')"
+          />
+
+          <div
+            class="max-w-screen-md mx-auto mb-3 bg-surface-container-lowest border border-outline-variant/10 rounded-2xl p-2 flex items-center gap-3 shadow-sm"
+            *ngIf="pendingAttachment"
+          >
+            <img
+              class="w-12 h-12 rounded-xl object-cover"
+              [src]="pendingAttachment.previewUrl"
+              [alt]="pendingAttachment.file.name"
+            />
+            <div class="flex-1 min-w-0">
+              <p class="text-xs font-bold text-on-background">
+                {{
+                  pendingAttachment.source === 'camera'
+                    ? 'Foto da câmera'
+                    : 'Foto selecionada'
+                }}
+              </p>
+              <p class="text-[11px] text-on-background/60 truncate">
+                {{ pendingAttachment.file.name }}
+              </p>
+            </div>
+            <button
+              class="w-9 h-9 rounded-full flex items-center justify-center text-on-background/60 hover:text-primary bg-surface-container-low"
+              type="button"
+              (click)="clearPendingAttachment()"
+              aria-label="Remover foto"
+            >
+              <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+          </div>
+
+          <form
+            class="max-w-screen-md mx-auto flex items-center gap-3"
+            (ngSubmit)="sendMessage()"
+          >
+            <div class="relative flex-shrink-0">
+              <button
+                class="w-12 h-12 flex items-center justify-center text-on-background/60 hover:text-primary transition-colors bg-surface-container-low rounded-full"
+                type="button"
+                (click)="toggleAttachmentMenu()"
+                [attr.aria-expanded]="attachmentMenuOpen"
+                aria-label="Adicionar anexo"
+              >
+                <span class="material-symbols-outlined">add</span>
+              </button>
+
+              <div
+                class="attachment-menu absolute bottom-14 left-0 w-56 rounded-2xl bg-surface-container-lowest border border-outline-variant/10 shadow-xl shadow-[#091d2e]/10 p-2 z-50"
+                *ngIf="attachmentMenuOpen"
+              >
+                <button
+                  class="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-on-background hover:bg-surface-container-low transition-colors"
+                  type="button"
+                  (click)="openPhotoPicker()"
+                >
+                  <span class="material-symbols-outlined text-primary"
+                    >photo_library</span
+                  >
+                  <span class="text-sm font-bold">Enviar foto</span>
+                </button>
+                <button
+                  class="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-on-background hover:bg-surface-container-low transition-colors"
+                  type="button"
+                  (click)="openCameraPicker()"
+                >
+                  <span class="material-symbols-outlined text-primary"
+                    >photo_camera</span
+                  >
+                  <span class="text-sm font-bold">Tirar foto</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="flex-1 relative">
+              <input
+                name="draftMessage"
+                [(ngModel)]="draftMessage"
+                class="w-full bg-surface-container border-none rounded-full py-3.5 px-6 text-sm focus:ring-2 focus:ring-primary/20 placeholder:text-on-background/30 text-on-background"
+                placeholder="Escreva sua mensagem..."
+                type="text"
+                [disabled]="isSending || isLoadingMessages"
+              />
+              <button
+                class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-on-background/40 hover:text-primary"
+                type="button"
+              >
+                <span class="material-symbols-outlined">mood</span>
+              </button>
+            </div>
+            <button
+              type="submit"
+              class="w-12 h-12 flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-primary to-primary-container text-white rounded-full shadow-lg shadow-primary/20 active:scale-90 transition-transform disabled:opacity-50 disabled:grayscale"
+              [disabled]="!canSendMessage"
+            >
+              <span
+                class="material-symbols-outlined"
+                style="font-variation-settings: 'FILL' 1"
+              >
+                {{ isSending ? 'hourglass_top' : 'send' }}
+              </span>
+            </button>
+          </form>
+        </footer>
+      </ng-container>
 
       <ng-template #conversationFallback>
-        <section class="chat-thread chat-thread--empty" *ngIf="isLoadingConversations; else noSelection">
-          <div class="chat-empty chat-empty--thread">
-            <span class="material-icons" aria-hidden="true">hourglass_top</span>
-            <strong>Carregando conversa</strong>
-            <p>Estamos buscando as mensagens mais recentes para abrir esse chat.</p>
-          </div>
-        </section>
-      </ng-template>
-
-      <ng-template #noSelection>
-        <section class="chat-thread chat-thread--empty">
-          <div class="chat-empty chat-empty--thread">
-            <span class="material-icons" aria-hidden="true">chat</span>
-            <strong>Conversa não encontrada</strong>
-            <p>Volte para a lista de conversas para escolher um chat válido.</p>
-            <a class="btn btn-secondary" routerLink="/chat">Voltar para conversas</a>
-          </div>
+        <section
+          class="flex flex-col items-center justify-center w-full flex-1 min-h-[70vh] opacity-40"
+        >
+          <span
+            class="material-symbols-outlined text-4xl mb-4"
+            [class.animate-spin]="isLoadingConversations"
+          >
+            {{ isLoadingConversations ? 'refresh' : 'chat_bubble_outline' }}
+          </span>
+          <p class="text-[11px] uppercase tracking-widest font-bold">
+            {{
+              isLoadingConversations
+                ? 'Carregando Chat...'
+                : 'Conversa não encontrada'
+            }}
+          </p>
+          <button
+            class="mt-8 bg-surface-container-high text-on-background px-6 py-3 rounded-full font-bold text-sm tracking-wide active:scale-95 transition-transform"
+            *ngIf="!isLoadingConversations"
+            routerLink="/chat"
+            type="button"
+          >
+            Sair
+          </button>
         </section>
       </ng-template>
     </ng-template>
-  </section>
+  </ng-container>
 
   <ng-template #guestState>
-    <section class="guest-card surface-card" *ngIf="authService.isRestoringSession(); else loginPrompt">
-      <span class="eyebrow">Chat</span>
-      <h1>Restaurando sua sessão</h1>
-      <p>Estamos confirmando seu login para abrir as conversas.</p>
-    </section>
-
-    <ng-template #loginPrompt>
-    <section class="guest-card surface-card">
-      <span class="eyebrow">Chat</span>
-      <h1>Converse em tempo real com o anunciante</h1>
-      <p>
-        Entre na sua conta para acompanhar conversas, combinar retirada e responder mensagens na hora.
+    <section
+      class="flex flex-col items-center justify-center flex-1 px-8 text-center w-full max-w-sm mx-auto h-[80vh]"
+    >
+      <span
+        class="material-symbols-outlined text-6xl text-primary/30 mb-6"
+        style="font-variation-settings: 'FILL' 1"
+      >
+        lock_person
+      </span>
+      <h1
+        class="text-2xl font-black font-['Inter'] text-on-background tracking-tight mb-2 leading-tight"
+      >
+        Entrar para ler<br />suas mensagens
+      </h1>
+      <p
+        class="text-on-surface-variant/80 text-sm mb-10 leading-relaxed max-w-[280px]"
+      >
+        Faça o login em nosso ambiente seguro para negociar diretamente com os
+        proprietários.
       </p>
-
-      <div class="guest-card__actions">
-        <a class="btn btn-primary" routerLink="/auth/login">Entrar</a>
-        <a class="btn btn-secondary" routerLink="/search">Ver anúncios</a>
+      <div class="flex flex-col gap-3 w-full">
+        <a
+          class="bg-primary hover:bg-primary/90 text-white rounded-full py-4 font-bold tracking-wide active:scale-95 transition-transform shadow-md"
+          routerLink="/auth/login"
+        >
+          Fazer Login Seguro
+        </a>
+        <a
+          class="bg-surface-container-high hover:bg-surface-variant text-on-background font-bold tracking-wide rounded-full py-4 active:scale-95 transition-transform"
+          routerLink="/search"
+        >
+          Explorar Anúncios
+        </a>
       </div>
     </section>
-    </ng-template>
   </ng-template>
 </main>

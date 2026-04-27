@@ -1,5 +1,11 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component, DestroyRef, ElementRef, ViewChild, inject } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  ElementRef,
+  ViewChild,
+  inject,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -33,6 +39,8 @@ export class ChatPageComponent {
 
   protected readonly fallbackAvatarImage =
     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Crect width='160' height='160' rx='40' fill='%23f3eeee'/%3E%3Ccircle cx='80' cy='60' r='24' fill='%23b7aaac'/%3E%3Cpath d='M40 128c7-22 24-34 40-34s33 12 40 34' fill='%23b7aaac'/%3E%3C/svg%3E";
+  protected readonly vehicleFallbackImage =
+    'https://lh3.googleusercontent.com/aida-public/AB6AXuD-5CMBZUxKBjq4dV6OIv6jCIskL6ZMefW2QaELDIBGXJDHaPcGeNaM0QyVIQHM5sejbgxOcXb5PeohKC6voIgcg2RIZ-IAQPYOWHMm3pPTYhpkAYXvG8TwtBYPHeYZrnFoKPQ6YpWMtmRRngAcqyvttsX0ossSO1D2rD98NvuoBZ-sLiRAvxwRIvTcpfNnj3-9sL9DQME-VW91LXK1JGFKgI4nj3wWwNwpW9Aqti-1BGxBWV8Zj0scwXENExlTaoX328NStqdT-i34';
 
   protected conversations: ChatConversationItem[] = [];
   protected messages: ChatMessage[] = [];
@@ -41,15 +49,29 @@ export class ChatPageComponent {
   protected isLoadingConversations = true;
   protected isLoadingMessages = false;
   protected isSending = false;
-  protected headerMenuOpen = false;
+  protected conversationSearchTerm = '';
+  protected attachmentMenuOpen = false;
+  protected pendingAttachment: {
+    file: File;
+    previewUrl: string;
+    source: 'camera' | 'library';
+  } | null = null;
 
   @ViewChild('messagesContainer')
   private messagesContainer?: ElementRef<HTMLDivElement>;
+
+  @ViewChild('photoInput')
+  private photoInput?: ElementRef<HTMLInputElement>;
+
+  @ViewChild('cameraInput')
+  private cameraInput?: ElementRef<HTMLInputElement>;
 
   private requestedConversationId: string | null = null;
   private socketEventsBound = false;
 
   constructor() {
+    this.destroyRef.onDestroy(() => this.revokePendingAttachmentPreview());
+
     this.hydrateConversationsFromInbox();
 
     if (this.authService.hasSession()) {
@@ -114,36 +136,130 @@ export class ChatPageComponent {
     );
   }
 
+  protected get filteredConversations() {
+    const searchTerm = this.conversationSearchTerm.trim().toLowerCase();
+
+    if (!searchTerm) {
+      return this.conversations;
+    }
+
+    return this.conversations.filter((conversation) => {
+      const participantName =
+        conversation.otherParticipant.fullName ||
+        conversation.otherParticipant.email;
+      const preview = conversation.lastMessage?.content || '';
+
+      return [participantName, conversation.vehicle.title, preview].some(
+        (value) => value.toLowerCase().includes(searchTerm),
+      );
+    });
+  }
+
   protected get canSendMessage() {
     return (
       !!this.selectedConversationId &&
-      !!this.draftMessage.trim() &&
+      (!!this.draftMessage.trim() || !!this.pendingAttachment) &&
       !this.isSending &&
       !this.isLoadingMessages
     );
-  }
-
-  protected toggleHeaderMenu() {
-    this.headerMenuOpen = !this.headerMenuOpen;
-  }
-
-  protected closeHeaderMenu() {
-    this.headerMenuOpen = false;
   }
 
   protected openConversation(conversationId: string) {
     this.router.navigate(['/chat', conversationId]);
   }
 
+  protected conversationParticipantName(conversation: ChatConversationItem) {
+    return (
+      conversation.otherParticipant.fullName ||
+      conversation.otherParticipant.email
+    );
+  }
+
+  protected conversationItemClasses(conversation: ChatConversationItem) {
+    return conversation.unreadCount
+      ? 'bg-surface-container-lowest'
+      : 'bg-surface';
+  }
+
+  protected conversationTimeClasses(conversation: ChatConversationItem) {
+    return conversation.unreadCount
+      ? 'text-primary'
+      : 'text-on-surface-variant/40';
+  }
+
+  protected conversationPreviewClasses(conversation: ChatConversationItem) {
+    return conversation.unreadCount
+      ? 'text-on-surface-variant font-bold'
+      : 'text-on-surface-variant/60 font-medium';
+  }
+
+  protected conversationTimeLabel(conversation: ChatConversationItem) {
+    const value =
+      conversation.lastMessageAt ||
+      conversation.lastMessage?.createdAt ||
+      conversation.updatedAt;
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return '';
+    }
+
+    const now = new Date();
+    const startOfToday = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
+    const startOfDate = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+    );
+    const dayDifference = Math.round(
+      (startOfToday.getTime() - startOfDate.getTime()) / 86_400_000,
+    );
+
+    if (dayDifference === 0) {
+      return new Intl.DateTimeFormat('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+      }).format(date);
+    }
+
+    if (dayDifference === 1) {
+      return 'Yesterday';
+    }
+
+    if (dayDifference < 7) {
+      return new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(
+        date,
+      );
+    }
+
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+    }).format(date);
+  }
+
+  protected trackByConversationId(
+    _index: number,
+    conversation: ChatConversationItem,
+  ) {
+    return conversation.id;
+  }
+
   protected selectConversation(conversationId: string) {
-    if (this.selectedConversationId === conversationId && this.messages.length) {
+    if (
+      this.selectedConversationId === conversationId &&
+      this.messages.length
+    ) {
       return;
     }
 
     this.logger.info('chat-page', 'conversation_selected', {
       conversationId,
     });
-    this.closeHeaderMenu();
     this.selectedConversationId = conversationId;
 
     this.socketService.joinConversation(conversationId);
@@ -153,7 +269,7 @@ export class ChatPageComponent {
 
   protected sendMessage() {
     const conversationId = this.selectedConversationId;
-    const content = this.draftMessage.trim();
+    const content = this.buildMessageContent(this.draftMessage.trim());
 
     if (!conversationId || !content) {
       this.logger.warn('chat-page', 'send_message_blocked', {
@@ -176,6 +292,7 @@ export class ChatPageComponent {
         next: (message) => {
           this.appendMessage(message);
           this.draftMessage = '';
+          this.clearPendingAttachment();
           this.isSending = false;
           this.logger.info('chat-page', 'send_message_succeeded', {
             conversationId,
@@ -191,6 +308,53 @@ export class ChatPageComponent {
           });
         },
       });
+  }
+
+  protected toggleAttachmentMenu() {
+    this.attachmentMenuOpen = !this.attachmentMenuOpen;
+  }
+
+  protected openPhotoPicker() {
+    this.attachmentMenuOpen = false;
+    this.photoInput?.nativeElement.click();
+  }
+
+  protected openCameraPicker() {
+    this.attachmentMenuOpen = false;
+    this.cameraInput?.nativeElement.click();
+  }
+
+  protected handleAttachmentSelected(
+    event: Event,
+    source: 'camera' | 'library',
+  ) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    input.value = '';
+
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      this.logger.warn('chat-page', 'attachment_rejected', {
+        type: file.type,
+      });
+      return;
+    }
+
+    this.clearPendingAttachment();
+    this.pendingAttachment = {
+      file,
+      previewUrl: URL.createObjectURL(file),
+      source,
+    };
+  }
+
+  protected clearPendingAttachment() {
+    this.revokePendingAttachmentPreview();
+    this.pendingAttachment = null;
   }
 
   private bindSocketEvents() {
@@ -253,10 +417,7 @@ export class ChatPageComponent {
       });
   }
 
-  private loadMessages(
-    conversationId: string,
-    options?: { silent?: boolean },
-  ) {
+  private loadMessages(conversationId: string, options?: { silent?: boolean }) {
     const silent = options?.silent ?? false;
 
     if (!silent) {
@@ -318,7 +479,9 @@ export class ChatPageComponent {
   }
 
   private appendMessage(message: ChatMessage) {
-    if (this.messages.some((currentMessage) => currentMessage.id === message.id)) {
+    if (
+      this.messages.some((currentMessage) => currentMessage.id === message.id)
+    ) {
       return;
     }
 
@@ -402,5 +565,21 @@ export class ChatPageComponent {
     return this.conversations.some(
       (conversation) => conversation.id === conversationId,
     );
+  }
+
+  private buildMessageContent(content: string) {
+    if (!this.pendingAttachment) {
+      return content;
+    }
+
+    const attachmentLabel = `[Foto] ${this.pendingAttachment.file.name}`;
+
+    return content ? `${content}\n${attachmentLabel}` : attachmentLabel;
+  }
+
+  private revokePendingAttachmentPreview() {
+    if (this.pendingAttachment?.previewUrl) {
+      URL.revokeObjectURL(this.pendingAttachment.previewUrl);
+    }
   }
 }
