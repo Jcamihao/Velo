@@ -16,9 +16,12 @@
     "db:seed": "npm --prefix backend run prisma:seed",
     "db:add:cars": "npm --prefix backend run db:add:cars --",
     "backend:prepare": "npm --prefix backend run db:prepare",
-    "backend:verify": "npm --prefix backend run verify"
+    "backend:verify": "npm --prefix backend run verify",
+    "format": "prettier --write \"**/*.{ts,html,scss,css,json,md,yml,yaml,js,mjs,cjs}\"",
+    "format:check": "prettier --check \"**/*.{ts,html,scss,css,json,md,yml,yaml,js,mjs,cjs}\""
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "prettier": "^3.8.3"
   }
 }
