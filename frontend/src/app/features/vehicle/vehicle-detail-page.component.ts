@@ -12,8 +12,6 @@ import { CompareService } from '../../core/services/compare.service';
 import { FavoritesService } from '../../core/services/favorites.service';
 import { VehiclesApiService } from '../../core/services/vehicles-api.service';
 import { VehicleDetail } from '../../core/models/domain.models';
-import { FixedActionButtonComponent } from '../../shared/components/fixed-action-button/fixed-action-button.component';
-import { ImageGalleryComponent } from '../../shared/components/image-gallery/image-gallery.component';
 
 type DetailFactItem = {
   icon: string;
@@ -32,13 +30,7 @@ type StarIcon = 'star' | 'star_half' | 'star_border';
 @Component({
   selector: 'app-vehicle-detail-page',
   standalone: true,
-  imports: [
-    CommonModule,
-    CurrencyPipe,
-    RouterLink,
-    ImageGalleryComponent,
-    FixedActionButtonComponent,
-  ],
+  imports: [CommonModule, CurrencyPipe, RouterLink],
   templateUrl: './vehicle-detail-page.component.html',
   styleUrls: ['./vehicle-detail-page.component.scss'],
 })
@@ -46,6 +38,8 @@ export class VehicleDetailPageComponent {
   protected readonly router = inject(Router);
   protected readonly fallbackAvatarImage =
     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Crect width='160' height='160' rx='40' fill='%23f3eeee'/%3E%3Ccircle cx='80' cy='60' r='24' fill='%23b7aaac'/%3E%3Cpath d='M40 128c7-22 24-34 40-34s33 12 40 34' fill='%23b7aaac'/%3E%3C/svg%3E";
+  protected readonly detailHeroFallbackImage =
+    'https://lh3.googleusercontent.com/aida-public/AB6AXuCi-3uZATOWOX9tz1_IzfGpHBQmumrpcsJCeXKKS8bl7D09Rl1SSHHAK1WBb4Fhk0XHnZpI9gDNeKue0hoMVXNFY6CAFab13PORW644KQ90wrptX5mhvUP-5p4K4mWL5mScue3sJB65tNGqSpm0lb9iexnBKmXB8ctC_hCCLZcDoyv_TsrAyLBpN0a0qB6_V-T1SfH3GbxdA9HnaxtD8GGdL1V1PGDeu4mN6Sw6-CAZKErccTSpmmzwA6G848zoqfJhHCilS1WEqCIf';
   private readonly route = inject(ActivatedRoute);
   private readonly vehiclesApiService = inject(VehiclesApiService);
   private readonly sanitizer = inject(DomSanitizer);
@@ -61,7 +55,7 @@ export class VehicleDetailPageComponent {
     globalThis as typeof globalThis & {
       requestIdleCallback?: (callback: () => void) => number;
     }
-  ).requestIdleCallback;
+  ).requestIdleCallback?.bind(globalThis);
   private readonly emptyStarIcons = this.buildStarIcons(0);
   private readonly emptyRatingDistributionValue: RatingDistributionItem[] = [
     5, 4, 3, 2, 1,
@@ -171,6 +165,76 @@ export class VehicleDetailPageComponent {
     return this.vehicle.addressLine?.trim()
       ? `${this.vehicle.city}, ${this.vehicle.state}`
       : 'Retirada combinada com o anunciante';
+  }
+
+  protected get heroImageUrl() {
+    return (
+      this.vehicle?.coverImage ||
+      [...(this.vehicle?.images ?? [])].sort(
+        (left, right) => left.position - right.position,
+      )[0]?.url ||
+      this.detailHeroFallbackImage
+    );
+  }
+
+  protected get galleryImageCount() {
+    return Math.max(this.vehicle?.images.length ?? 0, 1);
+  }
+
+  protected get vehicleYearAndFuelLabel() {
+    if (!this.vehicle) {
+      return '';
+    }
+
+    return `${this.vehicle.year} • ${this.fuelTypeLabel(this.vehicle.fuelType)}`;
+  }
+
+  protected get vehicleLocationLabel() {
+    if (!this.vehicle) {
+      return '';
+    }
+
+    return `${this.vehicle.city}, ${this.vehicle.state}`;
+  }
+
+  protected get displayReviewCountLabel() {
+    if (!this.totalReviewCount) {
+      return 'sem avaliações';
+    }
+
+    return `${this.totalReviewCount} avaliações`;
+  }
+
+  protected get weeklyRateValue() {
+    if (!this.vehicle) {
+      return 0;
+    }
+
+    return this.vehicle.weeklyRate ?? this.vehicle.dailyRate * 6;
+  }
+
+  protected get kmPolicyLabel() {
+    if (!this.vehicle) {
+      return '';
+    }
+
+    if (this.vehicle.kmPolicy === 'FREE') {
+      return 'Livre';
+    }
+
+    return '200km/dia';
+  }
+
+  protected get insuranceLabel() {
+    return this.vehicle?.hasInsurance === false ? 'Sob consulta' : 'Completo';
+  }
+
+  protected get ownerName() {
+    return this.vehicle?.owner?.fullName || 'Anunciante Triluga';
+  }
+
+  protected get ownerRatingValue() {
+    return this.vehicle?.owner?.ratingAverage ?? this.displayRating;
   }
 
   protected get detailItems() {
@@ -306,6 +370,16 @@ export class VehicleDetailPageComponent {
     return this.reviewAnalytics.highlightedReviews;
   }
 
+  protected get visibleVehicleReviews() {
+    return [...(this.vehicle?.reviews ?? [])]
+      .sort(
+        (left, right) =>
+          new Date(right.createdAt).getTime() -
+          new Date(left.createdAt).getTime(),
+      )
+      .slice(0, 3);
+  }
+
   protected get reviewHighlightSummary() {
     return this.reviewAnalytics.reviewHighlightSummary;
   }
@@ -366,37 +440,55 @@ export class VehicleDetailPageComponent {
   }
 
   protected get mapEmbedUrl(): SafeResourceUrl | null {
-    const latitude = this.vehicleLatitude;
-    const longitude = this.vehicleLongitude;
-
-    if (latitude === null || longitude === null) {
+    if (!this.vehicle) {
       return null;
     }
 
-    const cacheKey = `${latitude},${longitude}`;
+    const latitude = this.vehicleLatitude;
+    const longitude = this.vehicleLongitude;
+
+    const cacheKey =
+      latitude !== null && longitude !== null
+        ? `${latitude},${longitude}`
+        : this.vehicleLocationLabel;
 
     if (this.mapEmbedCacheKey === cacheKey) {
       return this.mapEmbedCacheUrl;
     }
 
-    const latitudeDelta = 0.012;
-    const longitudeDelta = 0.018;
-    const url = new URL('https://www.openstreetmap.org/export/embed.html');
+    if (latitude !== null && longitude !== null) {
+      const latitudeDelta = 0.012;
+      const longitudeDelta = 0.018;
+      const url = new URL('https://www.openstreetmap.org/export/embed.html');
 
-    url.searchParams.set(
-      'bbox',
-      [
-        longitude - longitudeDelta,
-        latitude - latitudeDelta,
-        longitude + longitudeDelta,
-        latitude + latitudeDelta,
-      ].join(','),
-    );
-    url.searchParams.set('layer', 'mapnik');
-    url.searchParams.set('marker', `${latitude},${longitude}`);
+      url.searchParams.set(
+        'bbox',
+        [
+          longitude - longitudeDelta,
+          latitude - latitudeDelta,
+          longitude + longitudeDelta,
+          latitude + latitudeDelta,
+        ].join(','),
+      );
+      url.searchParams.set('layer', 'mapnik');
+      url.searchParams.set('marker', `${latitude},${longitude}`);
+
+      this.mapEmbedCacheKey = cacheKey;
+      this.mapEmbedCacheUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
+        url.toString(),
+      );
+
+      return this.mapEmbedCacheUrl;
+    }
+
+    const url = new URL('https://maps.google.com/maps');
+    url.searchParams.set('q', this.vehicleLocationLabel);
+    url.searchParams.set('output', 'embed');
 
     this.mapEmbedCacheKey = cacheKey;
-    this.mapEmbedCacheUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url.toString());
+    this.mapEmbedCacheUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
+      url.toString(),
+    );
 
     return this.mapEmbedCacheUrl;
   }
@@ -406,7 +498,10 @@ export class VehicleDetailPageComponent {
     const longitude = this.vehicleLongitude;
 
     if (latitude === null || longitude === null) {
-      return 'https://www.openstreetmap.org';
+      const url = new URL('https://www.google.com/maps/search/');
+      url.searchParams.set('api', '1');
+      url.searchParams.set('query', this.vehicleLocationLabel);
+      return url.toString();
     }
 
     return `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=16/${latitude}/${longitude}`;
@@ -475,7 +570,11 @@ export class VehicleDetailPageComponent {
     return this.parseCoordinate(this.vehicle?.longitude, -180, 180);
   }
 
-  private parseCoordinate(value: number | string | null | undefined, min: number, max: number) {
+  private parseCoordinate(
+    value: number | string | null | undefined,
+    min: number,
+    max: number,
+  ) {
     if (value === null || value === undefined || value === '') {
       return null;
     }
@@ -611,6 +710,25 @@ export class VehicleDetailPageComponent {
     }
 
     this.favoritesService.toggleFavorite(this.vehicle);
+  }
+
+  protected async shareVehicle() {
+    if (!this.vehicle) {
+      return;
+    }
+
+    const shareData = {
+      title: this.vehicle.title,
+      text: `Veja ${this.vehicle.title} na Triluga`,
+      url: globalThis.location.href,
+    };
+
+    if (navigator.share) {
+      await navigator.share(shareData).catch(() => undefined);
+      return;
+    }
+
+    await navigator.clipboard?.writeText(shareData.url).catch(() => undefined);
   }
 
   protected trackByIndex(index: number) {

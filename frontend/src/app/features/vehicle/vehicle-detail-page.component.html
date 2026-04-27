@@ -1,358 +1,430 @@
-<main class="page vehicle-detail-page" *ngIf="vehicle">
-  <div class="detail-visual-column">
-    <section class="detail-stage">
-      <div class="detail-stage__toolbar">
+<main
+  class="vehicle-detail-stitch bg-surface text-on-surface selection:bg-primary-container/30 pb-[180px]"
+  *ngIf="vehicle"
+>
+  <!-- Hero Section: Full width gallery with overlays -->
+  <section class="relative">
+    <div class="relative w-full h-[420px] bg-surface-container-low">
+      <img
+        [alt]="vehicle.title"
+        class="w-full h-full object-cover"
+        [src]="heroImageUrl"
+      />
+
+      <!-- Overlaid Controls -->
+      <div
+        class="absolute top-12 left-6 right-6 flex justify-between items-center"
+      >
         <button
-          class="icon-chip"
+          class="bg-white/90 backdrop-blur-md p-2.5 rounded-full shadow-lg text-on-surface active:scale-90 transition-transform"
           type="button"
           (click)="router.navigate(['/search'])"
           aria-label="Voltar para busca"
         >
-          <span class="material-icons" aria-hidden="true">arrow_back</span>
+          <span class="material-symbols-outlined">arrow_back</span>
         </button>
-        <span>{{ vehicle.title }}</span>
-        <button
-          class="icon-chip icon-chip--ghost"
-          type="button"
-          [class.icon-chip--active]="isCompared"
-          [disabled]="compareDisabled"
-          [attr.aria-label]="
-            isCompared ? 'Remover da comparação' : 'Adicionar à comparação'
-          "
-          (click)="toggleCompare()"
-        >
-          <span class="material-icons" aria-hidden="true">compare_arrows</span>
-        </button>
-        <button
-          class="icon-chip icon-chip--ghost"
-          type="button"
-          [class.icon-chip--active]="isFavorite"
-          [disabled]="isFavoritePending"
-          [attr.aria-label]="
-            isFavorite ? 'Remover dos favoritos' : 'Salvar nos favoritos'
-          "
-          (click)="toggleFavorite()"
-        >
-          <span class="material-icons" aria-hidden="true">{{
-            isFavorite ? 'favorite' : 'favorite_border'
-          }}</span>
-        </button>
-      </div>
 
-      <section class="detail-stage__pickup-card">
-        <span class="material-icons" aria-hidden="true">location_on</span>
-        <div>
-          <strong>{{ pickupTitle }}</strong>
-          <p>{{ pickupSubtitle }}</p>
-        </div>
-      </section>
-
-      <section class="detail-stage__meta">
-        <div class="detail-stage__meta-strip">
-          <span>
-            <span class="material-icons" aria-hidden="true">tune</span>
-            {{ transmissionLabel(vehicle.transmission) }}
-          </span>
-          <span>
-            <span class="material-icons" aria-hidden="true"
-              >local_gas_station</span
+        <div class="flex space-x-2">
+          <button
+            class="bg-white/90 backdrop-blur-md p-2.5 rounded-full shadow-lg text-on-surface active:scale-90 transition-transform"
+            type="button"
+            (click)="shareVehicle()"
+            aria-label="Compartilhar veículo"
+          >
+            <span class="material-symbols-outlined">share</span>
+          </button>
+          <button
+            class="bg-white/90 backdrop-blur-md p-2.5 rounded-full shadow-lg text-primary active:scale-90 transition-transform"
+            type="button"
+            [disabled]="isFavoritePending"
+            (click)="toggleFavorite()"
+            [attr.aria-label]="
+              isFavorite ? 'Remover dos favoritos' : 'Salvar nos favoritos'
+            "
+          >
+            <span
+              class="material-symbols-outlined"
+              [style.font-variation-settings]="
+                isFavorite ? '\'FILL\' 1' : '\'FILL\' 0'
+              "
             >
-            {{ fuelTypeLabel(vehicle.fuelType) }}
-          </span>
-          <span>
-            <span class="material-icons" aria-hidden="true">event_seat</span>
-            {{ vehicle.seats }} lugares
-          </span>
+              {{ isFavorite ? 'favorite' : 'favorite_border' }}
+            </span>
+          </button>
         </div>
-
-        <strong class="detail-stage__price price-text">
-          {{ vehicle.dailyRate | currency: 'BRL' : 'symbol' : '1.0-0' }}
-        </strong>
-      </section>
-
-      <app-image-gallery [images]="vehicle.images"></app-image-gallery>
-    </section>
-
-    <section class="detail-info-card detail-location-card" *ngIf="hasPreciseLocation">
-      <div class="detail-info-card__head">
-        <div>
-          <span class="detail-info-card__eyebrow">Localização</span>
-          <h3>{{ vehicle.city }}, {{ vehicle.state }}</h3>
-        </div>
-        <span class="material-icons" aria-hidden="true">pin_drop</span>
       </div>
 
-      <p>Veja onde o veículo foi anunciado antes de falar com o anunciante.</p>
+      <!-- Page Indicator -->
+      <div
+        class="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center space-x-2 bg-black/20 backdrop-blur-sm px-4 py-2 rounded-full"
+      >
+        <span class="w-6 h-1.5 rounded-full bg-white"></span>
+        <span class="w-1.5 h-1.5 rounded-full bg-white/40"></span>
+        <span class="w-1.5 h-1.5 rounded-full bg-white/40"></span>
+        <span class="w-1.5 h-1.5 rounded-full bg-white/40"></span>
+        <span
+          class="ml-2 text-[10px] font-bold text-white uppercase tracking-widest"
+        >
+          1 / {{ galleryImageCount }}
+        </span>
+      </div>
+    </div>
+  </section>
 
-      <div class="detail-location-card__map" *ngIf="mapEmbedUrl as embedUrl">
-        <iframe
-          title="Localização do veículo anunciado"
-          [src]="embedUrl"
-          loading="lazy"
-          referrerpolicy="no-referrer-when-downgrade"
-        ></iframe>
+  <!-- Info Header: Premium Hierarchy -->
+  <section class="mt-8 px-6">
+    <div class="flex justify-between items-start gap-4">
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center space-x-2 mb-1">
+          <span
+            class="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider rounded-md"
+          >
+            Destaque
+          </span>
+          <span class="text-xs font-semibold text-on-surface-variant">
+            {{ vehicleYearAndFuelLabel }}
+          </span>
+        </div>
+
+        <h1
+          class="vehicle-detail-stitch__title text-3xl font-black text-on-surface tracking-tight leading-tight"
+        >
+          {{ vehicle.title }}
+        </h1>
+
+        <div class="flex items-center mt-2 space-x-1 min-w-0">
+          <span
+            class="material-symbols-outlined text-[#FFB800] text-lg"
+            style="font-variation-settings: 'FILL' 1"
+            >star</span
+          >
+          <span class="text-sm font-bold">
+            {{ displayRating | number: '1.1-1' }}
+          </span>
+          <span class="text-sm text-on-surface-variant font-medium">
+            ({{ displayReviewCountLabel }})
+          </span>
+          <span class="mx-2 text-outline-variant">•</span>
+          <span
+            class="text-xs font-semibold text-on-surface-variant underline truncate"
+          >
+            {{ vehicleLocationLabel }}
+          </span>
+        </div>
+      </div>
+
+      <div class="text-right flex-shrink-0">
+        <p
+          class="text-xs font-bold text-on-surface-variant uppercase tracking-tighter mb-0.5"
+        >
+          A partir de
+        </p>
+        <p class="text-3xl font-black text-primary leading-none">
+          {{ vehicle.dailyRate | currency: 'BRL' : 'symbol' : '1.0-0' }}
+          <span class="text-sm font-medium text-on-surface-variant">/dia</span>
+        </p>
+        <p
+          class="text-[11px] font-bold text-primary-container bg-primary/5 px-2 py-1 mt-1 rounded-lg inline-block"
+        >
+          {{ weeklyRateValue | currency: 'BRL' : 'symbol' : '1.0-0' }}/semana
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Specs Grid: Clean & Modern -->
+  <section class="mt-10 px-6 grid grid-cols-2 gap-4">
+    <div
+      class="bg-surface-container-lowest p-4 rounded-2xl border border-outline-variant/20 shadow-sm flex items-center space-x-4"
+    >
+      <div
+        class="w-11 h-11 bg-primary/5 rounded-xl flex items-center justify-center text-primary"
+      >
+        <span class="material-symbols-outlined">settings_input_component</span>
+      </div>
+      <div>
+        <p
+          class="text-[10px] uppercase tracking-wider text-on-surface-variant font-extrabold"
+        >
+          Câmbio
+        </p>
+        <p class="text-sm font-bold">
+          {{ transmissionLabel(vehicle.transmission) }}
+        </p>
+      </div>
+    </div>
+
+    <div
+      class="bg-surface-container-lowest p-4 rounded-2xl border border-outline-variant/20 shadow-sm flex items-center space-x-4"
+    >
+      <div
+        class="w-11 h-11 bg-primary/5 rounded-xl flex items-center justify-center text-primary"
+      >
+        <span class="material-symbols-outlined">group</span>
+      </div>
+      <div>
+        <p
+          class="text-[10px] uppercase tracking-wider text-on-surface-variant font-extrabold"
+        >
+          Lugares
+        </p>
+        <p class="text-sm font-bold">{{ vehicle.seats }} Pessoas</p>
+      </div>
+    </div>
+
+    <div
+      class="bg-surface-container-lowest p-4 rounded-2xl border border-outline-variant/20 shadow-sm flex items-center space-x-4"
+    >
+      <div
+        class="w-11 h-11 bg-primary/5 rounded-xl flex items-center justify-center text-primary"
+      >
+        <span class="material-symbols-outlined">speed</span>
+      </div>
+      <div>
+        <p
+          class="text-[10px] uppercase tracking-wider text-on-surface-variant font-extrabold"
+        >
+          Franquia KM
+        </p>
+        <p class="text-sm font-bold">{{ kmPolicyLabel }}</p>
+      </div>
+    </div>
+
+    <div
+      class="bg-surface-container-lowest p-4 rounded-2xl border border-outline-variant/20 shadow-sm flex items-center space-x-4"
+    >
+      <div
+        class="w-11 h-11 bg-primary/5 rounded-xl flex items-center justify-center text-primary"
+      >
+        <span class="material-symbols-outlined">verified_user</span>
+      </div>
+      <div>
+        <p
+          class="text-[10px] uppercase tracking-wider text-on-surface-variant font-extrabold"
+        >
+          Seguro
+        </p>
+        <p class="text-sm font-bold">{{ insuranceLabel }}</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Description -->
+  <section class="mt-8 px-6">
+    <h3 class="text-xl font-black mb-4 tracking-tight">Sobre este veículo</h3>
+    <p class="text-on-surface-variant leading-relaxed text-sm font-medium">
+      {{ vehicle.description }}
+    </p>
+  </section>
+
+  <!-- Owner Block -->
+  <section class="mt-6 px-6">
+    <div
+      class="bg-white p-5 rounded-2xl border border-outline-variant/30 shadow-[0_4px_20px_rgba(0,0,0,0.04)] flex items-center justify-between gap-3"
+    >
+      <div class="flex items-center space-x-4 min-w-0">
+        <div class="relative flex-shrink-0">
+          <img
+            [alt]="ownerName"
+            class="w-16 h-16 rounded-full border-2 border-white shadow-sm object-cover"
+            [src]="vehicle.owner?.avatarUrl || fallbackAvatarImage"
+          />
+          <div
+            class="absolute -bottom-1 -right-1 bg-primary-container p-1 rounded-full border-2 border-white"
+          >
+            <span
+              class="material-symbols-outlined text-[12px] text-white"
+              style="font-variation-settings: 'FILL' 1"
+              >verified</span
+            >
+          </div>
+        </div>
+
+        <div class="min-w-0">
+          <h4 class="text-lg font-bold text-on-surface truncate">
+            {{ ownerName }}
+          </h4>
+          <div class="flex items-center space-x-1.5">
+            <span class="text-xs text-primary font-bold">Membro Premium</span>
+            <span class="text-outline-variant">•</span>
+            <div class="flex items-center">
+              <span
+                class="material-symbols-outlined text-[12px] text-[#FFB800]"
+                style="font-variation-settings: 'FILL' 1"
+                >star</span
+              >
+              <span class="text-[11px] font-bold ml-0.5">
+                {{ ownerRatingValue | number: '1.1-1' }}
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <a
-        class="detail-map-link"
+        class="bg-surface-container-low hover:bg-surface-container-highest transition-colors px-4 py-2.5 rounded-xl text-xs font-bold text-primary active:scale-95 flex-shrink-0"
+        *ngIf="vehicle.owner?.id"
+        [routerLink]="['/users', vehicle.owner?.id]"
+      >
+        Ver Perfil
+      </a>
+    </div>
+  </section>
+
+  <!-- Location Preview -->
+  <section class="mt-7 px-6">
+    <div class="flex justify-between items-end mb-4">
+      <h3 class="text-xl font-black tracking-tight">Onde buscar</h3>
+      <a
+        class="text-sm font-bold text-primary underline"
         [href]="mapLink"
         target="_blank"
         rel="noreferrer"
       >
-        Abrir mapa maior
+        Ver mapa
       </a>
-    </section>
-  </div>
+    </div>
 
-  <section class="detail-panels">
-    <header class="detail-panels__header">
-      <h2>O que voce precisa saber</h2>
-    </header>
-
-    <div class="detail-facts">
-      <article
-        class="detail-fact"
-        *ngFor="
-          let detail of visibleDetailItems;
-          trackBy: trackByDetailLabel
-        "
+    <div
+      class="h-44 w-full rounded-2xl overflow-hidden relative border border-outline-variant/30"
+    >
+      <iframe
+        class="w-full h-full border-0"
+        title="Mapa de retirada do veículo"
+        [src]="mapEmbedUrl"
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"
+      ></iframe>
+      <div class="absolute inset-0 pointer-events-none"></div>
+      <div
+        class="absolute inset-0 flex items-center justify-center pointer-events-none"
+        *ngIf="hasPreciseLocation"
       >
-        <span class="material-icons" aria-hidden="true">{{
-          detail.icon
-        }}</span>
-        <small>{{ detail.label }}</small>
-        <strong>{{ detail.value }}</strong>
+        <div
+          class="w-14 h-14 bg-primary/20 rounded-full flex items-center justify-center animate-pulse"
+        >
+          <div
+            class="w-6 h-6 bg-primary rounded-full border-4 border-white shadow-xl"
+          ></div>
+        </div>
+      </div>
+      <div
+        class="absolute bottom-4 left-4 bg-white/95 backdrop-blur px-3 py-1.5 rounded-lg shadow-md pointer-events-none"
+      >
+        <p
+          class="text-[10px] font-black text-on-surface uppercase tracking-wider"
+        >
+          Aproximadamente
+        </p>
+        <p class="text-xs font-bold text-on-surface-variant">
+          {{ pickupTitle }}
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Reviews -->
+  <section class="mt-8 px-6">
+    <div class="flex justify-between items-end mb-4">
+      <div>
+        <h3 class="text-xl font-black tracking-tight">Avaliações</h3>
+        <p class="text-xs font-bold text-on-surface-variant mt-1">
+          {{ displayReviewCountLabel }}
+        </p>
+      </div>
+
+      <div class="flex items-center gap-1" *ngIf="totalReviewCount">
+        <span
+          class="material-symbols-outlined text-[#FFB800] text-lg"
+          style="font-variation-settings: 'FILL' 1"
+          >star</span
+        >
+        <span class="text-sm font-black text-on-surface">
+          {{ displayRating | number: '1.1-1' }}
+        </span>
+      </div>
+    </div>
+
+    <div
+      class="bg-white rounded-2xl border border-outline-variant/30 shadow-[0_4px_20px_rgba(0,0,0,0.04)] overflow-hidden"
+      *ngIf="visibleVehicleReviews.length; else emptyVehicleReviews"
+    >
+      <article
+        class="p-5 border-b border-outline-variant/20 last:border-b-0"
+        *ngFor="let review of visibleVehicleReviews; trackBy: trackById"
+      >
+        <div class="flex items-start justify-between gap-4 mb-3">
+          <div class="min-w-0">
+            <h4 class="text-sm font-black text-on-surface truncate">
+              {{ review.author.fullName || 'Usuário Triluga' }}
+            </h4>
+            <p class="text-[11px] font-bold text-on-surface-variant mt-0.5">
+              {{ review.createdAt | date: 'dd/MM/yyyy' }}
+            </p>
+          </div>
+
+          <div class="flex items-center gap-0.5 flex-shrink-0">
+            <span
+              class="material-symbols-outlined text-[#FFB800] text-[15px]"
+              style="font-variation-settings: 'FILL' 1"
+              *ngFor="
+                let star of reviewStars(review.rating);
+                trackBy: trackByIndex
+              "
+            >
+              {{ star }}
+            </span>
+          </div>
+        </div>
+
+        <p class="text-sm text-on-surface-variant leading-relaxed font-medium">
+          {{ excerptReview(review.comment, 220) }}
+        </p>
       </article>
     </div>
 
-    <button
-      type="button"
-      class="detail-facts__toggle"
-      *ngIf="detailItems.length > collapsedDetailCount"
-      (click)="toggleDetails()"
-    >
-      <span class="material-icons" aria-hidden="true">list</span>
-      {{
-        showAllDetails
-          ? 'Exibir menos'
-          : 'Exibir todos (' + detailItems.length + ')'
-      }}
-    </button>
-
-    <section class="detail-info-card">
-      <span class="detail-info-card__eyebrow">Descrição</span>
-      <p>{{ vehicle.description }}</p>
-    </section>
-
-    <section class="detail-info-card">
-      <span class="detail-info-card__eyebrow">Proprietário</span>
-      <div class="detail-owner-profile">
-        <img
-          class="detail-owner-profile__avatar"
-          [src]="vehicle.owner?.avatarUrl || fallbackAvatarImage"
-          [alt]="vehicle.owner?.fullName || 'Anunciante Triluga'"
-        />
-
-        <div class="detail-owner-profile__copy">
-          <h3 class="profile-name-text">{{ vehicle.owner?.fullName || 'Anunciante Triluga' }}</h3>
-          <p>{{ ownerRatingLabel }}</p>
-        </div>
-      </div>
-      <a
-        *ngIf="vehicle.owner?.id"
-        class="detail-owner-link"
-        [routerLink]="['/users', vehicle.owner?.id]"
+    <ng-template #emptyVehicleReviews>
+      <div
+        class="bg-white rounded-2xl border border-outline-variant/30 shadow-[0_4px_20px_rgba(0,0,0,0.04)] p-6 text-center"
       >
-        Ver perfil público
-      </a>
-      <span class="detail-info-card__meta" *ngIf="showChatAction">
-        Responde direto no chat da Triluga
-      </span>
-    </section>
-
-    <section
-      class="detail-info-card detail-info-card--reviews"
-      *ngIf="totalReviewCount; else emptyReviews"
-    >
-      <div class="review-summary">
-        <h3>Opiniões do carro</h3>
-
-        <div class="review-summary__grid">
-          <div class="review-summary__score-block">
-            <strong class="review-summary__score">{{
-              displayRating | number: '1.1-1'
-            }}</strong>
-
-            <div
-              class="review-summary__stars"
-              aria-label="Nota média do carro"
-            >
-              <span
-                class="material-icons"
-                *ngFor="
-                  let star of averageRatingStars;
-                  trackBy: trackByIndex
-                "
-                aria-hidden="true"
-              >
-                {{ star }}
-              </span>
-            </div>
-
-            <p>{{ totalReviewCount }} avaliações</p>
-
-            <button
-              type="button"
-              class="review-summary__recommendation"
-              *ngIf="totalReviewCount"
-            >
-              Recomendado por {{ recommendationPercentage }}%
-              <span class="material-icons" aria-hidden="true"
-                >expand_more</span
-              >
-            </button>
-          </div>
-
-          <div class="review-summary__distribution">
-            <div
-              class="review-summary__bar-row"
-              *ngFor="let item of ratingDistribution; trackBy: trackByStars"
-            >
-              <progress
-                class="review-summary__bar-track"
-                [value]="item.percentage"
-                max="100"
-                aria-label="Distribuição da avaliação"
-              ></progress>
-              <span class="review-summary__bar-label">{{
-                item.stars
-              }}</span>
-              <span class="material-icons" aria-hidden="true">star</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <section class="review-highlight">
-        <div class="review-highlight__head">
-          <div>
-            <h4>Opiniões em destaque</h4>
-            <small>{{ totalReviewCount }} comentários</small>
-          </div>
-        </div>
-
-        <p class="review-highlight__summary">
-          {{ reviewHighlightSummary }}
-        </p>
-
-        <div class="review-highlight__meta">
-          <span class="material-icons" aria-hidden="true"
-            >auto_awesome</span
-          >
-          <span>Resumo baseado nas avaliações enviadas</span>
-        </div>
-      </section>
-
-      <div class="review-list" *ngIf="highlightedReviews.length">
-        <article
-          class="review review--snippet"
-          *ngFor="let review of highlightedReviews; trackBy: trackById"
+        <span
+          class="material-symbols-outlined text-3xl text-on-surface-variant/60 mb-2"
+          >reviews</span
         >
-          <div class="review__rating-row">
-            <div class="review__stars">
-              <span
-                class="material-icons"
-                *ngFor="
-                  let star of reviewStars(review.rating);
-                  trackBy: trackByIndex
-                "
-                aria-hidden="true"
-              >
-                {{ star }}
-              </span>
-            </div>
-            <span class="review__date">{{
-              review.createdAt | date: 'dd MMM, y'
-            }}</span>
-          </div>
-
-          <p>{{ excerptReview(review.comment) }}</p>
-          <strong class="review__author">{{
-            review.author.fullName || 'Usuário'
-          }}</strong>
-        </article>
+        <p class="text-sm font-black text-on-surface">Ainda sem avaliações</p>
+        <p class="text-xs font-medium text-on-surface-variant mt-1">
+          As avaliações dos usuários aparecerão aqui.
+        </p>
       </div>
-    </section>
-
-    <ng-template #emptyReviews>
-      <section class="detail-info-card detail-info-card--reviews">
-        <div class="review-summary">
-          <h3>Opiniões do carro</h3>
-
-          <div class="review-summary__grid">
-            <div class="review-summary__score-block">
-              <strong class="review-summary__score">0.0</strong>
-
-              <div
-                class="review-summary__stars"
-                aria-label="Sem avaliações"
-              >
-                <span
-                  class="material-icons"
-                  *ngFor="
-                    let star of emptyRatingStars;
-                    trackBy: trackByIndex
-                  "
-                  aria-hidden="true"
-                >
-                  {{ star }}
-                </span>
-              </div>
-
-              <p>Ainda sem avaliações</p>
-            </div>
-
-            <div class="review-summary__distribution">
-              <div
-                class="review-summary__bar-row"
-                *ngFor="
-                  let item of emptyRatingDistribution;
-                  trackBy: trackByStars
-                "
-              >
-                <div class="review-summary__bar-track"></div>
-                <span class="review-summary__bar-label">{{
-                  item.stars
-                }}</span>
-                <span class="material-icons" aria-hidden="true">star</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
     </ng-template>
-
-    <section class="detail-info-card detail-info-card--trust">
-      <div class="detail-info-card__head">
-        <span class="detail-info-card__eyebrow">Como funciona</span>
-        <span class="material-icons" aria-hidden="true">chat</span>
-      </div>
-      <p>Veja o anúncio, chame no chat e alinhe retirada, documentos e condições direto com quem publicou.</p>
-      <span class="detail-info-card__meta">Fluxo simples, direto e com menos atrito.</span>
-    </section>
   </section>
 
-  <app-fixed-action-button
-    [helper]="footerHelper"
-    [label]="
-      (vehicle.dailyRate | currency: 'BRL' : 'symbol' : '1.0-0') || ''
-    "
-    [actionLabel]="ctaLabel"
-    [actionIcon]="ctaIcon"
-    [secondaryActionLabel]="footerChatLabel"
-    [secondaryActionIcon]="'chat_bubble'"
-    [secondaryBadgeCount]="footerChatUnreadCount"
-    (action)="handlePrimaryAction()"
-    (secondaryAction)="openChat()"
-  />
+  <!-- Sticky Interaction Bar -->
+  <div class="fixed bottom-[72px] left-0 w-full px-6 pb-2 z-40">
+    <div
+      class="bg-white/95 backdrop-blur-2xl rounded-2xl shadow-[0_12px_40px_rgba(9,29,46,0.15)] border border-white/20 p-4 flex items-center gap-3"
+    >
+      <button
+        class="w-12 h-12 rounded-xl flex items-center justify-center border border-outline-variant/30 text-on-surface-variant hover:bg-surface-container-low transition-colors active:scale-95 disabled:opacity-40"
+        type="button"
+        [class.text-primary]="isCompared"
+        [disabled]="compareDisabled"
+        (click)="toggleCompare()"
+        [attr.aria-label]="
+          isCompared ? 'Remover da comparação' : 'Adicionar à comparação'
+        "
+      >
+        <span class="material-symbols-outlined">compare_arrows</span>
+      </button>
+
+      <button
+        class="flex-1 h-14 bg-primary text-white font-black text-sm uppercase tracking-wider rounded-xl flex items-center justify-center space-x-3 active:scale-[0.98] transition-all shadow-lg shadow-primary/20"
+        type="button"
+        (click)="handlePrimaryAction()"
+      >
+        <span class="material-symbols-outlined">{{ ctaIcon }}</span>
+        <span>{{ ctaLabel }}</span>
+      </button>
+    </div>
+  </div>
 </main>
