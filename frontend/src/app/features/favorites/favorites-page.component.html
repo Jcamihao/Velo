@@ -1,22 +1,61 @@
-<main class="page favorites-page">
-  <section class="favorites-card">
-    <span class="eyebrow">Favoritos</span>
-    <h1>Seus veículos salvos</h1>
-    <p>Continue acompanhando os anúncios que chamaram sua atenção.</p>
-  </section>
+<main class="pb-24 max-w-7xl mx-auto flex-grow w-full">
+  <!-- TopAppBar -->
+  <header class="sticky top-0 z-40 bg-surface/90 backdrop-blur-md flex justify-between items-center w-full px-6 py-4">
+    <div class="flex items-center gap-3">
+      <span
+        class="material-symbols-outlined text-primary scale-110 active:scale-95 transition-transform cursor-pointer"
+        (click)="toggleMenu()"
+        >menu</span
+      >
+      <h1 class="!text-2xl !font-black italic tracking-tighter text-primary !leading-none !m-0">
+        Triluga
+      </h1>
+    </div>
+    <div class="flex items-center gap-4">
+      <span
+        class="material-symbols-outlined text-on-surface-variant scale-110 active:scale-95 transition-transform cursor-pointer"
+        >notifications</span
+      >
+    </div>
+  </header>
+  <!-- Header Section -->
+  <header class="mb-8 px-6">
+    <h1 class="text-3xl sm:text-4xl font-extrabold tracking-[-0.04em] text-on-surface mb-2">Seus Favoritos</h1>
+    <p class="text-on-surface-variant/70 text-[15px] sm:text-lg">Gerencie os veículos que despertaram seu interesse.</p>
+  </header>
 
-  <section class="favorites-list" *ngIf="favoriteItems.length; else emptyState">
+  <!-- Comparison Banner (Floating Action Hint) -->
+  <div class="mb-10 p-6 mx-6 rounded-xl bg-surface-container-low flex flex-col md:flex-row md:items-center justify-between gap-6 overflow-hidden relative group" *ngIf="favoriteItems.length">
+    <div class="relative z-10">
+      <h3 class="text-xl font-bold tracking-tight mb-1 hidden sm:block">Dúvida entre as opções?</h3>
+      <h3 class="text-lg font-bold tracking-tight mb-1 sm:hidden">Dúvida entre as opções?</h3>
+      <p class="text-on-surface-variant/80 text-sm sm:text-base">Compare lado a lado as especificações técnicas e preços.</p>
+    </div>
+    <a routerLink="/compare" class="relative z-10 bg-gradient-to-br from-primary to-primary-container text-on-primary px-6 sm:px-8 py-3.5 rounded-full font-bold tracking-tight shadow-lg shadow-primary/20 hover:shadow-primary/40 active:scale-95 transition-all flex items-center justify-center gap-2 shrink-0 w-full sm:w-auto text-center">
+      <span class="material-symbols-outlined text-xl">compare_arrows</span> Compare Favoritos
+    </a>
+    <div class="absolute -right-12 -top-12 w-48 h-48 bg-primary-container/20 rounded-full blur-3xl group-hover:bg-primary-container/30 transition-all pointer-events-none"></div>
+  </div>
+
+  <!-- Bento Grid / Cards -->
+  <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 px-6" *ngIf="favoriteItems.length; else emptyState">
     <app-vehicle-card
       *ngFor="let vehicle of favoriteItems"
       [vehicle]="vehicle"
     />
   </section>
 
+  <!-- Empty State -->
   <ng-template #emptyState>
-    <section class="empty-card">
-      <strong>Nenhum favorito salvo ainda</strong>
-      <p>Explore os anúncios e toque no coração para montar sua lista.</p>
-      <a routerLink="/search" class="btn btn-primary">Buscar veículos</a>
-    </section>
+    <div class="flex flex-col items-center justify-center py-20 mt-10 text-center px-6">
+      <div class="w-24 h-24 bg-surface-container-low rounded-full flex items-center justify-center mb-6 border border-surface-container-high/50 shadow-sm">
+        <span class="material-symbols-outlined text-5xl text-on-surface-variant/30" style="font-variation-settings: 'FILL' 1;">favorite</span>
+      </div>
+      <h3 class="text-2xl font-bold text-on-surface mb-2">Nada por aqui ainda</h3>
+      <p class="text-on-surface-variant/60 max-w-xs mb-8 text-sm">Comece a explorar nosso catálogo e salve seus veículos favoritos para visualizá-los aqui.</p>
+      <a routerLink="/search" class="bg-primary text-on-primary px-8 py-3.5 rounded-full font-bold shadow-lg shadow-primary/20 hover:shadow-primary/40 active:scale-95 transition-all text-sm">
+        Explorar Veículos
+      </a>
+    </div>
   </ng-template>
 </main>
