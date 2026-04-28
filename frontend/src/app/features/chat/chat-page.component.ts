@@ -18,11 +18,12 @@ import { AuthService } from '../../core/services/auth.service';
 import { ChatApiService } from '../../core/services/chat-api.service';
 import { ChatInboxService } from '../../core/services/chat-inbox.service';
 import { ChatSocketService } from '../../core/services/chat-socket.service';
+import { WebHeaderComponent } from '../../shared/components/web-header/web-header.component';
 
 @Component({
   selector: 'app-chat-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, DatePipe],
+  imports: [CommonModule, FormsModule, RouterLink, DatePipe, WebHeaderComponent],
   templateUrl: './chat-page.component.html',
   styleUrls: ['./chat-page.component.scss'],
 })
@@ -136,6 +137,14 @@ export class ChatPageComponent {
     );
   }
 
+  protected get desktopConversation() {
+    return this.selectedConversation ?? this.filteredConversations[0] ?? null;
+  }
+
+  protected get desktopConversationMessages() {
+    return this.selectedConversation ? this.messages : [];
+  }
+
   protected get filteredConversations() {
     const searchTerm = this.conversationSearchTerm.trim().toLowerCase();
 
@@ -162,6 +171,24 @@ export class ChatPageComponent {
       !this.isSending &&
       !this.isLoadingMessages
     );
+  }
+
+  protected isMessageReadByRecipient(message: ChatMessage) {
+    if (message.sender.id !== this.currentUserId) {
+      return false;
+    }
+
+    const readAt = this.selectedConversation?.otherParticipant.lastReadAt;
+
+    if (!readAt) {
+      return false;
+    }
+
+    return new Date(readAt).getTime() >= new Date(message.createdAt).getTime();
+  }
+
+  protected messageReceiptLabel(message: ChatMessage) {
+    return this.isMessageReadByRecipient(message) ? 'Lida' : 'Enviada';
   }
 
   protected openConversation(conversationId: string) {
@@ -191,6 +218,10 @@ export class ChatPageComponent {
     return conversation.unreadCount
       ? 'text-on-surface-variant font-bold'
       : 'text-on-surface-variant/60 font-medium';
+  }
+
+  protected isDesktopConversationActive(conversation: ChatConversationItem) {
+    return this.desktopConversation?.id === conversation.id;
   }
 
   protected conversationTimeLabel(conversation: ChatConversationItem) {
@@ -392,6 +423,12 @@ export class ChatPageComponent {
 
         this.refreshConversations(payload.conversationId);
       });
+
+    this.socketService.readReceipt$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((payload) => {
+        this.applyReadReceipt(payload);
+      });
   }
 
   private loadConversations(preferredConversationId?: string) {
@@ -515,6 +552,31 @@ export class ChatPageComponent {
           }
         : conversation,
     );
+  }
+
+  private applyReadReceipt(payload: {
+    conversationId: string;
+    readerId: string;
+    readAt: string;
+  }) {
+    if (payload.readerId === this.currentUserId) {
+      return;
+    }
+
+    this.conversations = this.conversations.map((conversation) =>
+      conversation.id === payload.conversationId &&
+      conversation.otherParticipant.id === payload.readerId
+        ? {
+            ...conversation,
+            otherParticipant: {
+              ...conversation.otherParticipant,
+              lastReadAt: payload.readAt,
+            },
+          }
+        : conversation,
+    );
+
+    this.chatInboxService.syncConversations(this.conversations);
   }
 
   private bootstrapAuthenticatedChat() {

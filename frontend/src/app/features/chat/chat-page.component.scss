@@ -195,3 +195,25 @@
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
 }
+
+.chat-web {
+  min-height: 100dvh;
+}
+
+.chat-web__shell {
+  display: flex;
+  flex: 1;
+  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.chat-web__sidebar,
+.chat-web__conversation,
+.chat-web__details {
+  height: calc(100dvh - 80px);
+}
+
+.chat-web__messages {
+  min-height: 0;
+}

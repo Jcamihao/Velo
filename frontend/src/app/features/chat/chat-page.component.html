@@ -2,6 +2,488 @@
   class="chat-stitch w-full bg-surface text-on-background min-h-[100dvh] flex flex-col relative isolate"
 >
   <ng-container *ngIf="authService.isAuthenticated(); else guestState">
+    <section class="chat-web hidden md:flex min-h-[100dvh] flex-col bg-surface">
+      <app-web-header [fixed]="true"></app-web-header>
+
+      <div class="chat-web__shell pt-20">
+        <aside
+          class="chat-web__sidebar w-[400px] xl:w-[430px] flex-shrink-0 bg-white border-r border-outline-variant/20 flex flex-col"
+        >
+          <div class="p-7">
+            <h1 class="text-[30px] font-black text-on-surface tracking-tight mb-8">
+              Mensagens
+            </h1>
+
+            <div class="relative mb-6">
+              <span
+                class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/60"
+              >
+                search
+              </span>
+              <input
+                class="w-full bg-surface-container-low border border-outline-variant/20 rounded-full py-3.5 pl-12 pr-4 text-sm text-on-surface focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-on-surface-variant/50"
+                placeholder="Pesquisar conversas..."
+                type="text"
+                name="conversationSearchTermDesktop"
+                [(ngModel)]="conversationSearchTerm"
+              />
+            </div>
+
+            <div class="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+              <button
+                class="px-5 py-2.5 bg-primary text-white rounded-full text-sm font-bold whitespace-nowrap"
+                type="button"
+              >
+                Tudo
+              </button>
+              <button
+                class="px-5 py-2.5 bg-surface-container-high text-on-surface-variant rounded-full text-sm font-medium whitespace-nowrap hover:bg-surface-container-highest transition-colors"
+                type="button"
+              >
+                Não lidas
+              </button>
+            </div>
+          </div>
+
+          <div class="flex-1 overflow-y-auto no-scrollbar">
+            <div
+              class="flex flex-col items-center justify-center py-20 text-center opacity-40"
+              *ngIf="!filteredConversations.length"
+            >
+              <span
+                class="material-symbols-outlined text-4xl mb-4"
+                [class.animate-spin]="isLoadingConversations"
+              >
+                {{ isLoadingConversations ? 'refresh' : 'question_answer' }}
+              </span>
+              <p class="text-[11px] font-bold uppercase tracking-widest">
+                {{
+                  isLoadingConversations
+                    ? 'Carregando...'
+                    : 'Caixa de entrada vazia'
+                }}
+              </p>
+            </div>
+
+            <article
+              *ngFor="
+                let conversation of filteredConversations;
+                trackBy: trackByConversationId
+              "
+              class="px-6 py-5 border-b border-outline-variant/5 hover:bg-surface-container-low transition-colors cursor-pointer relative"
+              [ngClass]="
+                isDesktopConversationActive(conversation)
+                  ? 'bg-primary/10 border-l-4 border-l-primary'
+                  : ''
+              "
+              (click)="openConversation(conversation.id)"
+            >
+              <div class="flex gap-4">
+                <div class="relative flex-shrink-0">
+                  <img
+                    class="w-14 h-14 rounded-full object-cover"
+                    [alt]="conversationParticipantName(conversation)"
+                    [src]="
+                      conversation.otherParticipant.avatarUrl ||
+                      fallbackAvatarImage
+                    "
+                  />
+                  <div
+                    class="absolute bottom-0 right-0 w-4 h-4 bg-primary border-2 border-white rounded-full"
+                    *ngIf="conversation.otherParticipant.isOnline"
+                  ></div>
+                </div>
+
+                <div class="flex-1 min-w-0">
+                  <div class="flex justify-between items-start mb-1">
+                    <h3 class="font-bold text-on-surface truncate">
+                      {{ conversationParticipantName(conversation) }}
+                    </h3>
+                    <span class="text-xs text-on-surface-variant">
+                      {{ conversationTimeLabel(conversation) }}
+                    </span>
+                  </div>
+                  <p
+                    class="text-sm font-bold truncate mb-1"
+                    [ngClass]="
+                      isDesktopConversationActive(conversation)
+                        ? 'text-primary'
+                        : 'text-on-surface-variant'
+                    "
+                  >
+                    {{ conversation.vehicle.title }}
+                  </p>
+                  <p class="text-sm text-on-surface-variant truncate">
+                    {{
+                      conversation.lastMessage?.content ||
+                        'Conversa iniciada. Envie sua primeira mensagem.'
+                    }}
+                  </p>
+                </div>
+              </div>
+            </article>
+          </div>
+        </aside>
+
+        <ng-container *ngIf="selectedConversation as conversation; else desktopSelectState">
+          <section class="chat-web__conversation flex-1 flex flex-col bg-surface relative">
+            <header
+              class="h-24 bg-white/70 backdrop-blur-lg flex items-center justify-between px-10 border-b border-outline-variant/10 z-10"
+            >
+              <div class="flex items-center gap-4 min-w-0">
+                <div class="w-14 h-14 rounded-xl bg-surface-container overflow-hidden flex-shrink-0">
+                  <img
+                    class="w-full h-full object-cover"
+                    [src]="conversation.vehicle.coverImage || vehicleFallbackImage"
+                    [alt]="conversation.vehicle.title"
+                  />
+                </div>
+                <div class="min-w-0">
+                  <h2 class="font-bold text-on-surface leading-tight truncate">
+                    {{ conversationParticipantName(conversation) }}
+                  </h2>
+                  <p class="text-sm text-primary font-bold truncate">
+                    Interesse em: {{ conversation.vehicle.title }}
+                  </p>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <button
+                  class="p-2.5 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors"
+                  type="button"
+                  aria-label="Ligar"
+                >
+                  <span class="material-symbols-outlined">call</span>
+                </button>
+                <button
+                  class="p-2.5 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors"
+                  type="button"
+                  [routerLink]="['/vehicles', conversation.vehicle.id]"
+                  aria-label="Ver detalhes"
+                >
+                  <span class="material-symbols-outlined">info</span>
+                </button>
+              </div>
+            </header>
+
+            <div
+              class="chat-web__messages flex-1 overflow-y-auto p-8 xl:p-10 space-y-6 flex flex-col no-scrollbar"
+              #messagesContainer
+            >
+              <div
+                class="self-center bg-surface-container-low px-4 py-1.5 rounded-full text-[10px] uppercase tracking-widest font-bold text-on-surface-variant mb-4"
+              >
+                Hoje
+              </div>
+
+              <ng-container *ngIf="desktopConversationMessages.length; else desktopNoMessages">
+                <ng-container *ngFor="let message of desktopConversationMessages">
+                  <div
+                    class="flex gap-4 max-w-[70%]"
+                    *ngIf="message.sender.id !== currentUserId"
+                  >
+                    <img
+                      class="w-8 h-8 rounded-full object-cover mt-auto"
+                      [src]="
+                        conversation.otherParticipant.avatarUrl ||
+                        fallbackAvatarImage
+                      "
+                      [alt]="conversationParticipantName(conversation)"
+                    />
+                    <div
+                      class="bg-white p-4 rounded-2xl rounded-bl-none shadow-sm border border-outline-variant/10"
+                    >
+                      <p class="text-base leading-relaxed text-on-surface whitespace-pre-wrap">
+                        {{ message.content }}
+                      </p>
+                      <span
+                        class="text-[10px] text-on-surface-variant mt-2 block text-right"
+                      >
+                        {{ message.createdAt | date: 'HH:mm' }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div
+                    class="flex gap-4 max-w-[70%] self-end flex-row-reverse"
+                    *ngIf="message.sender.id === currentUserId"
+                  >
+                    <div
+                      class="bg-primary p-4 rounded-2xl rounded-br-none shadow-lg shadow-primary/10"
+                    >
+                      <p class="text-base leading-relaxed text-white whitespace-pre-wrap">
+                        {{ message.content }}
+                      </p>
+                      <span class="text-[10px] text-emerald-100 mt-2 flex items-center justify-end gap-1">
+                        {{ message.createdAt | date: 'HH:mm' }}
+                        <span class="material-symbols-outlined text-[14px]">
+                          {{ isMessageReadByRecipient(message) ? 'done_all' : 'done' }}
+                        </span>
+                        {{ messageReceiptLabel(message) }}
+                      </span>
+                    </div>
+                  </div>
+                </ng-container>
+              </ng-container>
+
+              <ng-template #desktopNoMessages>
+                <div
+                  class="self-center w-full max-w-md bg-surface-container-low p-5 rounded-2xl border border-dashed border-outline-variant text-center"
+                >
+                  <span class="material-symbols-outlined text-primary mb-2">
+                    chat_bubble
+                  </span>
+                  <p class="text-sm font-bold text-on-surface">
+                    Selecione uma conversa
+                  </p>
+                  <p class="text-xs text-on-surface-variant">
+                    Abra uma conversa para carregar o histórico completo.
+                  </p>
+                </div>
+              </ng-template>
+            </div>
+
+            <footer class="p-6 bg-white/80 backdrop-blur-xl border-t border-outline-variant/10">
+              <input
+                #photoInput
+                class="hidden"
+                type="file"
+                accept="image/*"
+                (change)="handleAttachmentSelected($event, 'library')"
+              />
+              <input
+                #cameraInput
+                class="hidden"
+                type="file"
+                accept="image/*"
+                capture="environment"
+                (change)="handleAttachmentSelected($event, 'camera')"
+              />
+
+              <div
+                class="max-w-5xl mx-auto mb-3 bg-surface-container-lowest border border-outline-variant/10 rounded-2xl p-2 flex items-center gap-3 shadow-sm"
+                *ngIf="pendingAttachment"
+              >
+                <img
+                  class="w-12 h-12 rounded-xl object-cover"
+                  [src]="pendingAttachment.previewUrl"
+                  [alt]="pendingAttachment.file.name"
+                />
+                <div class="flex-1 min-w-0">
+                  <p class="text-xs font-bold text-on-background">
+                    {{
+                      pendingAttachment.source === 'camera'
+                        ? 'Foto da câmera'
+                        : 'Foto selecionada'
+                    }}
+                  </p>
+                  <p class="text-[11px] text-on-background/60 truncate">
+                    {{ pendingAttachment.file.name }}
+                  </p>
+                </div>
+                <button
+                  class="w-9 h-9 rounded-full flex items-center justify-center text-on-background/60 hover:text-primary bg-surface-container-low"
+                  type="button"
+                  (click)="clearPendingAttachment()"
+                  aria-label="Remover foto"
+                >
+                  <span class="material-symbols-outlined text-[20px]">close</span>
+                </button>
+              </div>
+
+              <form class="flex items-end gap-4 max-w-5xl mx-auto" (ngSubmit)="sendMessage()">
+                <div class="relative flex-shrink-0">
+                  <button
+                    class="p-3 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors flex-shrink-0"
+                    type="button"
+                    (click)="toggleAttachmentMenu()"
+                    [attr.aria-expanded]="attachmentMenuOpen"
+                    aria-label="Adicionar anexo"
+                  >
+                    <span class="material-symbols-outlined">add_circle</span>
+                  </button>
+
+                  <div
+                    class="attachment-menu absolute bottom-14 left-0 w-56 rounded-2xl bg-surface-container-lowest border border-outline-variant/10 shadow-xl shadow-[#091d2e]/10 p-2 z-50"
+                    *ngIf="attachmentMenuOpen"
+                  >
+                    <button
+                      class="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-on-background hover:bg-surface-container-low transition-colors"
+                      type="button"
+                      (click)="openPhotoPicker()"
+                    >
+                      <span class="material-symbols-outlined text-primary">
+                        photo_library
+                      </span>
+                      <span class="text-sm font-bold">Enviar foto</span>
+                    </button>
+                    <button
+                      class="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-on-background hover:bg-surface-container-low transition-colors"
+                      type="button"
+                      (click)="openCameraPicker()"
+                    >
+                      <span class="material-symbols-outlined text-primary">
+                        photo_camera
+                      </span>
+                      <span class="text-sm font-bold">Tirar foto</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div
+                  class="flex-1 bg-surface-container px-6 py-3 rounded-[24px] flex items-center gap-3"
+                >
+                  <input
+                    name="draftMessageDesktop"
+                    [(ngModel)]="draftMessage"
+                    class="flex-1 bg-transparent border-none focus:ring-0 text-sm py-1 placeholder:text-on-surface-variant text-on-surface"
+                    placeholder="Escreva sua mensagem..."
+                    type="text"
+                    [disabled]="isSending || isLoadingMessages"
+                  />
+                  <button
+                    class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors"
+                    type="button"
+                    aria-label="Emoji"
+                  >
+                    mood
+                  </button>
+                </div>
+
+                <button
+                  class="w-14 h-14 bg-primary text-white rounded-full flex items-center justify-center shadow-lg shadow-primary/30 hover:scale-105 active:scale-95 transition-all flex-shrink-0 disabled:opacity-50 disabled:grayscale"
+                  type="submit"
+                  [disabled]="!canSendMessage"
+                  aria-label="Enviar mensagem"
+                >
+                  <span
+                    class="material-symbols-outlined"
+                    style="font-variation-settings: 'FILL' 1"
+                  >
+                    {{ isSending ? 'hourglass_top' : 'send' }}
+                  </span>
+                </button>
+              </form>
+            </footer>
+          </section>
+
+          <aside
+            class="chat-web__details w-[320px] 2xl:w-[360px] hidden xl:flex flex-col bg-surface-container-low border-l border-outline-variant/10 p-8"
+          >
+            <h3 class="font-black text-lg text-on-surface mb-8 tracking-tight">
+              Detalhes da Reserva
+            </h3>
+
+            <div class="rounded-2xl overflow-hidden mb-7 bg-white shadow-sm">
+              <div class="h-40 overflow-hidden bg-surface-container">
+                <img
+                  class="w-full h-full object-cover"
+                  [src]="conversation.vehicle.coverImage || vehicleFallbackImage"
+                  [alt]="conversation.vehicle.title"
+                />
+              </div>
+              <div class="p-5">
+                <h4 class="font-bold text-on-surface truncate">
+                  {{ conversation.vehicle.title }}
+                </h4>
+                <p class="text-sm text-on-surface-variant mb-5">
+                  {{ conversation.vehicle.city }},
+                  {{ conversation.vehicle.state }}
+                </p>
+
+                <div class="space-y-3">
+                  <div class="flex justify-between text-sm">
+                    <span class="text-on-surface-variant">Preço/dia</span>
+                    <span class="font-bold">
+                      R$
+                      {{ conversation.vehicle.dailyRate | number: '1.0-0' }}
+                    </span>
+                  </div>
+                  <div class="flex justify-between text-sm">
+                    <span class="text-on-surface-variant">Taxa Triluga</span>
+                    <span class="font-bold text-primary">Grátis</span>
+                  </div>
+                  <div class="border-t border-outline-variant/10 pt-3 flex justify-between">
+                    <span class="font-bold text-on-surface">Total (3 dias)</span>
+                    <span class="font-black text-primary">
+                      R$
+                      {{
+                        conversation.vehicle.dailyRate * 3 | number: '1.0-0'
+                      }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-outline-variant/5 mb-7">
+              <h4
+                class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-5"
+              >
+                Sobre o Proprietário
+              </h4>
+              <div class="flex items-center gap-3 mb-4">
+                <img
+                  class="w-11 h-11 rounded-full object-cover"
+                  [src]="
+                    conversation.otherParticipant.avatarUrl ||
+                    fallbackAvatarImage
+                  "
+                  [alt]="conversationParticipantName(conversation)"
+                />
+                <div>
+                  <p class="font-bold text-sm">
+                    {{ conversationParticipantName(conversation) }}
+                  </p>
+                  <div class="flex items-center gap-1">
+                    <span
+                      class="material-symbols-outlined text-[14px] text-yellow-500"
+                      style="font-variation-settings: 'FILL' 1"
+                    >
+                      star
+                    </span>
+                    <span class="text-xs font-bold">4.9</span>
+                    <span class="text-[10px] text-on-surface-variant">
+                      (12 locações)
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <p class="text-xs text-on-surface-variant leading-relaxed italic">
+                "Entusiasta de clássicos e superesportivos. Prezo pela
+                pontualidade e conservação dos veículos."
+              </p>
+            </div>
+
+            <button
+              class="w-full py-3 rounded-full border-2 border-outline-variant/30 text-sm font-bold text-on-surface-variant hover:bg-white transition-colors mt-auto"
+              type="button"
+            >
+              Denunciar conversa
+            </button>
+          </aside>
+        </ng-container>
+
+        <ng-template #desktopSelectState>
+          <section
+            class="flex-1 flex flex-col items-center justify-center text-center px-8"
+          >
+            <span class="material-symbols-outlined text-5xl text-primary/30 mb-4">
+              chat_bubble
+            </span>
+            <h2 class="text-2xl font-black text-on-surface mb-2">
+              Selecione uma conversa
+            </h2>
+            <p class="text-sm text-on-surface-variant max-w-sm">
+              Abra uma conversa para carregar o histórico completo.
+            </p>
+          </section>
+        </ng-template>
+      </div>
+    </section>
+
+    <div class="md:hidden contents">
     <ng-container *ngIf="!isConversationRoute; else conversationView">
       <header
         class="sticky top-0 z-40 bg-surface/90 backdrop-blur-md flex justify-between items-center w-full px-6 py-4"
@@ -275,7 +757,7 @@
                 <div
                   class="bg-surface-container text-on-background px-4 py-3 rounded-2xl rounded-tl-none shadow-sm"
                 >
-                  <p class="text-sm leading-relaxed whitespace-pre-wrap">
+                    <p class="text-base leading-relaxed whitespace-pre-wrap">
                     {{ message.content }}
                   </p>
                 </div>
@@ -294,7 +776,7 @@
                 <div
                   class="bg-gradient-to-br from-primary to-primary-container text-white px-4 py-3 rounded-2xl rounded-tr-none shadow-md shadow-primary/10"
                 >
-                  <p class="text-sm leading-relaxed whitespace-pre-wrap">
+                    <p class="text-base leading-relaxed whitespace-pre-wrap">
                     {{ message.content }}
                   </p>
                 </div>
@@ -306,7 +788,10 @@
                     class="material-symbols-outlined text-[14px] text-primary"
                     style="font-variation-settings: 'FILL' 1"
                   >
-                    done_all
+                    {{ isMessageReadByRecipient(message) ? 'done_all' : 'done' }}
+                  </span>
+                  <span class="text-[10px] text-on-background/40 font-medium">
+                    {{ messageReceiptLabel(message) }}
                   </span>
                 </div>
               </div>
@@ -467,6 +952,7 @@
         </section>
       </ng-template>
     </ng-template>
+    </div>
   </ng-container>
 
   <ng-template #guestState>
