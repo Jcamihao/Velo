@@ -344,6 +344,7 @@ export interface ChatConversationItem {
     fullName: string | null;
     avatarUrl?: string | null;
     isOnline: boolean;
+    lastReadAt?: string | null;
   };
   lastMessage: {
     id: string;

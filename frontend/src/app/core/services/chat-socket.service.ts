@@ -24,6 +24,11 @@ export class ChatSocketService {
     userId: string;
     isOnline: boolean;
   }>();
+  private readonly readReceiptSubject = new Subject<{
+    conversationId: string;
+    readerId: string;
+    readAt: string;
+  }>();
   private readonly selfPresenceSignal = signal(false);
   private readonly transportConnectedSignal = signal(false);
 
@@ -33,6 +38,11 @@ export class ChatSocketService {
     this.conversationUpdatedSubject.asObservable();
   readonly presenceUpdated$: Observable<{ userId: string; isOnline: boolean }> =
     this.presenceUpdatedSubject.asObservable();
+  readonly readReceipt$: Observable<{
+    conversationId: string;
+    readerId: string;
+    readAt: string;
+  }> = this.readReceiptSubject.asObservable();
 
   connect() {
     const token = this.authService.getAccessToken();
@@ -211,6 +221,28 @@ export class ChatSocketService {
         this.zone.run(() => {
           this.logger.debug('chat-socket', 'conversation_updated', payload);
           this.conversationUpdatedSubject.next(payload);
+        });
+      },
+    );
+
+    socket.on(
+      'chat:read',
+      (payload: {
+        conversationId?: string;
+        readerId?: string;
+        readAt?: string;
+      }) => {
+        this.zone.run(() => {
+          if (!payload?.conversationId || !payload.readerId || !payload.readAt) {
+            return;
+          }
+
+          this.logger.debug('chat-socket', 'read_receipt_received', payload);
+          this.readReceiptSubject.next({
+            conversationId: payload.conversationId,
+            readerId: payload.readerId,
+            readAt: payload.readAt,
+          });
         });
       },
     );

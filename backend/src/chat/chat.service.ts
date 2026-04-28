@@ -539,9 +539,10 @@ export class ChatService {
     currentUserId: string,
     unreadCount: number,
   ) {
-    const otherParticipant = conversation.participants.find(
+    const otherMembership = conversation.participants.find(
       (participant: any) => participant.userId !== currentUserId,
-    )?.user;
+    );
+    const otherParticipant = otherMembership?.user;
     const lastMessage = conversation.messages[0] ?? null;
 
     return {
@@ -560,6 +561,7 @@ export class ChatService {
         fullName: otherParticipant?.profile?.fullName ?? null,
         avatarUrl: otherParticipant?.profile?.avatarUrl ?? null,
         isOnline: this.chatPresenceService.isUserOnline(otherParticipant?.id),
+        lastReadAt: otherMembership?.lastReadAt ?? null,
       },
       lastMessage: lastMessage
         ? {

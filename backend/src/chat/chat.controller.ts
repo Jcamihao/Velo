@@ -34,20 +34,46 @@ export class ChatController {
 
   @Get(':id/messages')
   @ApiOperation({ summary: 'Lista mensagens de uma conversa' })
-  getMessages(
+  async getMessages(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id') conversationId: string,
   ) {
-    return this.chatService.getConversationMessages(user.sub, conversationId);
+    const messages = await this.chatService.getConversationMessages(
+      user.sub,
+      conversationId,
+    );
+    const result = await this.chatService.markConversationRead(
+      user.sub,
+      conversationId,
+    );
+
+    this.chatGateway.broadcastReadReceipt({
+      conversationId,
+      readerId: user.sub,
+      readAt: result.readAt,
+    });
+
+    return messages;
   }
 
   @Patch(':id/read')
   @ApiOperation({ summary: 'Marca uma conversa como lida' })
-  markAsRead(
+  async markAsRead(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id') conversationId: string,
   ) {
-    return this.chatService.markConversationRead(user.sub, conversationId);
+    const result = await this.chatService.markConversationRead(
+      user.sub,
+      conversationId,
+    );
+
+    this.chatGateway.broadcastReadReceipt({
+      conversationId,
+      readerId: user.sub,
+      readAt: result.readAt,
+    });
+
+    return result;
   }
 
   @Post(':id/messages')

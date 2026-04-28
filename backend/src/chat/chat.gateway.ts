@@ -123,6 +123,21 @@ export class ChatGateway
     });
   }
 
+  broadcastReadReceipt(payload: {
+    conversationId: string;
+    readerId: string;
+    readAt: Date;
+  }) {
+    this.server.to(this.getConversationRoom(payload.conversationId)).emit(
+      'chat:read',
+      {
+        conversationId: payload.conversationId,
+        readerId: payload.readerId,
+        readAt: payload.readAt,
+      },
+    );
+  }
+
   @SubscribeMessage('chat:join')
   async handleJoin(
     @ConnectedSocket() client: Socket,
