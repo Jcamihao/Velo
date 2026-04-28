@@ -12,6 +12,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FilterModalComponent } from '../../shared/components/filter-modal/filter-modal.component';
 import { VehicleCardItem, VehicleType } from '../../core/models/domain.models';
 import { VehiclesApiService } from '../../core/services/vehicles-api.service';
+import { WebHeaderComponent } from '../../shared/components/web-header/web-header.component';
 
 type SearchQuery = {
   q: string;
@@ -31,7 +32,7 @@ type SearchQuery = {
 @Component({
   selector: 'app-search-page',
   standalone: true,
-  imports: [CommonModule, RouterLink, FilterModalComponent],
+  imports: [CommonModule, RouterLink, FilterModalComponent, WebHeaderComponent],
   templateUrl: './search-page.component.html',
   styleUrls: ['./search-page.component.scss'],
 })
@@ -305,6 +306,20 @@ export class SearchPageComponent implements AfterViewInit, OnDestroy {
     return this.query.city
       ? `Encontre seu carro ideal em ${this.query.city}`
       : 'Encontre seu carro ideal';
+  }
+
+  protected get webResultsTitle() {
+    const city = this.query.city || 'São Paulo, SP';
+
+    if (this.query.vehicleType === 'MOTORCYCLE') {
+      return `Motos em ${city}`;
+    }
+
+    if (this.query.vehicleType === 'CAR') {
+      return `Veículos em ${city}`;
+    }
+
+    return `Veículos em ${city}`;
   }
 
   protected get searchOverviewSubtitle() {

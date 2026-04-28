@@ -1,4 +1,4 @@
-<div class="bg-surface text-on-surface antialiased min-h-screen">
+<div class="bg-surface text-on-surface antialiased min-h-screen md:hidden">
   <!-- TopAppBar -->
   <header
     class="sticky top-0 z-40 bg-surface/90 backdrop-blur-md flex justify-between items-center w-full px-6 py-4"
@@ -210,4 +210,240 @@
     (close)="filtersOpen = false"
     (apply)="applyFilters($event)"
   />
+</div>
+
+<div class="hidden md:block bg-background font-body text-on-surface antialiased min-h-screen">
+  <app-web-header [fixed]="true"></app-web-header>
+
+  <main class="pt-28 pb-20 max-w-screen-2xl mx-auto px-8 flex gap-8">
+    <aside class="w-72 flex-shrink-0">
+      <div class="sticky top-28 space-y-8">
+        <div>
+          <h2 class="text-on-surface font-bold text-lg mb-4">Filtros</h2>
+
+          <div class="space-y-3 mb-8">
+            <label class="text-xs font-bold uppercase tracking-widest text-outline">
+              Categorias
+            </label>
+            <div class="flex flex-col gap-2">
+              <label class="flex items-center gap-3 cursor-pointer group">
+                <input
+                  class="rounded border-outline-variant text-primary focus:ring-primary"
+                  type="checkbox"
+                  [checked]="query.vehicleType === 'CAR' || !query.vehicleType"
+                  (change)="browseCars()"
+                />
+                <span class="text-sm font-medium group-hover:text-primary transition-colors">Carros</span>
+              </label>
+              <label class="flex items-center gap-3 cursor-pointer group">
+                <input
+                  class="rounded border-outline-variant text-primary focus:ring-primary"
+                  type="checkbox"
+                  [checked]="query.vehicleType === 'MOTORCYCLE'"
+                  (change)="browseMotorcycles()"
+                />
+                <span class="text-sm font-medium group-hover:text-primary transition-colors">Motos</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="space-y-3 mb-8">
+            <label class="text-xs font-bold uppercase tracking-widest text-outline">Marcas</label>
+            <div class="space-y-2">
+              <div class="relative">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-sm text-outline">search</span>
+                <input
+                  class="w-full bg-surface-container-low border-none rounded-lg pl-9 text-xs py-2 focus:ring-primary/20"
+                  placeholder="Pesquisar marca"
+                  type="text"
+                  [value]="query.q"
+                  (keydown.enter)="onSearch({ q: $any($event.target).value })"
+                />
+              </div>
+              <div class="flex flex-wrap gap-2 pt-2">
+                <button class="bg-primary text-on-primary px-3 py-1 rounded-full text-xs font-medium" type="button" (click)="onSearch({ q: 'Tesla' })">Tesla</button>
+                <button class="bg-surface-container-high text-on-surface-variant px-3 py-1 rounded-full text-xs font-medium hover:bg-surface-container-highest transition-colors" type="button" (click)="onSearch({ q: 'Toyota' })">Toyota</button>
+                <button class="bg-surface-container-high text-on-surface-variant px-3 py-1 rounded-full text-xs font-medium hover:bg-surface-container-highest transition-colors" type="button" (click)="onSearch({ q: 'Honda' })">Honda</button>
+                <button class="bg-surface-container-high text-on-surface-variant px-3 py-1 rounded-full text-xs font-medium hover:bg-surface-container-highest transition-colors" type="button" (click)="onSearch({ q: 'BMW' })">BMW</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-3 mb-8">
+            <label class="text-xs font-bold uppercase tracking-widest text-outline">
+              Faixa de Preço (Dia)
+            </label>
+            <div class="px-2 pt-4">
+              <div class="h-1.5 bg-surface-container-highest rounded-full relative">
+                <div class="absolute left-0 right-1/4 h-full bg-primary rounded-full"></div>
+                <div class="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-primary border-2 border-on-primary rounded-full shadow-lg"></div>
+                <div class="absolute right-1/4 top-1/2 -translate-y-1/2 w-4 h-4 bg-primary border-2 border-on-primary rounded-full shadow-lg"></div>
+              </div>
+              <div class="flex justify-between mt-4">
+                <span class="text-xs font-bold">R$ {{ query.minPrice || '50' }}</span>
+                <span class="text-xs font-bold">R$ {{ query.maxPrice || '800+' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-3 mb-8">
+            <label class="text-xs font-bold uppercase tracking-widest text-outline">Transmissão</label>
+            <div class="grid grid-cols-2 gap-2">
+              <button class="bg-primary text-on-primary py-2 rounded-lg text-xs font-bold" type="button">
+                Automático
+              </button>
+              <button class="bg-surface-container-low text-on-surface py-2 rounded-lg text-xs font-medium hover:bg-surface-container-high transition-colors" type="button">
+                Manual
+              </button>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <div class="flex items-center justify-between group cursor-pointer">
+              <span class="text-sm font-bold">Ano</span>
+              <span class="material-symbols-outlined text-outline">expand_more</span>
+            </div>
+            <div class="flex items-center justify-between group cursor-pointer">
+              <span class="text-sm font-bold">Combustível</span>
+              <span class="material-symbols-outlined text-outline">expand_more</span>
+            </div>
+          </div>
+          <button
+            class="w-full mt-8 py-4 bg-primary-container text-on-primary-container rounded-xl font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
+            type="button"
+            (click)="applyFilters({ vehicleType: query.vehicleType, q: query.q, maxPrice: query.maxPrice })"
+          >
+            Aplicar Filtros
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <section class="flex-1">
+      <div class="mb-10">
+        <nav class="flex items-center gap-2 text-xs text-outline mb-4">
+          <a class="hover:text-primary" routerLink="/">Home</a>
+          <span class="material-symbols-outlined text-[10px]">chevron_right</span>
+          <span class="text-on-surface/60 font-medium">Busca de Veículos</span>
+        </nav>
+        <div class="flex items-end justify-between gap-6">
+          <div>
+            <h1 class="text-4xl font-black tracking-tight text-on-surface mb-2">
+              {{ webResultsTitle }}
+            </h1>
+            <p class="text-on-surface-variant font-medium">
+              {{ totalItems }} {{ resultsLabel }} para sua jornada
+            </p>
+          </div>
+          <div class="flex items-center gap-4 bg-surface-container-lowest p-1 rounded-xl shadow-sm border border-outline-variant/10">
+            <span class="pl-4 text-xs font-bold text-outline uppercase tracking-wider">Ordenar por:</span>
+            <select class="border-none bg-transparent text-sm font-bold focus:ring-0 cursor-pointer pr-10">
+              <option>Relevância</option>
+              <option>Menor Preço</option>
+              <option>Maior Preço</option>
+              <option>Mais Novos</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8" *ngIf="vehicles.length">
+        <article
+          *ngFor="let vehicle of vehicles"
+          class="group bg-surface-container-lowest rounded-xl overflow-hidden hover:shadow-[0_32px_48px_-12px_rgba(9,29,46,0.12)] transition-all duration-500"
+          [routerLink]="['/vehicles', vehicle.id]"
+        >
+          <div class="relative aspect-[4/3] overflow-hidden">
+            <img
+              class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+              [alt]="vehicle.title"
+              [src]="vehicle.coverImage || 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=80'"
+            />
+            <div class="absolute top-4 left-4 flex flex-col gap-2">
+              <span class="bg-primary/90 text-on-primary text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full backdrop-blur-md">
+                {{ vehicle.category || 'Premium' }}
+              </span>
+              <span
+                class="bg-white/90 text-primary text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full backdrop-blur-md flex items-center gap-1"
+                *ngIf="vehicle.owner?.ratingAverage && vehicle.owner!.ratingAverage! > 4.7"
+              >
+                <span class="material-symbols-outlined text-[12px]">verified</span>
+                Triluga Certificado
+              </span>
+            </div>
+            <button class="absolute top-4 right-4 w-10 h-10 bg-white/20 hover:bg-white/40 backdrop-blur-xl rounded-full flex items-center justify-center transition-colors" type="button">
+              <span class="material-symbols-outlined text-white">favorite</span>
+            </button>
+          </div>
+          <div class="p-6">
+            <div class="flex justify-between items-start mb-4">
+              <div>
+                <h3 class="text-xl font-bold tracking-tight text-on-surface">
+                  {{ vehicle.title }}
+                </h3>
+                <div class="flex items-center gap-3 mt-1 text-on-surface-variant/70 text-sm font-medium">
+                  <span>{{ vehicle.year }}</span>
+                  <span class="w-1 h-1 bg-outline-variant rounded-full"></span>
+                  <span>{{ vehicle.city }}, {{ vehicle.state }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-end justify-between pt-4 border-t border-outline-variant/10">
+              <div>
+                <p class="text-[10px] font-bold text-outline uppercase tracking-wider mb-1">
+                  A partir de
+                </p>
+                <span class="text-2xl font-black text-primary tracking-tighter">
+                  R$ {{ vehicle.dailyRate | number: '1.0-0' }}
+                  <span class="text-sm font-medium text-on-surface/50">/ dia</span>
+                </span>
+              </div>
+              <button class="bg-surface-container-low p-3 rounded-full hover:bg-primary hover:text-on-primary transition-all duration-300" type="button">
+                <span class="material-symbols-outlined">arrow_forward</span>
+              </button>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <div *ngIf="loading && vehicles.length === 0" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+        <div *ngFor="let s of [1, 2, 3, 4, 5, 6]" class="h-96 bg-surface-container rounded-xl animate-pulse"></div>
+      </div>
+
+      <div
+        class="flex flex-col items-center justify-center py-20 text-center"
+        *ngIf="!loading && vehicles.length === 0"
+      >
+        <div class="w-16 h-16 bg-surface-container rounded-2xl flex items-center justify-center mb-4 text-outline border border-outline-variant/30">
+          <span class="material-symbols-outlined text-3xl font-light">search_off</span>
+        </div>
+        <h2 class="font-bold text-on-surface text-xl mb-2">{{ emptyStateTitle }}</h2>
+        <p class="text-sm text-on-surface-variant max-w-sm">{{ emptyStateDescription }}</p>
+      </div>
+
+      <p class="text-center font-semibold text-outline text-sm py-8 animate-pulse" *ngIf="loading && vehicles.length > 0">
+        Carregando...
+      </p>
+
+      <div
+        #sentinel
+        class="h-10 w-full opacity-0 pointer-events-none"
+        *ngIf="hasNextPage && vehicles.length"
+      ></div>
+
+      <div class="mt-16 flex items-center justify-center gap-2" *ngIf="vehicles.length">
+        <button class="w-12 h-12 flex items-center justify-center rounded-xl bg-surface-container-low text-outline hover:bg-surface-container-high transition-colors" type="button">
+          <span class="material-symbols-outlined">chevron_left</span>
+        </button>
+        <button class="w-12 h-12 flex items-center justify-center rounded-xl bg-primary text-on-primary font-bold" type="button">1</button>
+        <button class="w-12 h-12 flex items-center justify-center rounded-xl bg-surface-container-low text-on-surface font-bold hover:bg-surface-container-high transition-colors" type="button">2</button>
+        <button class="w-12 h-12 flex items-center justify-center rounded-xl bg-surface-container-low text-on-surface font-bold hover:bg-surface-container-high transition-colors" type="button">3</button>
+        <span class="px-2 text-outline">...</span>
+        <button class="w-12 h-12 flex items-center justify-center rounded-xl bg-surface-container-low text-outline hover:bg-surface-container-high transition-colors" type="button">
+          <span class="material-symbols-outlined">chevron_right</span>
+        </button>
+      </div>
+    </section>
+  </main>
+
 </div>
