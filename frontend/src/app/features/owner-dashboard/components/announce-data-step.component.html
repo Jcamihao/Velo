@@ -1,0 +1,209 @@
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div class="lg:col-span-7 space-y-8">
+            <header>
+              <h1 class="text-4xl font-extrabold tracking-tighter text-on-surface mb-2">
+                Comece seu anúncio
+              </h1>
+              <p class="text-on-surface-variant leading-relaxed">
+                Insira os dados básicos do seu veículo para identificação rápida.
+              </p>
+            </header>
+
+            <div class="space-y-6">
+              <div>
+                <label class="block text-sm font-semibold mb-3 text-on-surface-variant">
+                  Tipo de Veículo
+                </label>
+                <div class="flex gap-4">
+                  <button
+                    class="flex-1 py-4 px-6 rounded-xl flex flex-col items-center gap-2 transition-all"
+                    type="button"
+                    [ngClass]="
+                      owner.vehicleDraft.vehicleType === 'CAR'
+                        ? 'bg-primary text-on-primary shadow-lg shadow-primary/10 ring-2 ring-primary'
+                        : 'bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest'
+                    "
+                    (click)="owner.setVehicleType('CAR')"
+                  >
+                    <span class="material-symbols-outlined">directions_car</span>
+                    <span class="text-sm font-bold">Carro</span>
+                  </button>
+                  <button
+                    class="flex-1 py-4 px-6 rounded-xl flex flex-col items-center gap-2 transition-all"
+                    type="button"
+                    [ngClass]="
+                      owner.vehicleDraft.vehicleType === 'MOTORCYCLE'
+                        ? 'bg-primary text-on-primary shadow-lg shadow-primary/10 ring-2 ring-primary'
+                        : 'bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest'
+                    "
+                    (click)="owner.setVehicleType('MOTORCYCLE')"
+                  >
+                    <span class="material-symbols-outlined">motorcycle</span>
+                    <span class="text-sm font-bold">Moto</span>
+                  </button>
+                  <button
+                    class="hidden sm:flex flex-1 py-4 px-6 rounded-xl bg-surface-container-high text-on-surface-variant/60 flex-col items-center gap-2 cursor-not-allowed"
+                    type="button"
+                    disabled
+                    title="Categoria ainda não disponível"
+                  >
+                    <span class="material-symbols-outlined">local_shipping</span>
+                    <span class="text-sm font-bold">Caminhão</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-2">
+                  <label class="text-sm font-semibold text-on-surface-variant" for="plate">
+                    Placa do Veículo
+                  </label>
+                  <input
+                    id="plate"
+                    class="w-full bg-surface-container-low border-none rounded-xl py-4 px-5 focus:ring-2 focus:ring-primary-container text-on-surface placeholder:text-outline-variant font-medium transition-all uppercase"
+                    placeholder="AAA-0000"
+                    type="text"
+                    maxlength="8"
+                    [(ngModel)]="owner.vehicleDraft.plate"
+                  />
+                </div>
+                <div class="space-y-2">
+                  <label class="text-sm font-semibold text-on-surface-variant" for="city">
+                    Cidade
+                  </label>
+                  <div class="relative">
+                    <input
+                      id="city"
+                      class="w-full bg-surface-container-low border-none rounded-xl py-4 px-5 pl-12 focus:ring-2 focus:ring-primary-container text-on-surface placeholder:text-outline-variant font-medium transition-all"
+                      placeholder="São Paulo, SP"
+                      type="text"
+                      [ngModel]="owner.cityStateValue"
+                      (ngModelChange)="owner.updateCityState($event)"
+                    />
+                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">
+                      location_on
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="p-6 bg-surface-container-low rounded-xl space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div class="space-y-2">
+                    <label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant opacity-70">
+                      Marca
+                    </label>
+                    <input
+                      class="w-full bg-surface-container-lowest border-none rounded-lg py-3 px-4 focus:ring-2 focus:ring-primary-container text-on-surface font-medium"
+                      placeholder="Volkswagen"
+                      [(ngModel)]="owner.vehicleDraft.brand"
+                    />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant opacity-70">
+                      Modelo
+                    </label>
+                    <input
+                      class="w-full bg-surface-container-lowest border-none rounded-lg py-3 px-4 focus:ring-2 focus:ring-primary-container text-on-surface font-medium"
+                      placeholder="Golf GTI"
+                      [(ngModel)]="owner.vehicleDraft.model"
+                    />
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant opacity-70">
+                      Ano
+                    </label>
+                    <input
+                      class="w-full bg-surface-container-lowest border-none rounded-lg py-3 px-4 focus:ring-2 focus:ring-primary-container text-on-surface font-medium"
+                      placeholder="2024"
+                      type="number"
+                      min="1990"
+                      max="2100"
+                      [(ngModel)]="owner.vehicleDraft.year"
+                    />
+                  </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="space-y-2">
+                    <label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant opacity-70">
+                      Categoria
+                    </label>
+                    <select
+                      class="w-full bg-surface-container-lowest border-none rounded-lg py-3 px-4 focus:ring-2 focus:ring-primary-container text-on-surface font-medium"
+                      [(ngModel)]="owner.vehicleDraft.category"
+                    >
+                      <option *ngFor="let option of owner.categoryOptions" [value]="option.value">
+                        {{ option.label }}
+                      </option>
+                    </select>
+                  </div>
+                  <div class="space-y-2">
+                    <label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant opacity-70">
+                      Título público
+                    </label>
+                    <input
+                      class="w-full bg-surface-container-lowest border-none rounded-lg py-3 px-4 focus:ring-2 focus:ring-primary-container text-on-surface font-medium"
+                      placeholder="Gerado automaticamente"
+                      [(ngModel)]="owner.vehicleDraft.title"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div class="pt-6 flex justify-end">
+                <button
+                  class="group flex items-center gap-3 bg-gradient-to-br from-primary to-primary-container text-on-primary px-10 py-4 rounded-full font-bold text-lg shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
+                  type="button"
+                  (click)="owner.nextStep()"
+                >
+                  Continuar
+                  <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">
+                    arrow_forward
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="lg:col-span-5 space-y-6">
+            <div class="sticky top-28">
+              <div class="rounded-xl overflow-hidden aspect-[4/3] bg-surface-container-high relative mb-6">
+                <img
+                  alt="Interior premium de carro"
+                  class="w-full h-full object-cover"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDUt-v--KbvAYpn8OqlG5Stn5FxmoEVci9YI8n7Rs6bYAwhnmvbMs2JUOV8Ka7DNgAt7hNK6FuQ8FKrMcxODDoooFQRP72snr9tBb7OtudI9suSwW9V9PcV5QooB-fqflRA08XXNNyXZrdNrHxXHXp6dtWJJkorkOb3y-CSZmUI6r78gXp4N7PnVtfT1UuS_wNPSa1BXlz4Vwb000krNg9mVDO3THYIjGjfkx90dny1BqUtKzHXaMCa0dO1g-tAPrnNJnFG18clJkPm"
+                />
+                <div class="absolute inset-0 bg-gradient-to-t from-on-surface/60 to-transparent flex items-end p-8">
+                  <p class="text-white font-medium italic">
+                    "Venda seu veículo 2x mais rápido com dados precisos."
+                  </p>
+                </div>
+              </div>
+              <div class="p-8 bg-surface-container-low rounded-xl border-none">
+                <h3 class="text-xl font-bold text-on-surface mb-4">
+                  Por que a placa é necessária?
+                </h3>
+                <ul class="space-y-4">
+                  <li class="flex gap-4">
+                    <span class="material-symbols-outlined text-primary">verified</span>
+                    <p class="text-sm text-on-surface-variant leading-tight">
+                      Preenchimento automático das especificações técnicas.
+                    </p>
+                  </li>
+                  <li class="flex gap-4">
+                    <span class="material-symbols-outlined text-primary">verified</span>
+                    <p class="text-sm text-on-surface-variant leading-tight">
+                      Garante a procedência e segurança para o comprador.
+                    </p>
+                  </li>
+                  <li class="flex gap-4">
+                    <span class="material-symbols-outlined text-primary">verified</span>
+                    <p class="text-sm text-on-surface-variant leading-tight">
+                      Não exibimos sua placa publicamente no anúncio.
+                    </p>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>

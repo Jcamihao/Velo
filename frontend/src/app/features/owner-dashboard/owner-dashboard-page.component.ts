@@ -6,6 +6,8 @@ import { AuthService } from '../../core/services/auth.service';
 import { UiStateService } from '../../core/services/ui-state.service';
 import { VehiclesApiService } from '../../core/services/vehicles-api.service';
 import { VehicleCardComponent } from '../../shared/components/vehicle-card/vehicle-card.component';
+import { OwnerDashboardListComponent } from './components/owner-dashboard-list.component';
+import { VehicleWizardComponent } from './components/vehicle-wizard.component';
 import {
   CreateVehiclePayload,
   FuelType,
@@ -33,11 +35,19 @@ type OwnerViewMode = 'ads';
 @Component({
   selector: 'app-owner-dashboard-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, CurrencyPipe, VehicleCardComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    CurrencyPipe,
+    VehicleCardComponent,
+    VehicleWizardComponent,
+    OwnerDashboardListComponent,
+  ],
   templateUrl: './owner-dashboard-page.component.html',
   styleUrls: ['./owner-dashboard-page.component.scss'],
 })
 export class OwnerDashboardPageComponent implements OnDestroy {
+  protected readonly ownerContext = this;
   private readonly authService = inject(AuthService);
   protected readonly uiStateService = inject(UiStateService);
   private readonly route = inject(ActivatedRoute);
@@ -194,10 +204,10 @@ export class OwnerDashboardPageComponent implements OnDestroy {
     }
 
     if (this.currentStep === 2) {
-      return 'Condições do Veículo';
+      return 'Fotos e Preços';
     }
 
-    return 'Finalize seu anúncio';
+    return 'Condições do Veículo';
   }
 
   protected get cityStateValue() {
@@ -232,7 +242,7 @@ export class OwnerDashboardPageComponent implements OnDestroy {
   }
 
   protected get vehicleSummaryTitle() {
-    return this.vehicleDraft.title.trim() || 'Seu veículo';
+    return this.generatedVehicleTitle;
   }
 
   protected get vehicleSummarySubtitle() {
@@ -271,8 +281,52 @@ export class OwnerDashboardPageComponent implements OnDestroy {
     this.vehicleDraft.transmission = transmission;
   }
 
+  protected setFuelType(fuelType: FuelType) {
+    this.vehicleDraft.fuelType = fuelType;
+  }
+
+  protected setSeats(seats: number) {
+    this.vehicleDraft.seats = Math.min(9, Math.max(2, seats));
+  }
+
+  protected adjustSeats(delta: number) {
+    this.setSeats(Number(this.vehicleDraft.seats || 5) + delta);
+  }
+
   protected setKmPolicy(kmPolicy: 'FREE' | 'FIXED') {
     this.vehicleDraft.kmPolicy = kmPolicy;
+  }
+
+  protected setDetranStatus(status: 'OK' | 'ISSUES') {
+    this.vehicleDraft.hasDetranIssues = status === 'ISSUES';
+  }
+
+  protected get detranStatus() {
+    return this.vehicleDraft.hasDetranIssues ? 'ISSUES' : 'OK';
+  }
+
+  protected get selectedPhotoCount() {
+    return (
+      (this.editingVehicle?.images.length ?? 0) + this.pendingVehicleFiles.length
+    );
+  }
+
+  protected get estimatedDraftMonthlyRevenue() {
+    return Number(this.vehicleDraft.dailyRate || 0) * 20;
+  }
+
+  protected get generatedVehicleTitle() {
+    return (
+      this.vehicleDraft.title.trim() ||
+      [
+        this.vehicleDraft.brand.trim(),
+        this.vehicleDraft.model.trim(),
+        this.vehicleDraft.year || null,
+      ]
+        .filter(Boolean)
+        .join(' ') ||
+      'Seu veículo'
+    );
   }
 
   protected photoSlotUrl(index: number) {
@@ -409,7 +463,6 @@ export class OwnerDashboardPageComponent implements OnDestroy {
     const d = this.vehicleDraft;
     if (step === 1) {
       return !!(
-        d.title?.trim() &&
         d.plate?.trim() &&
         d.brand?.trim() &&
         d.model?.trim() &&
@@ -417,6 +470,18 @@ export class OwnerDashboardPageComponent implements OnDestroy {
       );
     }
     if (step === 2) {
+      return !!(
+        (this.editingVehicle?.images?.length ?? 0) +
+          this.pendingVehicleFiles.length >
+          0 &&
+        Number(d.weeklyRate) > 0 &&
+        d.city?.trim() &&
+        d.state?.trim().length === 2 &&
+        d.addressLine?.trim() &&
+        d.description?.trim()
+      );
+    }
+    if (step === 3) {
       const isMotoComplete =
         d.vehicleType === 'MOTORCYCLE'
           ? !!(d.motorcycleStyle && Number(d.engineCc))
@@ -425,20 +490,6 @@ export class OwnerDashboardPageComponent implements OnDestroy {
         d.mechanicsCondition?.trim() &&
         Number(d.seats) > 0 &&
         isMotoComplete
-      );
-    }
-    if (step === 3) {
-      const hasPhotos =
-        (this.editingVehicle?.images?.length ?? 0) +
-          this.pendingVehicleFiles.length >
-        0;
-      return !!(
-        hasPhotos &&
-        Number(d.weeklyRate) > 0 &&
-        d.city?.trim() &&
-        d.state?.trim().length === 2 &&
-        d.addressLine?.trim() &&
-        d.description?.trim()
       );
     }
     return false;
@@ -913,7 +964,6 @@ export class OwnerDashboardPageComponent implements OnDestroy {
   private normalizeVehicleDraft(): CreateVehiclePayload | null {
     const payload: CreateVehiclePayload = {
       ...this.vehicleDraft,
-      title: this.vehicleDraft.title.trim(),
       brand: this.vehicleDraft.brand.trim(),
       model: this.vehicleDraft.model.trim(),
       plate: this.vehicleDraft.plate.trim().toUpperCase(),
@@ -932,6 +982,10 @@ export class OwnerDashboardPageComponent implements OnDestroy {
       trunkSize: this.parseOptionalNumber(this.vehicleDraft.trunkSize),
       engineCc: this.parseOptionalNumber(this.vehicleDraft.engineCc),
     };
+
+    payload.title =
+      this.vehicleDraft.title.trim() ||
+      [payload.brand, payload.model, payload.year].filter(Boolean).join(' ');
 
     if (
       !payload.title ||
@@ -965,10 +1019,6 @@ export class OwnerDashboardPageComponent implements OnDestroy {
 
   private collectMissingVehicleFields() {
     const missingFields: string[] = [];
-
-    if (!this.vehicleDraft.title.trim()) {
-      missingFields.push('título');
-    }
 
     if (!this.vehicleDraft.plate.trim()) {
       missingFields.push('placa');

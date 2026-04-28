@@ -1,0 +1,481 @@
+<div
+    class="bg-surface text-on-surface min-h-screen pb-32 font-body antialiased flex flex-col md:hidden"
+  >
+    <header
+      class="sticky top-0 z-40 bg-surface/90 backdrop-blur-md flex justify-between items-center w-full px-6 py-4"
+    >
+      <div class="flex items-center gap-3">
+        <span
+          class="material-symbols-outlined text-primary scale-110 active:scale-95 transition-transform cursor-pointer"
+          (click)="owner.uiStateService.toggleMenu()"
+          >menu</span
+        >
+        <h1
+          class="!text-2xl !font-black italic tracking-tighter text-primary !leading-none !m-0"
+        >
+          Triluga
+        </h1>
+      </div>
+      <div class="flex items-center gap-4">
+        <span
+          class="material-symbols-outlined text-on-surface-variant scale-110 active:scale-95 transition-transform cursor-pointer"
+        >
+          notifications
+        </span>
+      </div>
+    </header>
+
+    <main class="flex-grow px-6 py-6 w-full mx-auto max-w-5xl">
+      <section class="mb-6 text-center sm:text-left">
+        <h1 class="text-2xl font-extrabold tracking-tight text-on-surface mb-1">
+          Meus Anuncios
+        </h1>
+        <p class="text-xs text-on-surface-variant">
+          Gerencie sua frota e acompanhe seu desempenho em tempo real.
+        </p>
+        <button
+          class="w-full mt-6 flex justify-center items-center gap-2 bg-gradient-to-br from-[#006d37] to-[#2ecc71] text-white px-6 py-3.5 rounded-full font-bold shadow-lg shadow-emerald-900/20 active:scale-95 transition-transform"
+          (click)="owner.goToCreateView()"
+        >
+          <span class="material-symbols-outlined text-xl">add_circle</span>
+          Criar Novo Anúncio
+        </button>
+      </section>
+
+      <section class="grid grid-cols-1 gap-4 mb-8">
+        <div
+          class="bg-surface-container-lowest p-6 rounded-xl flex flex-col gap-3 shadow-sm border border-outline-variant/10"
+        >
+          <div class="flex justify-between items-start">
+            <span class="material-symbols-outlined text-emerald-600 text-2xl"
+              >visibility</span
+            >
+            <span
+              class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full"
+              *ngIf="owner.totalViews > 0"
+              >+12%</span
+            >
+          </div>
+          <div>
+            <p
+              class="text-on-surface-variant text-[10px] font-bold uppercase tracking-widest"
+            >
+              Visualizações Totais
+            </p>
+            <h2 class="text-2xl font-black mt-1">{{ owner.totalViews }}</h2>
+          </div>
+          <div class="w-full bg-surface-container-high h-1.5 rounded-full mt-1">
+            <div
+              class="bg-emerald-500 h-1.5 rounded-full"
+              [style.width]="owner.totalViews > 0 ? '75%' : '0%'"
+            ></div>
+          </div>
+        </div>
+
+        <div
+          class="bg-surface-container-lowest p-6 rounded-xl flex flex-col gap-3 shadow-sm border border-outline-variant/10"
+        >
+          <div class="flex justify-between items-start">
+            <span class="material-symbols-outlined text-emerald-600 text-2xl"
+              >directions_car</span
+            >
+            <span
+              class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full"
+              >Estável</span
+            >
+          </div>
+          <div>
+            <p
+              class="text-on-surface-variant text-[10px] font-bold uppercase tracking-widest"
+            >
+              Anúncios Ativos
+            </p>
+            <h2 class="text-2xl font-black mt-1">{{ owner.totalAds }}</h2>
+          </div>
+          <div class="flex -space-x-2 mt-1" *ngIf="owner.totalAds > 0">
+            <div
+              class="w-6 h-6 rounded-full border border-white bg-slate-200"
+            ></div>
+            <div
+              class="w-6 h-6 rounded-full border border-white bg-slate-300"
+              *ngIf="owner.totalAds > 1"
+            ></div>
+            <div
+              class="w-6 h-6 rounded-full border border-white flex items-center justify-center bg-emerald-100 text-[8px] font-bold text-emerald-700"
+              *ngIf="owner.totalAds > 2"
+            >
+              +{{ owner.totalAds - 2 }}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="bg-surface-container-low rounded-xl p-4 md:p-8">
+        <div class="flex flex-col gap-4 mb-6">
+          <h3 class="text-lg font-bold tracking-tight">Meus Veículos</h3>
+          <div
+            class="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide"
+          >
+            <button
+              class="bg-primary text-on-primary px-4 py-1.5 rounded-full text-[11px] font-bold shadow-sm whitespace-nowrap active:scale-95 duration-150"
+            >
+              Todos
+            </button>
+            <button
+              class="bg-surface-container-highest text-on-surface-variant px-4 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap active:scale-95 duration-150"
+            >
+              Publicados
+            </button>
+            <button
+              class="bg-surface-container-highest text-on-surface-variant px-4 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap active:scale-95 duration-150"
+            >
+              Rascunhos
+            </button>
+          </div>
+        </div>
+
+        <p
+          class="text-xs font-medium text-on-surface-variant bg-surface-container-lowest p-6 text-center rounded-xl border border-outline-variant/10 shadow-sm"
+          *ngIf="owner.loading"
+        >
+          Carregando seus anúncios...
+        </p>
+        <p
+          class="text-xs font-medium text-on-surface-variant bg-surface-container-lowest p-6 text-center rounded-xl border border-outline-variant/10 shadow-sm"
+          *ngIf="!owner.loading && !owner.vehicles.length"
+        >
+          Você ainda não tem anúncios cadastrados.
+        </p>
+
+        <div class="flex flex-col gap-4" *ngIf="!owner.loading && owner.vehicles.length">
+          <article
+            *ngFor="let vehicle of owner.vehicles; trackBy: owner.trackById"
+            class="bg-surface-container-lowest p-4 rounded-xl flex flex-col gap-4 shadow-sm border border-outline-variant/10 group hover:bg-white transition-all"
+          >
+            <div class="flex gap-4">
+              <img
+                [alt]="vehicle.title"
+                class="w-24 h-20 object-cover rounded-lg flex-shrink-0"
+                [ngClass]="{ 'opacity-60 grayscale-[50%]': !vehicle.isActive }"
+                [src]="vehicle.coverImage || owner.fallbackImage"
+              />
+
+              <div class="flex-grow flex flex-col justify-between pt-1">
+                <div>
+                  <div class="flex items-center gap-2 mb-1.5">
+                    <span
+                      class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest"
+                      [ngClass]="{
+                        'bg-emerald-100 text-emerald-700':
+                          vehicle.isPublished && vehicle.isActive,
+                        'bg-amber-100 text-amber-700':
+                          !vehicle.isPublished && vehicle.isActive,
+                        'bg-slate-200 text-slate-600': !vehicle.isActive,
+                      }"
+                    >
+                      {{
+                        !vehicle.isActive
+                          ? 'Inativo'
+                          : vehicle.isPublished
+                            ? 'Publicado'
+                            : 'Rascunho'
+                      }}
+                    </span>
+                  </div>
+                  <h4
+                    class="font-bold text-sm leading-tight line-clamp-2"
+                    [ngClass]="
+                      !vehicle.isActive ? 'text-slate-500' : 'text-on-surface'
+                    "
+                  >
+                    {{ vehicle.title }}
+                  </h4>
+                </div>
+
+                <div
+                  class="flex gap-3 text-[10px] text-on-surface-variant font-medium mt-2"
+                >
+                  <span class="flex items-center gap-1"
+                    ><span class="material-symbols-outlined text-[14px]"
+                      >calendar_today</span
+                    >
+                    {{ vehicle.year || '2023' }}</span
+                  >
+                  <span class="flex items-center gap-1"
+                    ><span class="material-symbols-outlined text-[14px]"
+                      >visibility</span
+                    >
+                    {{ vehicle.viewsCount || 0 }}</span
+                  >
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="pt-3 border-t border-surface-container-high flex justify-between items-center px-1"
+            >
+              <div>
+                <p
+                  class="text-[9px] text-on-surface-variant uppercase font-bold tracking-wider"
+                >
+                  Preço Diário
+                </p>
+                <p
+                  class="text-base font-black"
+                  [ngClass]="
+                    !vehicle.isActive
+                      ? 'text-slate-400'
+                      : vehicle.dailyRate
+                        ? 'text-emerald-800'
+                        : 'text-slate-400'
+                  "
+                >
+                  {{
+                    vehicle.dailyRate
+                      ? (vehicle.dailyRate
+                        | currency: 'BRL' : 'symbol' : '1.2-2')
+                      : 'Pendente'
+                  }}
+                </p>
+              </div>
+              <div
+                class="flex gap-1 bg-surface-container-lowest rounded-full p-1 border border-outline-variant/10 shadow-sm"
+              >
+                <button
+                  class="p-2 rounded-full hover:bg-surface-container-high text-on-surface-variant transition-colors active:scale-95 disabled:opacity-40"
+                  [disabled]="
+                    owner.vehicleActionId === vehicle.id || !vehicle.isActive
+                  "
+                  (click)="owner.startEditingVehicle(vehicle)"
+                  aria-label="Editar"
+                >
+                  <span class="material-symbols-outlined text-lg">edit</span>
+                </button>
+                <button
+                  class="p-2 rounded-full hover:bg-surface-container-high text-on-surface-variant transition-colors active:scale-95 disabled:opacity-40"
+                  [disabled]="
+                    owner.vehicleActionId === vehicle.id || !vehicle.isActive
+                  "
+                  (click)="owner.toggleVehiclePublication(vehicle)"
+                  [attr.aria-label]="
+                    vehicle.isPublished ? 'Despublicar' : 'Publicar'
+                  "
+                >
+                  <span class="material-symbols-outlined text-lg">{{
+                    vehicle.isPublished ? 'visibility_off' : 'visibility'
+                  }}</span>
+                </button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="hidden bg-surface text-on-surface min-h-screen font-body antialiased md:flex flex-col">
+    <app-web-header [fixed]="true"></app-web-header>
+
+    <main class="flex-grow pt-24 pb-12 px-6 md:px-8 max-w-7xl mx-auto w-full">
+      <div class="flex flex-col gap-6 md:flex-row md:justify-between md:items-end mb-10">
+        <div>
+          <h1 class="text-4xl font-extrabold tracking-tight text-on-surface mb-2">
+            Painel do Proprietário
+          </h1>
+          <p class="text-on-surface-variant">
+            Gerencie sua frota e acompanhe seu desempenho em tempo real.
+          </p>
+        </div>
+        <button
+          class="flex items-center justify-center gap-2 bg-gradient-to-br from-primary to-primary-container text-on-primary px-6 py-3 rounded-full font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-transform"
+          type="button"
+          (click)="owner.goToCreateView()"
+        >
+          <span class="material-symbols-outlined">add_circle</span>
+          Criar Novo Anúncio
+        </button>
+      </div>
+
+      <section class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+        <div class="bg-surface-container-lowest p-8 rounded-xl flex flex-col gap-4">
+          <div class="flex justify-between items-start">
+            <span class="material-symbols-outlined text-emerald-600 text-3xl">visibility</span>
+            <span class="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full" *ngIf="owner.totalViews > 0">
+              +12%
+            </span>
+          </div>
+          <div>
+            <p class="text-on-surface-variant text-sm font-medium uppercase tracking-wider">
+              Visualizações Totais
+            </p>
+            <h2 class="text-3xl font-black mt-1">{{ owner.totalViews }}</h2>
+          </div>
+          <div class="w-full bg-surface-container-high h-1.5 rounded-full mt-2">
+            <div class="bg-emerald-500 h-1.5 rounded-full" [style.width]="owner.totalViews > 0 ? '75%' : '0%'"></div>
+          </div>
+        </div>
+
+        <div class="bg-surface-container-lowest p-8 rounded-xl flex flex-col gap-4">
+          <div class="flex justify-between items-start">
+            <span class="material-symbols-outlined text-emerald-600 text-3xl">directions_car</span>
+            <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-full">
+              Estável
+            </span>
+          </div>
+          <div>
+            <p class="text-on-surface-variant text-sm font-medium uppercase tracking-wider">
+              Anúncios Ativos
+            </p>
+            <h2 class="text-3xl font-black mt-1">{{ owner.totalAds }}</h2>
+          </div>
+          <div class="flex -space-x-2 mt-2" *ngIf="owner.totalAds > 0">
+            <div class="w-8 h-8 rounded-full border-2 border-white bg-slate-200"></div>
+            <div class="w-8 h-8 rounded-full border-2 border-white bg-slate-300" *ngIf="owner.totalAds > 1"></div>
+            <div class="w-8 h-8 rounded-full border-2 border-white bg-slate-400" *ngIf="owner.totalAds > 2"></div>
+            <div class="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center bg-emerald-100 text-[10px] font-bold text-emerald-700" *ngIf="owner.totalAds > 3">
+              +{{ owner.totalAds - 3 }}
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <section class="bg-surface-container-low rounded-xl p-5 md:p-8">
+        <div class="flex flex-col gap-4 md:flex-row md:justify-between md:items-center mb-8">
+          <h3 class="text-xl font-bold tracking-tight">Meus Veículos</h3>
+          <div class="flex gap-2 overflow-x-auto">
+            <button class="bg-primary text-on-primary px-4 py-2 rounded-full text-sm font-bold shadow-sm" type="button">
+              Todos
+            </button>
+            <button class="bg-surface-container-highest text-on-surface-variant px-4 py-2 rounded-full text-sm font-bold" type="button">
+              Publicados
+            </button>
+            <button class="bg-surface-container-highest text-on-surface-variant px-4 py-2 rounded-full text-sm font-bold" type="button">
+              Rascunhos
+            </button>
+          </div>
+        </div>
+
+        <p
+          class="text-sm font-medium text-on-surface-variant bg-surface-container-lowest p-8 text-center rounded-xl"
+          *ngIf="owner.loading"
+        >
+          Carregando seus anúncios...
+        </p>
+        <p
+          class="text-sm font-medium text-on-surface-variant bg-surface-container-lowest p-8 text-center rounded-xl"
+          *ngIf="!owner.loading && !owner.vehicles.length"
+        >
+          Você ainda não tem anúncios cadastrados.
+        </p>
+
+        <div class="space-y-4" *ngIf="!owner.loading && owner.vehicles.length">
+          <article
+            *ngFor="let vehicle of owner.vehicles; trackBy: owner.trackById"
+            class="bg-surface-container-lowest p-4 rounded-xl flex flex-col md:flex-row md:items-center gap-5 md:gap-6 group hover:bg-white transition-all"
+          >
+            <img
+              [alt]="vehicle.title"
+              class="w-full md:w-32 h-44 md:h-20 object-cover rounded-lg flex-shrink-0"
+              [ngClass]="{ 'opacity-60 grayscale-[50%]': !vehicle.isActive }"
+              [src]="vehicle.coverImage || owner.fallbackImage"
+            />
+
+            <div class="flex-grow min-w-0">
+              <div class="flex flex-wrap items-center gap-3 mb-1">
+                <h4
+                  class="font-bold text-lg truncate"
+                  [ngClass]="!vehicle.isActive ? 'text-slate-500' : 'text-on-surface'"
+                >
+                  {{ vehicle.title }}
+                </h4>
+                <span
+                  class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest"
+                  [ngClass]="{
+                    'bg-emerald-100 text-emerald-700':
+                      vehicle.isPublished && vehicle.isActive,
+                    'bg-amber-100 text-amber-700':
+                      !vehicle.isPublished && vehicle.isActive,
+                    'bg-slate-200 text-slate-600': !vehicle.isActive,
+                  }"
+                >
+                  {{
+                    !vehicle.isActive
+                      ? 'Inativo'
+                      : vehicle.isPublished
+                        ? 'Publicado'
+                        : 'Rascunho'
+                  }}
+                </span>
+              </div>
+              <div class="flex flex-wrap gap-4 text-xs text-on-surface-variant font-medium">
+                <span class="flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[14px]">calendar_today</span>
+                  {{ vehicle.year || '2023' }}
+                </span>
+                <span class="flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[14px]">location_on</span>
+                  {{ vehicle.city }}, {{ vehicle.state }}
+                </span>
+                <span class="flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[14px]">visibility</span>
+                  {{ owner.vehicleViewsLabel(vehicle) }}
+                </span>
+              </div>
+            </div>
+
+            <div class="text-left md:text-right md:px-6 md:border-l md:border-surface-container-high">
+              <p class="text-[10px] text-on-surface-variant uppercase font-bold tracking-wider">
+                Preço Diário
+              </p>
+              <p
+                class="text-lg font-black"
+                [ngClass]="
+                  !vehicle.isActive
+                    ? 'text-slate-400'
+                    : vehicle.dailyRate
+                      ? 'text-emerald-800'
+                      : 'text-slate-400'
+                "
+              >
+                {{
+                  vehicle.dailyRate
+                    ? (vehicle.dailyRate | currency: 'BRL' : 'symbol' : '1.2-2')
+                    : 'Pendente'
+                }}
+              </p>
+            </div>
+
+            <div class="flex gap-2 justify-end">
+              <button
+                class="p-2 rounded-full hover:bg-surface-container-high text-on-surface-variant transition-colors disabled:opacity-40"
+                type="button"
+                [disabled]="owner.vehicleActionId === vehicle.id || !vehicle.isActive"
+                (click)="owner.startEditingVehicle(vehicle)"
+                aria-label="Editar"
+              >
+                <span class="material-symbols-outlined">edit</span>
+              </button>
+              <button
+                class="p-2 rounded-full hover:bg-surface-container-high text-on-surface-variant transition-colors disabled:opacity-40"
+                type="button"
+                [disabled]="owner.vehicleActionId === vehicle.id || !vehicle.isActive"
+                (click)="owner.toggleVehiclePublication(vehicle)"
+                [attr.aria-label]="vehicle.isPublished ? 'Despublicar' : 'Publicar'"
+              >
+                <span class="material-symbols-outlined">
+                  {{ vehicle.isPublished ? 'visibility_off' : 'visibility' }}
+                </span>
+              </button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <p class="feedback" *ngIf="owner.vehicleFeedback">{{ owner.vehicleFeedback }}</p>
+      <p class="feedback feedback--error" *ngIf="owner.vehicleError">
+        {{ owner.vehicleError }}
+      </p>
+    </main>
+
+  </div>

@@ -1,0 +1,259 @@
+<header class="mb-12">
+          <div class="flex items-center gap-2 text-primary font-semibold mb-2">
+            <span class="material-symbols-outlined text-sm">auto_awesome</span>
+            <span class="text-xs uppercase tracking-widest">Etapa 3 de 3</span>
+          </div>
+          <h1 class="text-4xl font-extrabold text-on-surface tracking-tight mb-4">
+            Condições do Veículo
+          </h1>
+          <p class="text-on-surface-variant text-lg max-w-2xl leading-relaxed">
+            Detalhe o estado mecânico e burocrático para atrair compradores qualificados. Transparência gera confiança.
+          </p>
+        </header>
+
+        <div class="space-y-10">
+          <section class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="space-y-4">
+              <label class="block text-sm font-bold text-on-surface flex items-center gap-2">
+                <span class="material-symbols-outlined text-lg">settings_input_component</span>
+                Transmissão
+              </label>
+              <div class="grid grid-cols-2 gap-3">
+                <button
+                  class="flex flex-col items-center justify-center p-4 rounded-xl shadow-md transition-all"
+                  type="button"
+                  [ngClass]="
+                    owner.vehicleDraft.transmission === 'MANUAL'
+                      ? 'bg-primary text-on-primary'
+                      : 'bg-surface-container-lowest text-on-surface-variant border border-outline-variant/15 hover:bg-surface-container-low'
+                  "
+                  (click)="owner.setTransmission('MANUAL')"
+                >
+                  <span class="material-symbols-outlined mb-1">fiber_manual_record</span>
+                  <span class="text-sm font-medium">Manual</span>
+                </button>
+                <button
+                  class="flex flex-col items-center justify-center p-4 rounded-xl shadow-md transition-all"
+                  type="button"
+                  [ngClass]="
+                    owner.vehicleDraft.transmission === 'AUTOMATIC' || owner.vehicleDraft.transmission === 'CVT'
+                      ? 'bg-primary text-on-primary'
+                      : 'bg-surface-container-lowest text-on-surface-variant border border-outline-variant/15 hover:bg-surface-container-low'
+                  "
+                  (click)="owner.setTransmission('AUTOMATIC')"
+                >
+                  <span class="material-symbols-outlined mb-1">precision_manufacturing</span>
+                  <span class="text-sm font-medium">Automática</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <label class="block text-sm font-bold text-on-surface flex items-center gap-2">
+                <span class="material-symbols-outlined text-lg">local_gas_station</span>
+                Combustível
+              </label>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  *ngFor="let option of owner.fuelOptions"
+                  type="button"
+                  class="px-5 py-2.5 rounded-full text-sm font-medium transition-all"
+                  [ngClass]="
+                    owner.vehicleDraft.fuelType === option.value
+                      ? 'bg-primary text-on-primary'
+                      : 'bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest'
+                  "
+                  (click)="owner.setFuelType(option.value)"
+                >
+                  {{ option.label }}
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="md:col-span-2 p-8 bg-surface-container-low rounded-xl flex flex-col gap-6">
+              <div class="flex justify-between items-start">
+                <div class="space-y-1">
+                  <h3 class="text-lg font-bold text-on-surface">Condição Mecânica</h3>
+                  <p class="text-sm text-on-surface-variant">
+                    Como você avalia o estado geral do motor e suspensão?
+                  </p>
+                </div>
+                <span class="material-symbols-outlined text-primary text-3xl">build_circle</span>
+              </div>
+              <textarea
+                class="w-full bg-surface-container-lowest border-none rounded-xl p-4 text-on-surface font-medium focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline/50"
+                placeholder="Ex: Revisões em dia na concessionária, pneus novos..."
+                rows="4"
+                [(ngModel)]="owner.vehicleDraft.mechanicsCondition"
+              ></textarea>
+              <div class="flex justify-between text-xs font-bold text-on-surface-variant px-1">
+                <span>REVISAR</span>
+                <span>BOM</span>
+                <span class="text-primary">IMPECÁVEL</span>
+              </div>
+            </div>
+
+            <div class="p-8 bg-surface-container-lowest border border-outline-variant/15 rounded-xl flex flex-col justify-between">
+              <div class="space-y-4">
+                <label class="block text-sm font-bold text-on-surface">Lugares</label>
+                <div class="flex items-center gap-4">
+                  <button
+                    class="w-10 h-10 rounded-full border border-outline-variant/40 flex items-center justify-center text-on-surface-variant"
+                    type="button"
+                    (click)="owner.adjustSeats(-1)"
+                  >
+                    -
+                  </button>
+                  <span class="text-2xl font-black">{{ owner.vehicleDraft.seats }}</span>
+                  <button
+                    class="w-10 h-10 rounded-full border border-outline-variant/40 flex items-center justify-center text-on-surface-variant"
+                    type="button"
+                    (click)="owner.adjustSeats(1)"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+              <span class="material-symbols-outlined text-slate-300 text-5xl self-end" style="font-variation-settings: 'FILL' 1;">
+                airline_seat_recline_extra
+              </span>
+            </div>
+          </section>
+
+          <section
+            class="grid grid-cols-1 md:grid-cols-2 gap-6"
+            *ngIf="owner.vehicleDraft.vehicleType === 'MOTORCYCLE'"
+          >
+            <div class="space-y-2">
+              <label class="block text-sm font-bold text-on-surface">
+                Estilo da moto
+              </label>
+              <select
+                class="w-full bg-surface-container-lowest border-none rounded-xl p-4 text-on-surface font-medium focus:ring-2 focus:ring-primary/20 transition-all"
+                [(ngModel)]="owner.vehicleDraft.motorcycleStyle"
+              >
+                <option value="">Selecione</option>
+                <option *ngFor="let option of owner.motorcycleStyleOptions" [value]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-bold text-on-surface">
+                Cilindrada
+              </label>
+              <input
+                class="w-full bg-surface-container-lowest border-none rounded-xl p-4 text-on-surface font-medium focus:ring-2 focus:ring-primary/20 transition-all"
+                type="number"
+                min="50"
+                max="2500"
+                [(ngModel)]="owner.vehicleDraft.engineCc"
+              />
+            </div>
+          </section>
+
+          <section class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="p-6 bg-surface-container-lowest rounded-xl border border-outline-variant/15 space-y-6">
+              <div class="flex items-center gap-3">
+                <div class="p-3 bg-emerald-50 rounded-lg text-primary">
+                  <span class="material-symbols-outlined">verified_user</span>
+                </div>
+                <div>
+                  <h4 class="font-bold">Seguro Atual</h4>
+                  <p class="text-xs text-on-surface-variant">
+                    O veículo possui seguro ativo?
+                  </p>
+                </div>
+              </div>
+              <div class="flex gap-4">
+                <label
+                  class="flex-1 flex items-center gap-3 p-4 rounded-xl cursor-pointer border-2"
+                  [ngClass]="
+                    owner.vehicleDraft.hasInsurance
+                      ? 'bg-surface-container-low border-primary'
+                      : 'bg-surface-container-lowest border-outline-variant/20'
+                  "
+                >
+                  <input
+                    class="text-primary focus:ring-primary"
+                    name="insurance"
+                    type="radio"
+                    [ngModel]="owner.vehicleDraft.hasInsurance"
+                    (ngModelChange)="owner.vehicleDraft.hasInsurance = true"
+                  />
+                  <span class="text-sm font-semibold">Sim, ativo</span>
+                </label>
+                <label
+                  class="flex-1 flex items-center gap-3 p-4 rounded-xl cursor-pointer border"
+                  [ngClass]="
+                    !owner.vehicleDraft.hasInsurance
+                      ? 'bg-surface-container-low border-primary'
+                      : 'bg-surface-container-lowest border-outline-variant/20'
+                  "
+                >
+                  <input
+                    class="text-primary focus:ring-primary"
+                    name="insurance"
+                    type="radio"
+                    [ngModel]="!owner.vehicleDraft.hasInsurance"
+                    (ngModelChange)="owner.vehicleDraft.hasInsurance = false"
+                  />
+                  <span class="text-sm font-semibold">Não possui</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="p-6 bg-surface-container-lowest rounded-xl border border-outline-variant/15 space-y-6">
+              <div class="flex items-center gap-3">
+                <div class="p-3 bg-blue-50 rounded-lg text-blue-600">
+                  <span class="material-symbols-outlined">gavel</span>
+                </div>
+                <div>
+                  <h4 class="font-bold">Status Detran</h4>
+                  <p class="text-xs text-on-surface-variant">Documentação e multas pendentes.</p>
+                </div>
+              </div>
+              <select
+                class="w-full bg-surface-container-low border-none rounded-xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-primary"
+                [ngModel]="owner.detranStatus"
+                (ngModelChange)="owner.setDetranStatus($event)"
+              >
+                <option value="OK">Tudo regularizado (IPVA pago)</option>
+                <option value="ISSUES">IPVA, multas ou licenciamento pendente</option>
+              </select>
+            </div>
+          </section>
+
+          <footer class="flex items-center justify-between pt-12">
+            <button
+              class="flex items-center gap-2 px-8 py-4 rounded-full font-bold text-on-surface-variant hover:bg-surface-container-low transition-all"
+              type="button"
+              (click)="owner.prevStep()"
+            >
+              <span class="material-symbols-outlined">arrow_back</span>
+              Voltar
+            </button>
+            <button
+              class="bg-gradient-to-br from-primary to-primary-container flex items-center gap-2 px-12 py-4 rounded-full font-bold text-white shadow-xl shadow-emerald-900/10 hover:scale-105 active:opacity-80 transition-all"
+              type="button"
+              (click)="owner.saveVehicle()"
+              [disabled]="owner.submittingVehicle || owner.uploadingVehicleImages"
+            >
+              {{
+                owner.submittingVehicle || owner.uploadingVehicleImages
+                  ? owner.vehicleSubmitLabel
+                  : 'Publicar anúncio'
+              }}
+              <span class="material-symbols-outlined">rocket_launch</span>
+            </button>
+          </footer>
+
+          <div class="pt-2">
+            <p class="feedback" *ngIf="owner.vehicleFeedback">{{ owner.vehicleFeedback }}</p>
+            <p class="feedback feedback--error" *ngIf="owner.vehicleError">
+              {{ owner.vehicleError }}
+            </p>
+          </div>
+        </div>

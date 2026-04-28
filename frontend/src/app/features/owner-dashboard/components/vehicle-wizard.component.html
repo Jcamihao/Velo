@@ -1,0 +1,85 @@
+<div
+    class="announce-stitch bg-surface font-body text-on-surface antialiased min-h-screen flex flex-col"
+  >
+    <app-web-header [fixed]="true"></app-web-header>
+
+    <div class="fixed top-[64px] left-0 w-full h-1 bg-surface-container-highest z-50">
+      <div class="h-full bg-primary transition-all duration-500" [style.width]="owner.stepProgressWidth"></div>
+    </div>
+
+    <main class="flex-grow pt-24 pb-20 px-6 max-w-5xl mx-auto w-full">
+      <div class="mb-12">
+        <div class="flex justify-between items-center mb-4 px-2">
+          <button
+            type="button"
+            class="flex items-center gap-2 text-left"
+            (click)="owner.goToStep(1)"
+          >
+            <span
+              class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+              [ngClass]="
+                owner.currentStep === 1
+                  ? 'bg-primary text-on-primary'
+                  : owner.checkStepCompletion(1)
+                    ? 'bg-secondary-container text-on-secondary-container'
+                    : 'bg-surface-container-highest text-on-surface-variant'
+              "
+            >
+              1
+            </span>
+            <span class="font-bold text-lg tracking-tight">Dados Principais</span>
+          </button>
+          <button
+            type="button"
+            class="hidden md:flex items-center gap-2 text-left"
+            [class.opacity-40]="owner.currentStep !== 2 && !owner.checkStepCompletion(2)"
+            (click)="owner.goToStep(2)"
+          >
+            <span
+              class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+              [ngClass]="
+                owner.currentStep === 2
+                  ? 'bg-primary text-on-primary'
+                  : owner.checkStepCompletion(2)
+                    ? 'bg-secondary-container text-on-secondary-container'
+                    : 'bg-surface-container-highest text-on-surface-variant'
+              "
+            >
+              2
+            </span>
+            <span class="font-medium">Fotos e Preço</span>
+          </button>
+          <button
+            type="button"
+            class="hidden md:flex items-center gap-2 text-left"
+            [class.opacity-40]="owner.currentStep !== 3 && !owner.checkStepCompletion(3)"
+            (click)="owner.goToStep(3)"
+          >
+            <span
+              class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+              [ngClass]="
+                owner.currentStep === 3
+                  ? 'bg-primary text-on-primary'
+                  : owner.checkStepCompletion(3)
+                    ? 'bg-secondary-container text-on-secondary-container'
+                    : 'bg-surface-container-highest text-on-surface-variant'
+              "
+            >
+              3
+            </span>
+            <span class="font-medium">Condições</span>
+          </button>
+        </div>
+        <div class="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden">
+          <div class="h-full bg-primary transition-all duration-500 ease-in-out" [style.width]="owner.stepProgressWidth"></div>
+        </div>
+      </div>
+
+      <app-announce-data-step *ngIf="owner.currentStep === 1" [owner]="owner"></app-announce-data-step>
+
+      <app-announce-photos-price-step *ngIf="owner.currentStep === 2" [owner]="owner"></app-announce-photos-price-step>
+
+      <app-announce-conditions-step *ngIf="owner.currentStep === 3" [owner]="owner"></app-announce-conditions-step>
+    </main>
+
+  </div>
