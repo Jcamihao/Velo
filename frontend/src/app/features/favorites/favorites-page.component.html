@@ -1,4 +1,4 @@
-<main class="pb-24 max-w-7xl mx-auto flex-grow w-full">
+<main class="pb-24 max-w-7xl mx-auto flex-grow w-full md:hidden">
   <!-- TopAppBar -->
   <header
     class="sticky top-0 z-40 bg-surface/90 backdrop-blur-md flex justify-between items-center w-full px-6 py-4"
@@ -65,7 +65,7 @@
   <!-- Bento Grid / Cards -->
   <section
     class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 px-6"
-    *ngIf="favoriteItems.length; else emptyState"
+    *ngIf="favoriteItems.length; else mobileEmptyState"
   >
     <app-vehicle-card
       *ngFor="let vehicle of favoriteItems"
@@ -74,7 +74,7 @@
   </section>
 
   <!-- Empty State -->
-  <ng-template #emptyState>
+  <ng-template #mobileEmptyState>
     <div
       class="flex flex-col items-center justify-center py-20 mt-10 text-center px-6"
     >
@@ -103,3 +103,119 @@
     </div>
   </ng-template>
 </main>
+
+<div class="favorites-web">
+  <app-web-header [fixed]="true"></app-web-header>
+
+  <main class="favorites-web__main">
+    <section class="favorites-web__hero">
+      <div>
+        <h1>Meus Favoritos</h1>
+        <p>Gerencie sua lista de desejos e compare os melhores veículos.</p>
+      </div>
+
+      <div class="favorites-web__actions" *ngIf="favoriteItems.length">
+        <button
+          type="button"
+          class="favorites-web__sort"
+          (click)="cycleSortMode()"
+        >
+          <span class="material-symbols-outlined">sort</span>
+          {{ sortLabel() }}
+        </button>
+        <a
+          routerLink="/compare"
+          class="favorites-web__compare"
+          [class.favorites-web__compare--disabled]="!compareFavoritesCount"
+          (click)="compareFavorites()"
+        >
+          <span class="material-symbols-outlined">compare_arrows</span>
+          Comparar Selecionados ({{ compareFavoritesCount }})
+        </a>
+      </div>
+    </section>
+
+    <section
+      class="favorites-web__grid"
+      *ngIf="favoriteItems.length; else desktopEmptyState"
+    >
+      <article
+        class="favorite-card"
+        *ngFor="let vehicle of sortedFavoriteItems; trackBy: trackById"
+      >
+        <div class="favorite-card__media">
+          <a [routerLink]="['/vehicles', vehicle.id]" aria-label="Ver detalhes">
+            <img
+              [src]="vehicle.coverImage || fallbackImage"
+              [alt]="vehicle.title"
+              loading="lazy"
+            />
+          </a>
+
+          <button
+            type="button"
+            class="favorite-card__remove"
+            aria-label="Remover dos favoritos"
+            [disabled]="favoritesService.isPending(vehicle.id)"
+            (click)="removeFavorite(vehicle)"
+          >
+            <span class="material-symbols-outlined">delete</span>
+          </button>
+
+          <span class="favorite-card__badge">{{ categoryLabel(vehicle) }}</span>
+        </div>
+
+        <div class="favorite-card__body">
+          <div class="favorite-card__title-row">
+            <h2>{{ vehicle.title }}</h2>
+            <strong>
+              {{
+                vehicle.dailyRate | currency: 'BRL' : 'symbol' : '1.0-0'
+              }}
+            </strong>
+          </div>
+
+          <p class="favorite-card__meta">
+            {{ vehicle.year }} • {{ vehicle.city }}, {{ vehicle.state }}
+          </p>
+
+          <div class="favorite-card__specs">
+            <span>
+              <span class="material-symbols-outlined">speed</span>
+              {{ rangeLabel(vehicle) }}
+            </span>
+            <span>
+              <span class="material-symbols-outlined">{{
+                vehicle.fuelType === 'ELECTRIC' ? 'bolt' : 'local_gas_station'
+              }}</span>
+              {{ fuelTypeLabel(vehicle.fuelType) }}
+            </span>
+            <span>
+              <span class="material-symbols-outlined">settings</span>
+              {{ transmissionLabel(vehicle.transmission) }}
+            </span>
+          </div>
+
+          <a class="favorite-card__details" [routerLink]="['/vehicles', vehicle.id]">
+            Ver Detalhes
+          </a>
+        </div>
+      </article>
+    </section>
+
+    <ng-template #desktopEmptyState>
+      <section class="favorites-web__empty">
+        <div class="favorites-web__empty-icon">
+          <span class="material-symbols-outlined">favorite_border</span>
+        </div>
+        <h2>Sua lista está vazia</h2>
+        <p>
+          Comece a explorar o showroom e salve os veículos que mais combinam com
+          sua rotina.
+        </p>
+        <a routerLink="/search">Explorar Veículos</a>
+      </section>
+    </ng-template>
+  </main>
+
+</div>
